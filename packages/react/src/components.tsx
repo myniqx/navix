@@ -1,56 +1,31 @@
-import { useRef, useEffect, type ReactNode } from 'react';
-import {
-  HorizontalListBehavior,
-  VerticalListBehavior,
-  GridBehavior,
-} from '@navix/core';
-import type { NavEvent } from '@navix/core';
+import { useRef, type ReactNode } from 'react';
+import { ListBehavior, GridBehavior, ButtonBehavior } from '@navix/core';
 import { useFocusable } from './useFocusable';
 
-// Horizontal container — left/right navigation
-export function HorizontalList({
-  fKey,
-  children,
-}: {
-  fKey: string;
-  children: ReactNode;
-}) {
+// Horizontal container — left/right navigation between children
+export function HorizontalList({ fKey, children }: { fKey: string; children: ReactNode }) {
   const { node, FocusProvider } = useFocusable(fKey);
   const behaviorRef = useRef(false);
   if (!behaviorRef.current) {
-    new HorizontalListBehavior(node);
+    new ListBehavior(node, 'horizontal');
     behaviorRef.current = true;
   }
   return <FocusProvider>{children}</FocusProvider>;
 }
 
-// Vertical container — up/down navigation
-export function VerticalList({
-  fKey,
-  children,
-}: {
-  fKey: string;
-  children: ReactNode;
-}) {
+// Vertical container — up/down navigation between children
+export function VerticalList({ fKey, children }: { fKey: string; children: ReactNode }) {
   const { node, FocusProvider } = useFocusable(fKey);
   const behaviorRef = useRef(false);
   if (!behaviorRef.current) {
-    new VerticalListBehavior(node);
+    new ListBehavior(node, 'vertical');
     behaviorRef.current = true;
   }
   return <FocusProvider>{children}</FocusProvider>;
 }
 
-// Grid container — 4-direction navigation with column count
-export function Grid({
-  fKey,
-  columns,
-  children,
-}: {
-  fKey: string;
-  columns: number;
-  children: ReactNode;
-}) {
+// Grid container — 4-direction navigation with column count for row wrapping
+export function Grid({ fKey, columns, children }: { fKey: string; columns: number; children: ReactNode }) {
   const { node, FocusProvider } = useFocusable(fKey);
   const behaviorRef = useRef(false);
   if (!behaviorRef.current) {
@@ -60,8 +35,24 @@ export function Grid({
   return <FocusProvider>{children}</FocusProvider>;
 }
 
-// Leaf button — consumes enter events, does NOT provide context to children
-export function FocusButton({
+/**
+ * Button — leaf focusable node. Wraps children in a single element and sets
+ * `data-focused="true"` on it when this node is the active leaf in the tree.
+ *
+ * No FocusProvider — Button is always a leaf, it has no focusable children.
+ *
+ * Styling is left entirely to the consumer via the `data-focused` attribute:
+ *   [data-focused="true"] { outline: 2px solid #4fc3f7; }
+ *
+ * Props:
+ *   fKey          — unique key within the parent container's focus scope.
+ *   onPress       — fired on Enter press.
+ *   onLongPress   — fired when Enter is held (default threshold: 500ms).
+ *   onDoublePress — fired on quick double Enter tap (default window: 300ms).
+ *   children      — any React content; receives no focus props directly.
+ *                   Use `data-focused` on the wrapper for styling.
+ */
+export function Button({
   fKey,
   onPress,
   onLongPress,
@@ -74,30 +65,28 @@ export function FocusButton({
   onDoublePress?: () => void;
   children: ReactNode;
 }) {
-  // Store latest callbacks in a ref to avoid stale closures
-  const handlersRef = useRef({ onPress, onLongPress, onDoublePress });
-  useEffect(() => {
-    handlersRef.current = { onPress, onLongPress, onDoublePress };
-  });
+  // Refs keep callbacks stable — ButtonBehavior captures them without going stale
+  const onPressRef = useRef(onPress);
+  const onLongPressRef = useRef(onLongPress);
+  const onDoublePressRef = useRef(onDoublePress);
+  onPressRef.current = onPress;
+  onLongPressRef.current = onLongPress;
+  onDoublePressRef.current = onDoublePress;
 
-  const { node, directlyFocused } = useFocusable(fKey, {
-    onEvent: (event: NavEvent): boolean => {
-      if (event.action !== 'enter') return false;
-      if (event.type === 'press')       { handlersRef.current.onPress?.();       return true; }
-      if (event.type === 'longpress')   { handlersRef.current.onLongPress?.();   return true; }
-      if (event.type === 'doublepress') { handlersRef.current.onDoublePress?.(); return true; }
-      return false;
-    },
-  });
+  const { node, directlyFocused } = useFocusable(fKey);
+
+  const behaviorRef = useRef(false);
+  if (!behaviorRef.current) {
+    new ButtonBehavior(node, {
+      onPress: () => onPressRef.current?.(),
+      onLongPress: () => onLongPressRef.current?.(),
+      onDoublePress: () => onDoublePressRef.current?.(),
+    });
+    behaviorRef.current = true;
+  }
 
   return (
-    <div
-      data-focused={directlyFocused}
-      style={{
-        outline: directlyFocused ? '2px solid #00bfff' : '2px solid transparent',
-        display: 'inline-block',
-      }}
-    >
+    <div data-focused={directlyFocused} style={{ display: 'inline-block' }}>
       {children}
     </div>
   );

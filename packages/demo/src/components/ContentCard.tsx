@@ -1,33 +1,29 @@
 /**
  * ContentCard
  *
- * A focusable media card with two states:
+ * A focusable media card built on <Expandable>.
  *
- * NORMAL state (isSelected = false):
- *   - Card node has no children in the focus tree
+ * COLLAPSED state (isExpanded = false):
+ *   - Shows poster + "▶ Play" bar
  *   - directlyFocused = true when this card is the active leaf
- *   - enter → opens the action overlay (isSelected = true)
- *   - left/right/up/down → return false, parent HorizontalList handles navigation
+ *   - Enter → Expandable opens (isExpanded = true)
+ *   - Left/right/up/down → bubble to parent HorizontalList / VerticalList
  *
- * SELECTED state (isSelected = true):
- *   - Card node gets two child nodes (Play, Info) via HorizontalList
- *   - Events now travel DOWN into the child nodes first (core handleEvent flow)
- *   - left/right → caught by the inner HorizontalList, navigates between Play/Info
- *   - up/down → children return false, card's onEvent returns false, parent row handles it
- *   - back → card's onEvent catches it, closes the overlay
- *   - enter on Play/Info → each button handles it independently
- *
- * This is pure core behavior — no extra API needed. The tree structure itself
- * controls which component receives events at any given moment.
+ * EXPANDED state (isExpanded = true):
+ *   - Shows poster + action buttons (Play, Info)
+ *   - Inner HorizontalList mounts, its children register into the focus tree
+ *   - Left/right → navigate between action buttons (caught by inner HorizontalList)
+ *   - Back → Expandable closes (core ExpandableBehavior handles this)
+ *   - Enter on a button → button's onEvent consumes it
  *
  * Props:
  *   fKey    — unique key within the parent HorizontalList's focus scope.
  *   item    — content data (title, year, background color).
- *   onPress — called when the user selects Play (reported to the event log).
+ *   onPress — called when the user confirms Play.
  */
 
-import { useState, useRef } from 'react';
-import { useFocusable, HorizontalList } from '@navix/react';
+import { useRef } from 'react';
+import { HorizontalList, useFocusable, Expandable } from '@navix/react';
 import type { NavEvent } from '@navix/core';
 import type { ContentItem } from '../data';
 
@@ -38,130 +34,105 @@ interface ContentCardProps {
 }
 
 export function ContentCard({ fKey, item, onPress }: ContentCardProps) {
-  const [isSelected, setIsSelected] = useState(false);
-
-  const onPressRef = useRef(onPress);
-  onPressRef.current = onPress;
-
-  const { focused, directlyFocused, FocusProvider } = useFocusable(fKey, {
-    onEvent: (e: NavEvent) => {
-      // When selected, back closes the overlay and returns focus to this card.
-      // The card node is still active in the parent row — no focus shift needed.
-      if (isSelected && e.action === 'back' && e.type === 'press') {
-        setIsSelected(false);
-        return true;
-      }
-
-      // When not selected, enter opens the overlay.
-      // Once selected, enter travels to the child HorizontalList first (core flow),
-      // so this branch only fires when there are no children to consume it.
-      if (!isSelected && e.action === 'enter' && e.type === 'press') {
-        setIsSelected(true);
-        return true;
-      }
-
-      // All other events (directional) bubble up to the parent row.
-      return false;
-    },
-  });
-
-  // Card is visually "active" when directly focused OR when the overlay is open
-  const isActive = directlyFocused || (focused && isSelected);
-
   return (
-    <FocusProvider>
-      <div
-        style={{
-          width: 140,
-          marginRight: 12,
-          cursor: 'pointer',
-          userSelect: 'none',
-          transform: isActive ? 'scale(1.08)' : 'scale(1)',
-          transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-          boxShadow: isActive
-            ? '0 0 0 2px #4fc3f7, 0 8px 24px rgba(0,0,0,0.6)'
-            : '0 2px 8px rgba(0,0,0,0.4)',
-          borderRadius: 6,
-          overflow: 'hidden',
-          position: 'relative',
-        }}
-      >
-        {/* Poster area */}
-        <div
-          style={{
-            height: 200,
-            background: `linear-gradient(135deg, ${item.color} 0%, ${item.color}99 100%)`,
-            display: 'flex',
-            alignItems: 'flex-end',
-            padding: '10px',
-            position: 'relative',
-          }}
-        >
-          <div
-            style={{
-              position: 'absolute',
-              top: 8,
-              right: 8,
-              background: 'rgba(0,0,0,0.6)',
-              borderRadius: 3,
-              padding: '2px 6px',
-              fontSize: 10,
-              color: '#aaa',
-            }}
-          >
-            {item.year}
-          </div>
-          <div
-            style={{
-              fontSize: isActive ? 13 : 12,
-              fontWeight: 700,
-              color: isActive ? '#fff' : '#ddd',
-              textShadow: '0 1px 4px rgba(0,0,0,0.8)',
-              lineHeight: 1.2,
-              transition: 'font-size 0.15s',
-            }}
-          >
-            {item.title}
-          </div>
-        </div>
+    <Expandable fKey={fKey}>
+      {({ isExpanded, focused, directlyFocused, collapse }) => {
+        // Card is visually highlighted when directly focused OR when expanded
+        // (expanded means focus went into children but card stays "active")
+        const isActive = directlyFocused || (focused && isExpanded);
 
-        {/* Bottom bar — replaced by action buttons when selected */}
-        {!isSelected ? (
+        return (
           <div
             style={{
-              background: isActive ? '#1a2a3a' : '#111',
-              padding: '6px 10px',
-              fontSize: 11,
-              color: isActive ? '#4fc3f7' : '#555',
-              transition: 'all 0.15s',
+              width: 140,
+              marginRight: 12,
+              cursor: 'pointer',
+              userSelect: 'none',
+              transform: isActive ? 'scale(1.08)' : 'scale(1)',
+              transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+              boxShadow: isActive
+                ? '0 0 0 2px #4fc3f7, 0 8px 24px rgba(0,0,0,0.6)'
+                : '0 2px 8px rgba(0,0,0,0.4)',
+              borderRadius: 6,
+              overflow: 'hidden',
             }}
           >
-            ▶ Play
-          </div>
-        ) : (
-          /*
-           * Action overlay — only mounted when isSelected = true.
-           * Mounting adds two child nodes to this card's focus node.
-           * Core's handleEvent will now route events into these children first,
-           * intercepting left/right before they reach the parent row.
-           */
-          <HorizontalList fKey={`${fKey}-actions`}>
-            <div style={{ display: 'flex' }}>
-              <ActionButton
-                fKey={`${fKey}-play`}
-                label="▶ Play"
-                onPress={() => { onPressRef.current(); setIsSelected(false); }}
-              />
-              <ActionButton
-                fKey={`${fKey}-info`}
-                label="ℹ Info"
-                onPress={() => { setIsSelected(false); }}
-              />
+            {/* Poster — always visible */}
+            <div
+              style={{
+                height: 200,
+                background: `linear-gradient(135deg, ${item.color} 0%, ${item.color}99 100%)`,
+                display: 'flex',
+                alignItems: 'flex-end',
+                padding: '10px',
+                position: 'relative',
+              }}
+            >
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 8,
+                  right: 8,
+                  background: 'rgba(0,0,0,0.6)',
+                  borderRadius: 3,
+                  padding: '2px 6px',
+                  fontSize: 10,
+                  color: '#aaa',
+                }}
+              >
+                {item.year}
+              </div>
+              <div
+                style={{
+                  fontSize: isActive ? 13 : 12,
+                  fontWeight: 700,
+                  color: isActive ? '#fff' : '#ddd',
+                  textShadow: '0 1px 4px rgba(0,0,0,0.8)',
+                  lineHeight: 1.2,
+                  transition: 'font-size 0.15s',
+                }}
+              >
+                {item.title}
+              </div>
             </div>
-          </HorizontalList>
-        )}
-      </div>
-    </FocusProvider>
+
+            {/* Bottom area — switches between hint bar and action buttons */}
+            {!isExpanded ? (
+              // Collapsed: simple play hint
+              <div
+                style={{
+                  background: isActive ? '#1a2a3a' : '#111',
+                  padding: '6px 10px',
+                  fontSize: 11,
+                  color: isActive ? '#4fc3f7' : '#555',
+                  transition: 'all 0.15s',
+                }}
+              >
+                ▶ Play
+              </div>
+            ) : (
+              // Expanded: action buttons mount into the focus tree.
+              // HorizontalList registers as a child of this card's Expandable node.
+              // Left/right now navigates between Play and Info instead of between cards.
+              <HorizontalList fKey={`${fKey}-actions`}>
+                <div style={{ display: 'flex' }}>
+                  <ActionButton
+                    fKey={`${fKey}-play`}
+                    label="▶ Play"
+                    onPress={() => { onPress(); collapse(); }}
+                  />
+                  <ActionButton
+                    fKey={`${fKey}-info`}
+                    label="ℹ Info"
+                    onPress={() => { collapse(); }}
+                  />
+                </div>
+              </HorizontalList>
+            )}
+          </div>
+        );
+      }}
+    </Expandable>
   );
 }
 
@@ -170,9 +141,11 @@ export function ContentCard({ fKey, item, onPress }: ContentCardProps) {
 /**
  * ActionButton
  *
- * A leaf focus node inside the card's action overlay.
- * Registers into the parent HorizontalList when mounted,
- * unregisters automatically when the overlay closes (unmount).
+ * A leaf focus node inside the card's expanded action row.
+ * Mounts into the focus tree when the card expands, unmounts when it collapses.
+ *
+ * Uses useFocusable directly (not <Expandable>) because it is a leaf —
+ * it has no children and does not need expand/collapse behavior.
  *
  * Props:
  *   fKey    — unique key within the card's HorizontalList.

@@ -1,0 +1,5 @@
+/* Action overlay buttons — focused state via data-focused attribute on Button wrapper */
+[data-focused="true"] .action-btn {
+  background: #4fc3f7;
+  color: #000;
+}
