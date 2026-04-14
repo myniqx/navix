@@ -1,0 +1,16 @@
+{
+  "name": "navix",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "bun run --filter '@navix/core' build && bun run --filter '@navix/react' build",
+    "dev": "concurrently --kill-others --names 'core,react,demo' --prefix-colors 'cyan,magenta,green' 'bun run --cwd packages/core dev' 'bun run --cwd packages/react dev' 'bun run --cwd packages/demo dev'"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3"
+  }
+}
