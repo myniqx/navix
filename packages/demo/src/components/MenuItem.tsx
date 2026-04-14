@@ -26,7 +26,7 @@ export function MenuItem({ fKey, label, onPress }: MenuItemProps) {
   const onPressRef = useRef(onPress);
   onPressRef.current = onPress;
 
-  const { directlyFocused, FocusProvider } = useFocusable(fKey, {
+  const { directlyFocused, focusSelf, FocusProvider } = useFocusable(fKey, {
     onEvent: (e: NavEvent) => {
       if (e.action === 'enter' && e.type === 'press') {
         onPressRef.current();
@@ -39,6 +39,7 @@ export function MenuItem({ fKey, label, onPress }: MenuItemProps) {
   return (
     <FocusProvider>
       <div
+        onMouseEnter={focusSelf}
         style={{
           padding: '8px 20px',
           fontSize: 14,

@@ -88,7 +88,7 @@ export function Button({
   onLongPressRef.current = onLongPress;
   onDoublePressRef.current = onDoublePress;
 
-  const { node, directlyFocused } = useFocusable(fKey);
+  const { node, directlyFocused, focusSelf } = useFocusable(fKey);
 
   const behaviorRef = useRef(false);
   if (!behaviorRef.current) {
@@ -118,6 +118,7 @@ export function Button({
       {...rest}
       data-focused={directlyFocused}
       style={mergedStyle}
+      onMouseEnter={focusSelf}
       onClick={(e) => { e.stopPropagation(); onClickRef.current?.(); }}
     >
       {rendered}

@@ -17,6 +17,11 @@ export interface IFocusNodeBehavior {
   collapse?: () => void;
   // Expand this node — only meaningful for ExpandableBehavior
   expand?: () => void;
+  // When true, this node is "expanded" and acts as a focus trap.
+  // requestFocus() checks the entire tree for any node where this returns true.
+  // If one exists and the requesting node is not a descendant of it, the focus
+  // request is blocked. Only ExpandableBehavior returns a meaningful value here.
+  readonly isTrapped?: boolean;
 }
 
 export interface ActionConfig {

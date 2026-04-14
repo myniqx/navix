@@ -19,6 +19,8 @@ interface UseFocusableResult {
   node: FocusNode;
   focused: boolean;
   directlyFocused: boolean;
+  // Call on onMouseEnter to move focus to this node via mouse/pointer
+  focusSelf: () => void;
   FocusProvider: React.FC<{ children: ReactNode }>;
 }
 
@@ -72,5 +74,10 @@ export function useFocusable(
     [node],
   );
 
-  return { node, focused, directlyFocused, FocusProvider };
+  // Moves focus to this node from mouse/pointer interaction.
+  // Walks up the tree via requestFocus() so all ancestors update their activeChildId,
+  // ensuring only one active path exists in the tree at any time.
+  const focusSelf = useCallback(() => node.requestFocus(), [node]);
+
+  return { node, focused, directlyFocused, focusSelf, FocusProvider };
 }

@@ -155,6 +155,45 @@ export class FocusNode {
     return node;
   }
 
+  // Walk up the tree from this node to root, making each ancestor point to
+  // the next node as its activeChildId. This gives this node the full active
+  // path, which triggers _propagateFocus and clears any previously focused branch.
+  //
+  // Focus trap: if any node in the tree has behavior.isTrapped = true, only
+  // nodes that are descendants of that node may receive focus. Any request
+  // from outside is silently ignored.
+  requestFocus(): void {
+    const trapNode = this._findTrap(this.getRoot());
+    if (trapNode !== null && !this._isDescendantOf(trapNode)) return;
+
+    let current: FocusNode = this;
+    while (current.parent) {
+      current.parent.focusChild(current.id);
+      current = current.parent;
+    }
+  }
+
+  // Returns the first node in the tree whose behavior has isTrapped = true,
+  // or null if no trap is active.
+  private _findTrap(node: FocusNode): FocusNode | null {
+    if (node.behavior?.isTrapped) return node;
+    for (const child of node.children) {
+      const found = this._findTrap(child);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  // Returns true if this node is a descendant of the given ancestor.
+  private _isDescendantOf(ancestor: FocusNode): boolean {
+    let current: FocusNode | null = this.parent;
+    while (current !== null) {
+      if (current === ancestor) return true;
+      current = current.parent;
+    }
+    return false;
+  }
+
   private _resetFocusFlags(): void {
     this.isFocused = false;
     this.isDirectlyFocused = false;

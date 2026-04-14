@@ -61,7 +61,7 @@ export function Expandable({ fKey, children }: ExpandableProps) {
   // It owns the onEvent handler on the FocusNode.
   const behaviorRef = useRef<ExpandableBehavior | null>(null);
 
-  const { focused, directlyFocused, FocusProvider, node } = useFocusable(fKey);
+  const { focused, directlyFocused, focusSelf, FocusProvider, node } = useFocusable(fKey);
 
   // Attach behavior to node once
   if (behaviorRef.current === null) {
@@ -88,7 +88,7 @@ export function Expandable({ fKey, children }: ExpandableProps) {
     <ExpandableContext.Provider value={contextValue}>
       <FocusProvider>
         {/* Mouse click mirrors keyboard enter/back — toggle expand state */}
-        <div style={{ display: 'contents' }} onClick={() => isExpanded ? collapse() : expand()}>
+        <div style={{ display: 'contents' }} onMouseEnter={focusSelf} onClick={() => isExpanded ? collapse() : expand()}>
           {children(renderProps)}
         </div>
       </FocusProvider>

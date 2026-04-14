@@ -24,6 +24,12 @@ import type { NavEvent, IFocusNodeBehavior } from '../types';
 export class ExpandableBehavior implements IFocusNodeBehavior {
   isExpanded: boolean = false;
 
+  // Signals to requestFocus() that this node is a focus trap while expanded.
+  // Other behaviors leave this undefined — only ExpandableBehavior opts in.
+  get isTrapped(): boolean {
+    return this.isExpanded;
+  }
+
   // Called whenever expanded state changes. Assign from the adapter layer.
   onChange: ((expanded: boolean) => void) | null = null;
 
@@ -59,8 +65,11 @@ export class ExpandableBehavior implements IFocusNodeBehavior {
 
   expand(): void {
     if (this.isExpanded) return;
-    // Walk entire tree from root, collapse every other expandable
+    // Collapse all other expandables first — clears any active trap
     this._walkCollapse(this._node.getRoot());
+    // Request focus before setting isExpanded — trap is not yet active so
+    // _findTrap won't block this node's own requestFocus call
+    this._node.requestFocus();
     this.isExpanded = true;
     this.onChange?.(true);
   }
