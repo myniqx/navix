@@ -8,4 +8,4 @@ export { GridBehavior } from './behaviors/GridBehavior';
 export { ButtonBehavior } from './behaviors/ButtonBehavior';
 export { ExpandableBehavior } from './behaviors/ExpandableBehavior';
 
-export type { NavEvent, ActionConfig, InputConfig } from './types';
+export type { NavEvent, ActionConfig, InputConfig, IFocusNodeBehavior } from './types';

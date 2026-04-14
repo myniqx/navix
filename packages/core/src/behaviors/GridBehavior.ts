@@ -1,8 +1,9 @@
 import type { FocusNode } from '../FocusNode';
-import type { NavEvent } from '../types';
+import type { NavEvent, IFocusNodeBehavior } from '../types';
 
-export class GridBehavior {
+export class GridBehavior implements IFocusNodeBehavior {
   constructor(node: FocusNode, columns: number) {
+    node.behavior = this;
     node.onEvent = (event: NavEvent): boolean => {
       if (event.type !== 'press') return false;
 

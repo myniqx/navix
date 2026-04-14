@@ -1,4 +1,4 @@
-import type { NavEvent } from './types';
+import type { NavEvent, IFocusNodeBehavior } from './types';
 
 let counter = 0;
 
@@ -12,6 +12,9 @@ export class FocusNode {
   isDirectlyFocused: boolean = false;
 
   onEvent?: (event: NavEvent) => boolean;
+
+  // Attached behavior — set by behavior constructors via node.behavior = this
+  behavior?: IFocusNodeBehavior;
 
   // Subscribers notified on any state change (used by React adapter)
   private subscribers: Set<() => void> = new Set();
@@ -41,12 +44,15 @@ export class FocusNode {
       this._propagateFocus();
     }
 
+    child.behavior?.onRegister?.();
     this.notify();
   }
 
   unregister(child: FocusNode): void {
     const idx = this.children.indexOf(child);
     if (idx === -1) return;
+
+    child.behavior?.onUnregister?.();
 
     this.children.splice(idx, 1);
     child.parent = null;
@@ -131,7 +137,7 @@ export class FocusNode {
 
   // Walk up to root and recompute isFocused / isDirectlyFocused for the whole tree
   private _propagateFocus(): void {
-    const root = this._getRoot();
+    const root = this.getRoot();
     root._resetFocusFlags();
     const path = root.getActivePath();
 
@@ -143,7 +149,7 @@ export class FocusNode {
     }
   }
 
-  private _getRoot(): FocusNode {
+  getRoot(): FocusNode {
     let node: FocusNode = this;
     while (node.parent) node = node.parent;
     return node;

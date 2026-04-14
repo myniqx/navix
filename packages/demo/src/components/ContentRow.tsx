@@ -21,10 +21,10 @@ interface ContentRowProps {
   rowKey: string;
   label: string;
   items: ContentItem[];
-  onPress: (item: ContentItem) => void;
+  onPlay: (item: ContentItem) => void;
 }
 
-export function ContentRow({ rowKey, label, items, onPress }: ContentRowProps) {
+export function ContentRow({ rowKey, label, items, onPlay }: ContentRowProps) {
   return (
     <div style={{ padding: '24px 32px 0' }}>
       {/* Section heading */}
@@ -60,7 +60,7 @@ export function ContentRow({ rowKey, label, items, onPress }: ContentRowProps) {
               // Prefix with rowKey so card fKeys are unique across all rows
               fKey={`${rowKey}-${item.id}`}
               item={item}
-              onPress={() => onPress(item)}
+              onPlay={() => onPlay(item)}
             />
           ))}
         </div>

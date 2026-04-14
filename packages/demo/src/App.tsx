@@ -63,7 +63,7 @@ export function App() {
               rowKey={`row-${i}`}
               label={row.label}
               items={row.items}
-              onPress={(item) => emit(`Pressed: ${item.title} (${item.year})`)}
+              onPlay={(item) => emit(`Play: ${item.title} (${item.year})`)}
             />
           ))}
         </VerticalList>

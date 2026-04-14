@@ -1,4 +1,5 @@
 import { useRef, type ReactNode } from 'react';
+import type React from 'react';
 import { ListBehavior, GridBehavior, ButtonBehavior } from '@navix/core';
 import { useFocusable } from './useFocusable';
 
@@ -35,41 +36,55 @@ export function Grid({ fKey, columns, children }: { fKey: string; columns: numbe
   return <FocusProvider>{children}</FocusProvider>;
 }
 
+// Render prop signature — children as a function that receives focus state
+type ButtonRenderFn = (props: { focused: boolean }) => ReactNode;
+
 /**
- * Button — leaf focusable node. Wraps children in a single element and sets
- * `data-focused="true"` on it when this node is the active leaf in the tree.
+ * Button — leaf focusable node.
  *
- * No FocusProvider — Button is always a leaf, it has no focusable children.
+ * onClick fires on both mouse click and keyboard Enter — they are the same action.
+ * onLongPress and onDoublePress are keyboard-only (no mouse equivalent).
  *
- * Styling is left entirely to the consumer via the `data-focused` attribute:
- *   [data-focused="true"] { outline: 2px solid #4fc3f7; }
+ * Two ways to handle focus styling:
  *
- * Props:
- *   fKey          — unique key within the parent container's focus scope.
- *   onPress       — fired on Enter press.
- *   onLongPress   — fired when Enter is held (default threshold: 500ms).
- *   onDoublePress — fired on quick double Enter tap (default window: 300ms).
- *   children      — any React content; receives no focus props directly.
- *                   Use `data-focused` on the wrapper for styling.
+ * 1. focusedStyle prop — merged onto the wrapper div when focused:
+ *      <Button style={{ background: '#222' }} focusedStyle={{ background: '#4fc3f7' }}>
+ *        Play
+ *      </Button>
+ *
+ * 2. Render prop — children as a function that receives { focused }:
+ *      <Button>
+ *        {({ focused }) => (
+ *          <div style={{ color: focused ? '#fff' : '#888' }}>Play</div>
+ *        )}
+ *      </Button>
+ *
+ * Both can be used at the same time. All other div props (className, etc.)
+ * are forwarded to the wrapper div.
  */
 export function Button({
   fKey,
-  onPress,
+  onClick,
   onLongPress,
   onDoublePress,
+  style,
+  focusedStyle,
   children,
+  ...rest
 }: {
   fKey: string;
-  onPress?: () => void;
+  onClick?: () => void;
   onLongPress?: () => void;
   onDoublePress?: () => void;
-  children: ReactNode;
-}) {
-  // Refs keep callbacks stable — ButtonBehavior captures them without going stale
-  const onPressRef = useRef(onPress);
+  style?: React.CSSProperties;
+  // Applied on top of `style` when this node is the focused leaf
+  focusedStyle?: React.CSSProperties;
+  children: ReactNode | ButtonRenderFn;
+} & Omit<React.HTMLAttributes<HTMLDivElement>, 'onClick' | 'style' | 'children'>) {
+  const onClickRef = useRef(onClick);
   const onLongPressRef = useRef(onLongPress);
   const onDoublePressRef = useRef(onDoublePress);
-  onPressRef.current = onPress;
+  onClickRef.current = onClick;
   onLongPressRef.current = onLongPress;
   onDoublePressRef.current = onDoublePress;
 
@@ -78,16 +93,34 @@ export function Button({
   const behaviorRef = useRef(false);
   if (!behaviorRef.current) {
     new ButtonBehavior(node, {
-      onPress: () => onPressRef.current?.(),
+      onPress: () => onClickRef.current?.(),
       onLongPress: () => onLongPressRef.current?.(),
       onDoublePress: () => onDoublePressRef.current?.(),
     });
     behaviorRef.current = true;
   }
 
+  // Merge focusedStyle on top of style when focused
+  const mergedStyle: React.CSSProperties = {
+    display: 'inline-block',
+    cursor: 'pointer',
+    ...style,
+    ...(directlyFocused ? focusedStyle : undefined),
+  };
+
+  // Support both plain children and render prop
+  const rendered = typeof children === 'function'
+    ? (children as ButtonRenderFn)({ focused: directlyFocused })
+    : children;
+
   return (
-    <div data-focused={directlyFocused} style={{ display: 'inline-block' }}>
-      {children}
+    <div
+      {...rest}
+      data-focused={directlyFocused}
+      style={mergedStyle}
+      onClick={(e) => { e.stopPropagation(); onClickRef.current?.(); }}
+    >
+      {rendered}
     </div>
   );
 }

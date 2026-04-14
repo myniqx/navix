@@ -22,23 +22,28 @@
  *   onPress — called when the user confirms Play.
  */
 
-import { useRef } from 'react';
-import { HorizontalList, useFocusable, Expandable } from '@navix/react';
-import type { NavEvent } from '@navix/core';
+import { useState } from 'react';
+import { HorizontalList, Expandable, Button } from '@navix/react';
 import type { ContentItem } from '../data';
+
+// Accent colors applied to the poster when an action is triggered
+const COLOR_PLAY = '#0d3b2e'; // dark green — now playing
+const COLOR_INFO = '#1a1a4a'; // dark blue  — info viewed
 
 interface ContentCardProps {
   fKey: string;
   item: ContentItem;
-  onPress: () => void;
+  // Called when the user confirms Play — used by the parent to log the event
+  onPlay: () => void;
 }
 
-export function ContentCard({ fKey, item, onPress }: ContentCardProps) {
+export function ContentCard({ fKey, item, onPlay }: ContentCardProps) {
+  // posterColor starts as the item's original color, changes on Play/Info
+  const [posterColor, setPosterColor] = useState(item.color);
+
   return (
     <Expandable fKey={fKey}>
       {({ isExpanded, focused, directlyFocused, collapse }) => {
-        // Card is visually highlighted when directly focused OR when expanded
-        // (expanded means focus went into children but card stays "active")
         const isActive = directlyFocused || (focused && isExpanded);
 
         return (
@@ -57,15 +62,16 @@ export function ContentCard({ fKey, item, onPress }: ContentCardProps) {
               overflow: 'hidden',
             }}
           >
-            {/* Poster — always visible */}
+            {/* Poster — color transitions when Play or Info is activated */}
             <div
               style={{
                 height: 200,
-                background: `linear-gradient(135deg, ${item.color} 0%, ${item.color}99 100%)`,
+                background: `linear-gradient(135deg, ${posterColor} 0%, ${posterColor}99 100%)`,
                 display: 'flex',
                 alignItems: 'flex-end',
                 padding: '10px',
                 position: 'relative',
+                transition: 'background 0.3s ease',
               }}
             >
               <div
@@ -96,9 +102,7 @@ export function ContentCard({ fKey, item, onPress }: ContentCardProps) {
               </div>
             </div>
 
-            {/* Bottom area — switches between hint bar and action buttons */}
             {!isExpanded ? (
-              // Collapsed: simple play hint
               <div
                 style={{
                   background: isActive ? '#1a2a3a' : '#111',
@@ -111,21 +115,32 @@ export function ContentCard({ fKey, item, onPress }: ContentCardProps) {
                 ▶ Play
               </div>
             ) : (
-              // Expanded: action buttons mount into the focus tree.
-              // HorizontalList registers as a child of this card's Expandable node.
-              // Left/right now navigates between Play and Info instead of between cards.
+              // Action overlay — HorizontalList mounts two Button nodes into the tree.
+              // left/right navigates between them, back collapses via ExpandableBehavior.
               <HorizontalList fKey={`${fKey}-actions`}>
                 <div style={{ display: 'flex' }}>
-                  <ActionButton
+                  <Button
                     fKey={`${fKey}-play`}
-                    label="▶ Play"
-                    onPress={() => { onPress(); collapse(); }}
-                  />
-                  <ActionButton
+                    style={{ flex: 1, padding: '8px 4px', textAlign: 'center', fontSize: 11, fontWeight: 600, background: '#1a2a3a', color: '#aaa', transition: 'all 0.15s' }}
+                    focusedStyle={{ background: '#4fc3f7', color: '#000' }}
+                    onClick={() => {
+                      setPosterColor(COLOR_PLAY);
+                      onPlay();
+                    }}
+                  >
+                    ▶ Play
+                  </Button>
+                  <Button
                     fKey={`${fKey}-info`}
-                    label="ℹ Info"
-                    onPress={() => { collapse(); }}
-                  />
+                    style={{ flex: 1, padding: '8px 4px', textAlign: 'center', fontSize: 11, fontWeight: 600, background: '#1a2a3a', color: '#aaa', transition: 'all 0.15s' }}
+                    focusedStyle={{ background: '#4fc3f7', color: '#000' }}
+                    onClick={() => {
+                      setPosterColor(COLOR_INFO);
+                      collapse();
+                    }}
+                  >
+                    ℹ Info
+                  </Button>
                 </div>
               </HorizontalList>
             )}
@@ -133,64 +148,5 @@ export function ContentCard({ fKey, item, onPress }: ContentCardProps) {
         );
       }}
     </Expandable>
-  );
-}
-
-// ── ActionButton ──────────────────────────────────────────────────────────────
-
-/**
- * ActionButton
- *
- * A leaf focus node inside the card's expanded action row.
- * Mounts into the focus tree when the card expands, unmounts when it collapses.
- *
- * Uses useFocusable directly (not <Expandable>) because it is a leaf —
- * it has no children and does not need expand/collapse behavior.
- *
- * Props:
- *   fKey    — unique key within the card's HorizontalList.
- *   label   — button text.
- *   onPress — called on Enter press.
- */
-function ActionButton({
-  fKey,
-  label,
-  onPress,
-}: {
-  fKey: string;
-  label: string;
-  onPress: () => void;
-}) {
-  const onPressRef = useRef(onPress);
-  onPressRef.current = onPress;
-
-  const { directlyFocused, FocusProvider } = useFocusable(fKey, {
-    onEvent: (e: NavEvent) => {
-      if (e.action === 'enter' && e.type === 'press') {
-        onPressRef.current();
-        return true;
-      }
-      return false;
-    },
-  });
-
-  return (
-    <FocusProvider>
-      <div
-        style={{
-          flex: 1,
-          padding: '8px 4px',
-          textAlign: 'center',
-          fontSize: 11,
-          fontWeight: 600,
-          background: directlyFocused ? '#4fc3f7' : '#1a2a3a',
-          color: directlyFocused ? '#000' : '#aaa',
-          transition: 'all 0.15s',
-          cursor: 'pointer',
-        }}
-      >
-        {label}
-      </div>
-    </FocusProvider>
   );
 }

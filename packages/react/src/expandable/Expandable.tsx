@@ -87,7 +87,10 @@ export function Expandable({ fKey, children }: ExpandableProps) {
   return (
     <ExpandableContext.Provider value={contextValue}>
       <FocusProvider>
-        {children(renderProps)}
+        {/* Mouse click mirrors keyboard enter/back — toggle expand state */}
+        <div style={{ display: 'contents' }} onClick={() => isExpanded ? collapse() : expand()}>
+          {children(renderProps)}
+        </div>
       </FocusProvider>
     </ExpandableContext.Provider>
   );

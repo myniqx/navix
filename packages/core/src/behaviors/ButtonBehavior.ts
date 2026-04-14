@@ -1,5 +1,5 @@
 import type { FocusNode } from '../FocusNode';
-import type { NavEvent } from '../types';
+import type { NavEvent, IFocusNodeBehavior } from '../types';
 
 interface ButtonHandlers {
   onPress?: () => void;
@@ -7,8 +7,9 @@ interface ButtonHandlers {
   onDoublePress?: () => void;
 }
 
-export class ButtonBehavior {
+export class ButtonBehavior implements IFocusNodeBehavior {
   constructor(node: FocusNode, handlers: ButtonHandlers) {
+    node.behavior = this;
     node.onEvent = (event: NavEvent): boolean => {
       if (event.action !== 'enter') return false;
 
