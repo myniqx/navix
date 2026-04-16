@@ -3,7 +3,7 @@ import { PaginatedGrid } from '@navix/react';
 import type { PaginatedGridAction } from '@navix/react';
 import { MOVIE_CHANNELS } from '../data';
 import type { ContentItem } from '../data';
-import { LiveCard } from './LiveCard';
+import { MovieCard } from './MovieCard';
 
 const ROWS = 4;
 const COLUMNS = 6;
@@ -23,7 +23,7 @@ export function MovieView() {
         color: '#e53935',
         marginBottom: 14,
       }}>
-        Live TV
+        Movies
         <span style={{
           fontSize: 10,
           fontWeight: 400,
@@ -49,7 +49,7 @@ export function MovieView() {
           setTick((n) => n + 1);
         }}
         renderItem={(item, fKey) => (
-          <LiveCard
+          <MovieCard
             fKey={fKey}
             item={item}
             action={actionsRef.current.get(item.id) ?? null}

@@ -53,7 +53,7 @@ export function ContentCard({ fKey, item, onPlay }: ContentCardProps) {
               marginRight: 12,
               cursor: 'pointer',
               userSelect: 'none',
-              transform: isActive ? 'scale(1.08)' : 'scale(1)',
+              transform: isActive ? 'scale(1)' : 'scale(0.94)',
               transition: 'transform 0.15s ease, box-shadow 0.15s ease',
               boxShadow: isActive
                 ? '0 0 0 2px #4fc3f7, 0 8px 24px rgba(0,0,0,0.6)'

@@ -35,7 +35,7 @@ export function LiveView({ onPlay }: LiveViewProps) {
         color: '#4fc3f7',
         marginBottom: 14,
       }}>
-        Favourites
+        Live Stream
       </div>
 
       {/*

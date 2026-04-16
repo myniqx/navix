@@ -45,9 +45,9 @@ function makeItems(prefix: string, count: number): ContentItem[] {
 
 // Horizontal rows shown on the Series tab
 export const ROWS: { label: string; items: ContentItem[] }[] = [
-  { label: 'Action',  items: makeItems('Action',  8) },
-  { label: 'Series',  items: makeItems('Series',  7) },
-  { label: 'Live TV', items: makeItems('Channel', 6) },
+  { label: 'Drama', items: makeItems('Action', 8) },
+  { label: 'Action', items: makeItems('Series', 7) },
+  { label: 'Romantic', items: makeItems('Channel', 6) },
 ];
 
 // Flat grid shown on the Live tab
@@ -60,9 +60,11 @@ export const MOVIE_CHANNELS: ContentItem[] = [
   ...makeItems('Movie', 120),
 ];
 
+export type HomeRowCardType = 'movie' | 'series' | 'live';
+
 // Paginated rows shown on the Home tab
-export const HOME_ROWS: { label: string; items: ContentItem[] }[] = [
-  { label: 'Drama',    items: makeItems('Drama',    18) },
-  { label: 'Thriller', items: makeItems('Thriller', 15) },
-  { label: 'Comedy',   items: makeItems('Comedy',   20) },
+export const HOME_ROWS: { label: string; cardType: HomeRowCardType; items: ContentItem[] }[] = [
+  { label: 'Movies',       cardType: 'movie',  items: makeItems('Movie',   18) },
+  { label: 'Tv Series',    cardType: 'series', items: makeItems('Serie',   15) },
+  { label: 'Live Streams', cardType: 'live',   items: makeItems('Channel', 20) },
 ];

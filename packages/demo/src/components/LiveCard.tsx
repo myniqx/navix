@@ -81,13 +81,12 @@ export function LiveCard({ fKey, item, action }: LiveCardProps) {
       onMouseEnter={focusSelf}
       style={{
         width: '100%',
-        height: '100%',
         borderRadius: 6,
         background: bg,
         border: `1px solid ${borderColor}`,
         overflow: 'hidden',
         transition: 'all 0.2s ease',
-        transform: isFocused ? 'scale(1.03)' : 'scale(0.97)',
+        transform: isFocused ? 'scale(1)' : 'scale(0.96)',
         boxShadow: isFocused ? `0 0 0 2px ${isPlaying ? '#4caf7d' : '#4fc3f7'}, 0 4px 16px rgba(0,0,0,0.5)` : 'none',
         display: 'flex',
         flexDirection: 'column',
@@ -96,7 +95,7 @@ export function LiveCard({ fKey, item, action }: LiveCardProps) {
       {/* Channel preview area */}
       <div
         style={{
-          flex: 1,
+          height: 160,
           background: `linear-gradient(160deg, ${item.color}99 0%, ${item.color}44 100%)`,
           display: 'flex',
           alignItems: 'center',
