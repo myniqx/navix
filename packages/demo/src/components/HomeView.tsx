@@ -1,11 +1,7 @@
-import { useState, useRef } from 'react';
 import { PaginatedList } from '@navix/react';
-import type { PaginatedListAction } from '@navix/react';
 import { HOME_ROWS } from '../data';
 import type { ContentItem, HomeRowCardType } from '../data';
-import { MovieCard } from './MovieCard';
-import { SeriesCard } from './SeriesCard';
-import { LiveCard } from './LiveCard';
+import { MediaCard } from './MediaCard';
 
 const VISIBLE_COUNT = 6;
 const THRESHOLD = 1;
@@ -29,7 +25,6 @@ export function HomeView({ onPlay: _onPlay }: HomeViewProps) {
           }}>
             {row.label}
           </div>
-
           <HomeRow items={row.items} rowIndex={i} cardType={row.cardType} />
         </div>
       ))}
@@ -38,8 +33,7 @@ export function HomeView({ onPlay: _onPlay }: HomeViewProps) {
 }
 
 function HomeRow({ items, rowIndex, cardType }: { items: ContentItem[]; rowIndex: number; cardType: HomeRowCardType }) {
-  const actionsRef = useRef<Map<string, PaginatedListAction>>(new Map());
-  const [, setTick] = useState(0);
+  const variant = cardType === 'live' ? 'live' : cardType === 'series' ? 'series' : 'movie';
 
   return (
     <PaginatedList
@@ -50,16 +44,9 @@ function HomeRow({ items, rowIndex, cardType }: { items: ContentItem[]; rowIndex
       gap={12}
       outerStyle={{ padding: '16px 4px' }}
       slotStyle={{ alignItems: 'stretch' }}
-      onItemAction={(action, item) => {
-        actionsRef.current.set(item.id, action);
-        setTick((n) => n + 1);
-      }}
-      renderItem={(item, fKey) => {
-        const action = actionsRef.current.get(item.id) ?? null;
-        if (cardType === 'movie') return <MovieCard fKey={fKey} item={item} action={action} />;
-        if (cardType === 'live')  return <LiveCard  fKey={fKey} item={item} action={action} />;
-        return <SeriesCard fKey={fKey} item={item} action={action} />;
-      }}
+      renderItem={(item, fKey) => (
+        <MediaCard fKey={fKey} item={item} variant={variant} />
+      )}
     />
   );
 }

@@ -2,11 +2,9 @@ import { useState, useRef, useEffect, useCallback, useMemo, type ReactNode, type
 import { PaginatedGridBehavior } from '@navix/core';
 import type { FocusNode, PaginatedGridOrientation } from '@navix/core';
 import { useFocusable } from '../useFocusable';
+import type { BaseComponentProps } from '../types';
 
-export type PaginatedGridAction = 'visible' | 'hidden' | 'focused' | 'blurred';
-
-interface PaginatedGridProps<T> {
-  fKey: string;
+interface PaginatedGridProps<T> extends BaseComponentProps {
   orientation?: PaginatedGridOrientation;
   rows: number;
   columns: number;
@@ -15,7 +13,6 @@ interface PaginatedGridProps<T> {
   renderItem: (item: T, fKey: string) => ReactNode;
   gap?: number;
   buffer?: number;
-  onItemAction?: (action: PaginatedGridAction, item: T) => void;
   outerStyle?: CSSProperties;
   innerStyle?: CSSProperties;
   slotStyle?: CSSProperties;
@@ -31,62 +28,47 @@ export function PaginatedGrid<T>({
   renderItem,
   gap = 0,
   buffer = 1,
-  onItemAction,
+  onFocus,
+  onBlurred,
+  onRegister,
+  onUnregister,
   outerStyle: outerStyleProp,
   innerStyle: innerStyleProp,
   slotStyle: slotStyleProp,
 }: PaginatedGridProps<T>) {
-  const [, setActiveIndex] = useState(0);
   const [viewOffset, setViewOffset] = useState(0);
   const [containerMainSize, setContainerMainSize] = useState(0);
   const [containerCrossSize, setContainerCrossSize] = useState(0);
   const outerRef = useRef<HTMLDivElement | null>(null);
   const pendingFocusKeyRef = useRef<string | null>(null);
-  const onItemActionRef = useRef(onItemAction);
-  onItemActionRef.current = onItemAction;
-
   const isHorizontal = orientation === 'horizontal';
   const sliceSize = isHorizontal ? rows : columns;
   const visibleSlices = isHorizontal ? columns : rows;
 
-  const { node, FocusProvider } = useFocusable(fKey);
+  const behaviorRef = useRef<PaginatedGridBehavior | null>(null);
+
+  const { node, FocusProvider } = useFocusable(
+    fKey,
+    { onFocus, onBlurred, onRegister, onUnregister },
+    (n: FocusNode) => {
+      behaviorRef.current = new PaginatedGridBehavior(n, orientation, items.length, rows, columns, threshold);
+      return behaviorRef.current;
+    },
+  );
 
   const itemKeys = useMemo(() => {
     const prefix = Math.random().toString(36).slice(2);
     return items.map((_, i) => `${fKey}-${prefix}-${i}`);
   }, [items]);
 
-  const keyToItem = useMemo(() => {
-    const map = new Map<string, T>();
-    items.forEach((item, i) => map.set(itemKeys[i]!, item));
-    return map;
-  }, [itemKeys, items]);
-
-  const behaviorRef = useRef<PaginatedGridBehavior | null>(null);
-  if (behaviorRef.current === null) {
-    behaviorRef.current = new PaginatedGridBehavior(
-      node, orientation, items.length, rows, columns, threshold,
-    );
-  }
-
-  const behavior = behaviorRef.current;
+  const behavior = behaviorRef.current!;
   behavior.totalCount = items.length;
   behavior.rows = rows;
   behavior.columns = columns;
   behavior.threshold = threshold;
 
   behavior.onChange = (newIndex: number, newOffset: number) => {
-    const prevIndex = behavior.activeIndex === newIndex ? null : behavior.activeIndex;
-
-    setActiveIndex(newIndex);
     setViewOffset(newOffset);
-
-    if (prevIndex !== null) {
-      const blurredItem = items[prevIndex];
-      if (blurredItem) onItemActionRef.current?.('blurred', blurredItem);
-    }
-    const focusedItem = items[newIndex];
-    if (focusedItem) onItemActionRef.current?.('focused', focusedItem);
 
     const targetKey = itemKeys[newIndex]!;
     const child = node.children.find((c: FocusNode) => c.key === targetKey);
@@ -98,18 +80,10 @@ export function PaginatedGrid<T>({
   };
 
   behavior.onChildRegistered = (child: FocusNode) => {
-    const item = keyToItem.get(child.key);
-    if (item) onItemActionRef.current?.('visible', item);
-
     if (pendingFocusKeyRef.current !== null && child.key === pendingFocusKeyRef.current) {
       pendingFocusKeyRef.current = null;
       node.focusChild(child.id);
     }
-  };
-
-  behavior.onChildUnregistered = (child: FocusNode) => {
-    const item = keyToItem.get(child.key);
-    if (item) onItemActionRef.current?.('hidden', item);
   };
 
   const measureRef = useCallback((el: HTMLDivElement | null) => {
@@ -169,7 +143,6 @@ export function PaginatedGrid<T>({
     width: '100%',
   };
 
-  // Main axis container
   const mainContainerStyle: CSSProperties = {
     ...innerStyleProp,
     display: 'flex',
@@ -185,7 +158,6 @@ export function PaginatedGrid<T>({
     ? { minWidth: paddingBefore, flexShrink: 0 }
     : { minHeight: paddingBefore, flexShrink: 0 };
 
-  // Each slice is a column (horizontal) or row (vertical)
   const sliceStyle: CSSProperties = {
     display: 'flex',
     flexDirection: isHorizontal ? 'column' : 'row',

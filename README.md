@@ -49,8 +49,8 @@ All navigation logic lives here.
 | `ButtonBehavior` | Handles enter/longpress/doublepress on a leaf node. |
 | `ExpandableBehavior` | Two-state container (collapsed/expanded). Traps focus when expanded. Expanding one node collapses all others, except ancestors on the active path. |
 | `PaginatedListBehavior` | Index-based 1D pagination. Tracks `activeIndex` and `viewOffset` independently of DOM children. Notifies React via `onChange` when either changes. |
-| `PaginatedGridBehavior` | Index-based 2D pagination. Supports horizontal (column-major) and vertical (row-major) orientation. Pagination axis and cross axis are independent. |
-| `IFocusNodeBehavior` | Interface all behaviors implement. Lifecycle hooks: `onRegister`, `onUnregister`, `onChildRegistered`, `onChildUnregistered`, `collapse`, `expand`. |
+| `PaginatedGridBehavior` | Index-based 2D pagination. Supports horizontal (column-major) and vertical (row-major) orientation. |
+| `IFocusNodeBehavior` | Interface all behaviors implement. Lifecycle hooks: `onRegister`, `onUnregister`, `onChildRegistered`, `onChildUnregistered`, `onFocus`, `onBlurred`, `collapse`, `expand`. |
 
 ### `@navix/react`
 
@@ -59,14 +59,16 @@ React 18+ adapter. Peer dependency on `react` and `react-dom`.
 | Export | Description |
 |---|---|
 | `FocusRoot` | Creates the `FocusTree`, attaches `keydown`/`keyup` listeners to `document`, provides root node via context. |
-| `useFocusable(key, options?)` | Hook. Creates a `FocusNode`, registers it into the nearest parent context, returns `focused`, `directlyFocused`, `focusSelf`, and `FocusProvider`. |
+| `useFocusable(key, callbacks?, createBehavior?)` | Hook. Creates a `FocusNode`, registers it with the nearest parent, returns `focused`, `directlyFocused`, `focusSelf`, `FocusProvider`. Accepts lifecycle callbacks and an optional behavior factory. |
 | `HorizontalList` | Node + `ListBehavior('horizontal')`. |
 | `VerticalList` | Node + `ListBehavior('vertical')`. |
 | `Grid` | Node + `GridBehavior(columns)`. Syncs `columns` prop on every render. |
-| `Button` | Leaf node. Handles enter events. Supports `onClick`, `focusedStyle`, and render prop children. |
+| `Button` | Leaf node. Handles enter events. Supports `onClick`, `onLongPress`, `onDoublePress`, `focusedStyle`, and render prop children. |
 | `Expandable` | Node + `ExpandableBehavior`. Render prop exposes `isExpanded`, `focused`, `directlyFocused`, `expand`, `collapse`. |
 | `PaginatedList` | Virtualized 1D list with sliding window pagination. Items are rendered only within the visible window + buffer. |
 | `PaginatedGrid` | Virtualized 2D grid with sliding window pagination. Supports horizontal (column-major) and vertical (row-major) orientation. |
+| `BaseComponentProps` | Shared interface all components extend: `fKey`, `onFocus`, `onBlurred`, `onRegister`, `onUnregister`. |
+| `ItemAction` | `'visible' \| 'hidden' \| 'focused' \| 'blurred'` — action type used by paginated components. |
 
 ---
 
@@ -81,7 +83,7 @@ FocusTree.root
 └─ VerticalList "app"
    ├─ HorizontalList "menu"
    │  ├─ "menu-Home"        ← isDirectlyFocused
-   │  └─ "menu-Settings"    ← isFocused (ancestor on active path)
+   │  └─ "menu-Settings"
    └─ HorizontalList "row-0"
       ├─ "card-0"
       └─ "card-1"
@@ -138,7 +140,34 @@ new PaginatedListBehavior(node, orientation, totalCount, visibleCount, threshold
 new PaginatedGridBehavior(node, orientation, totalCount, rows, columns, threshold);
 ```
 
+All behaviors fire lifecycle hooks when core calls them:
+
+| Hook | When |
+|---|---|
+| `onRegister` | Node registered with parent |
+| `onUnregister` | Node removed from parent |
+| `onFocus` | Node became the directly focused leaf |
+| `onBlurred` | Node lost direct focus |
+| `onChildRegistered` | A child node was registered |
+| `onChildUnregistered` | A child node was unregistered |
+
 You can skip built-in behaviors entirely and write `node.onEvent` directly for custom navigation logic.
+
+### BaseComponentProps and callbacks
+
+All React components extend `BaseComponentProps`:
+
+```ts
+interface BaseComponentProps {
+  fKey: string;
+  onFocus?: (key: string) => void;
+  onBlurred?: (key: string) => void;
+  onRegister?: (key: string) => void;
+  onUnregister?: (key: string) => void;
+}
+```
+
+`key` is the `fKey` of the component that fired the event — useful for identifying which item in a list changed state.
 
 ### Expandable and focus trapping
 
@@ -189,33 +218,56 @@ function App() {
 </Button>
 ```
 
-### Custom focus logic
+### Focus lifecycle callbacks
+
+Every component accepts `onFocus`, `onBlurred`, `onRegister`, `onUnregister`. All receive the `fKey` of the component that fired the event:
+
+```tsx
+<Button
+  fKey="play"
+  onRegister={(key) => console.log(key, 'mounted')}
+  onFocus={(key) => console.log(key, 'focused')}
+  onBlurred={(key) => console.log(key, 'blurred')}
+  onUnregister={(key) => console.log(key, 'unmounted')}
+  onClick={() => play()}
+>
+  ▶ Play
+</Button>
+```
+
+### Custom focusable with useFocusable
 
 ```tsx
 import { useFocusable } from '@navix/react';
+import { ButtonBehavior } from '@navix/core';
+import type { FocusNode } from '@navix/core';
 
-function MenuItem({ fKey, label, onPress }) {
-  const { directlyFocused, FocusProvider } = useFocusable(fKey, {
-    onEvent: (e) => {
-      if (e.action === 'enter' && e.type === 'press') { onPress(); return true; }
-      return false;
+function MenuItem({ fKey, label, onPress, onFocus }) {
+  const { directlyFocused, focusSelf } = useFocusable(
+    fKey,
+    {
+      onFocus: (key) => onFocus?.(key),
+      onRegister: (key) => console.log(key, 'registered'),
     },
-  });
+    (node: FocusNode) => new ButtonBehavior(node, { onPress }),
+  );
 
   return (
-    <FocusProvider>
-      <div style={{ color: directlyFocused ? '#fff' : '#888' }}>{label}</div>
-    </FocusProvider>
+    <div onMouseEnter={focusSelf} style={{ color: directlyFocused ? '#fff' : '#888' }}>
+      {label}
+    </div>
   );
 }
 ```
+
+If no `createBehavior` is provided, a minimal default behavior is attached automatically so callbacks are always wired correctly.
 
 ### Expandable
 
 Turns a node into a two-state container. Only one expandable can be open at a time. When expanded, focus is trapped and only `back` can close it.
 
 ```tsx
-<Expandable fKey="card">
+<Expandable fKey="card" onFocus={(key) => console.log(key, 'focused')}>
   {({ isExpanded, directlyFocused, collapse }) => (
     <div style={{ border: directlyFocused ? '2px solid #4fc3f7' : '2px solid transparent' }}>
       <div>Title</div>
@@ -236,6 +288,8 @@ Turns a node into a two-state container. Only one expandable can be open at a ti
 
 Virtualized horizontal or vertical list. Only items within the visible window + buffer are mounted. The sliding window moves when focus reaches the threshold position.
 
+Child items receive `onRegister`/`onUnregister`/`onFocus`/`onBlurred` via their own `fKey` — the paginated container does not proxy item-level events.
+
 ```tsx
 <PaginatedList
   fKey="row"
@@ -245,17 +299,11 @@ Virtualized horizontal or vertical list. Only items within the visible window + 
   threshold={1}              // focus stays fixed until this position from the edge, then window slides
   gap={12}                   // gap between slots in px
   buffer={2}                 // extra items rendered outside visible window for smooth transitions
+  onFocus={(key) => console.log(key, 'row focused')}
+  onBlurred={(key) => console.log(key, 'row blurred')}
   renderItem={(item, fKey) => <MovieCard fKey={fKey} item={item} />}
-  onItemAction={(action, item) => {
-    // action: 'visible' | 'hidden' | 'focused' | 'blurred'
-    // visible  → item entered the render window (buffer included) — good time to prefetch
-    // hidden   → item left the render window — release resources
-    // focused  → item became the active leaf
-    // blurred  → item lost direct focus
-  }}
-  outerStyle={{ padding: '12px 4px' }}  // merged before overflow:hidden and width:100%
-  innerStyle={{}}                        // merged before transform and flex direction
-  slotStyle={{}}                         // merged before slot sizing
+  outerStyle={{ padding: '12px 4px' }}
+  slotStyle={{ alignItems: 'stretch' }}
 />
 ```
 
@@ -273,8 +321,8 @@ Virtualized 2D grid. Pagination moves one slice (column or row) at a time along 
   threshold={1}              // slices from edge before window starts sliding
   gap={8}
   buffer={1}
+  onFocus={(key) => console.log(key, 'grid focused')}
   renderItem={(item, fKey) => <ChannelCard fKey={fKey} item={item} />}
-  onItemAction={(action, item) => { /* same actions as PaginatedList */ }}
   outerStyle={{ height: 'calc(90vh - 120px)' }}  // height required for cross-axis slot sizing
 />
 ```
@@ -319,11 +367,11 @@ Navigate with arrow keys. `Enter` to select. `Backspace` or `Escape` to go back.
 
 | Tab | Component | Description |
 |---|---|---|
-| Home | `PaginatedList` | Three paginated rows with smart cache simulation |
-| Movie | `PaginatedGrid` | 120 movies in a paginated 4×6 grid with trailer preview |
-| Series | `HorizontalList` | Classic horizontal shelves |
-| Live | `Grid` | Fixed grid of live channels |
-| Options | `Expandable` modal | Settings modal with persistent state, navigable with arrow keys |
+| Home | `PaginatedList` | Three paginated rows — movies, series, live channels. Each card caches a trailer on mount and plays on focus. |
+| Movie | `PaginatedGrid` | Movies in a paginated 4×6 grid with trailer preview simulation. |
+| Series | `HorizontalList` | Classic horizontal shelves. |
+| Live | `Grid` | Fixed grid of live channels. |
+| Options | `Expandable` modal | Settings modal with persistent state, navigable with arrow keys. |
 
 ---
 
@@ -333,13 +381,17 @@ Navigate with arrow keys. `Enter` to select. `Backspace` or `Escape` to go back.
 
 **Bottom-up event return** — Returning `true` from `onEvent` consumes the event. Returning `false` lets it bubble. Components handle what they know about and ignore the rest.
 
-**Behaviors are decorators** — All behaviors set `node.behavior = this`. The tree calls lifecycle hooks (`onRegister`, `onUnregister`, `onChildRegistered`, `onChildUnregistered`) without knowing which behavior is attached.
+**Behaviors are decorators** — All behaviors set `node.behavior = this`. The tree calls lifecycle hooks (`onRegister`, `onUnregister`, `onFocus`, `onBlurred`, `onChildRegistered`, `onChildUnregistered`) without knowing which behavior is attached.
+
+**Callbacks always wired** — `useFocusable` attaches a minimal default behavior when no `createBehavior` is provided, ensuring `onFocus`/`onBlurred`/`onRegister`/`onUnregister` callbacks are always delivered regardless of whether the component uses a built-in behavior.
 
 **Exclusive expand in core** — `ExpandableBehavior` walks the tree on expand to close all other expandables. Ancestors on the active path are skipped. This is a core concern — the rule holds regardless of framework.
 
 **Pagination decoupled from DOM** — `PaginatedListBehavior` and `PaginatedGridBehavior` track `activeIndex` and `viewOffset` independently of `node.children`. Navigation decisions happen before React re-renders. `onChildRegistered` is used to hand focus to newly mounted children after the render cycle completes.
 
 **Stable virtual keys** — `PaginatedList` and `PaginatedGrid` generate item keys via `useMemo` tied to the `items` array reference. Keys are stable across scroll — items do not remount when the window slides. When `items` changes (new array reference), all keys regenerate and children remount cleanly.
+
+**Item-level lifecycle via child callbacks** — Paginated components do not proxy item events. Each child component handles its own `onRegister`/`onFocus`/`onBlurred`/`onUnregister` lifecycle directly via `useFocusable` or the component's own props.
 
 **React StrictMode safe** — `FocusRoot` handles the double-mount cycle. `FocusNode.register` guards against duplicate registration.
 
@@ -348,6 +400,8 @@ Navigate with arrow keys. `Enter` to select. `Backspace` or `Escape` to go back.
 ## Roadmap
 
 - [x] `FocusNode.requestFocus()` — programmatic focus from anywhere in the tree
+- [x] `onFocus` / `onBlurred` lifecycle callbacks on all components
+- [x] `onRegister` / `onUnregister` lifecycle callbacks on all components
 - [ ] Vue 3 adapter (`@navix/vue`)
 - [ ] Solid adapter (`@navix/solid`)
 - [ ] Vanilla JS adapter (`@navix/vanilla`)

@@ -15,6 +15,8 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
   onChange: ((activeIndex: number, viewOffset: number) => void) | null = null;
   onChildRegistered?: ((child: FocusNode) => void) | undefined;
   onChildUnregistered?: ((child: FocusNode) => void) | undefined;
+  onBlurred?: ((child: FocusNode) => void) | undefined;
+  onFocus?: ((child: FocusNode) => void) | undefined;
 
   constructor(
     node: FocusNode,
@@ -30,31 +32,31 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
     this.columns = columns;
     this.threshold = threshold;
     node.behavior = this;
-
-    node.onEvent = (event: NavEvent): boolean => {
-      if (event.type !== 'press') return false;
-
-      if (orientation === 'horizontal') {
-        // Columns are the pagination axis, rows are fixed per column
-        // up/down = move within same column (±1)
-        // left/right = move to prev/next column (±rows)
-        if (event.action === 'up') return this._moveTo(this.activeIndex - 1, 'cross');
-        if (event.action === 'down') return this._moveTo(this.activeIndex + 1, 'cross');
-        if (event.action === 'left') return this._moveTo(this.activeIndex - this.rows, 'main');
-        if (event.action === 'right') return this._moveTo(this.activeIndex + this.rows, 'main');
-      } else {
-        // Rows are the pagination axis, columns are fixed per row
-        // left/right = move within same row (±1)
-        // up/down = move to prev/next row (±columns)
-        if (event.action === 'left') return this._moveTo(this.activeIndex - 1, 'cross');
-        if (event.action === 'right') return this._moveTo(this.activeIndex + 1, 'cross');
-        if (event.action === 'up') return this._moveTo(this.activeIndex - this.columns, 'main');
-        if (event.action === 'down') return this._moveTo(this.activeIndex + this.columns, 'main');
-      }
-
-      return false;
-    };
   }
+
+  onEvent = (event: NavEvent): boolean => {
+    if (event.type !== 'press') return false;
+
+    if (this.orientation === 'horizontal') {
+      // Columns are the pagination axis, rows are fixed per column
+      // up/down = move within same column (±1)
+      // left/right = move to prev/next column (±rows)
+      if (event.action === 'up') return this._moveTo(this.activeIndex - 1, 'cross');
+      if (event.action === 'down') return this._moveTo(this.activeIndex + 1, 'cross');
+      if (event.action === 'left') return this._moveTo(this.activeIndex - this.rows, 'main');
+      if (event.action === 'right') return this._moveTo(this.activeIndex + this.rows, 'main');
+    } else {
+      // Rows are the pagination axis, columns are fixed per row
+      // left/right = move within same row (±1)
+      // up/down = move to prev/next row (±columns)
+      if (event.action === 'left') return this._moveTo(this.activeIndex - 1, 'cross');
+      if (event.action === 'right') return this._moveTo(this.activeIndex + 1, 'cross');
+      if (event.action === 'up') return this._moveTo(this.activeIndex - this.columns, 'main');
+      if (event.action === 'down') return this._moveTo(this.activeIndex + this.columns, 'main');
+    }
+
+    return false;
+  };
 
   // axis: 'main' = pagination direction, 'cross' = within a page slice
   private _moveTo(newIndex: number, axis: 'main' | 'cross'): boolean {

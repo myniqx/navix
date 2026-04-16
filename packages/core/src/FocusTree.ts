@@ -11,7 +11,6 @@ export class FocusTree {
     this.inputManager = new InputManager(config);
 
     this.inputManager.onNavEvent = (event: NavEvent) => {
-      console.log('[FocusTree] navEvent:', event, '| root children:', this.root.children.length);
       this.handleNavEvent(event);
     };
   }

@@ -1,7 +1,9 @@
-import { useState, useRef, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ExpandableBehavior } from '@navix/core';
+import type { FocusNode } from '@navix/core';
 import { useFocusable } from '../useFocusable';
 import { ExpandableContext } from './ExpandableContext';
+import type { BaseComponentProps } from '../types';
 
 /**
  * Values passed to the render prop child function.
@@ -19,12 +21,7 @@ export interface ExpandableRenderProps {
   collapse: () => void;
 }
 
-interface ExpandableProps {
-  /**
-   * Unique key for this node in the focus tree.
-   * Must be unique within the parent focus scope.
-   */
-  fKey: string;
+interface ExpandableProps extends BaseComponentProps {
   /**
    * Render prop — receives focus state and expand/collapse controls.
    * Called on every render, including when isExpanded or focus state changes.
@@ -54,26 +51,20 @@ interface ExpandableProps {
  *   Collapsed: enter → expands. All other events bubble to parent.
  *   Expanded:  back → collapses. All other events route to active children first.
  */
-export function Expandable({ fKey, children }: ExpandableProps) {
+export function Expandable({ fKey, onFocus, onBlurred, onRegister, onUnregister, children }: ExpandableProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Behavior is created once and lives for the lifetime of this component.
-  // It owns the onEvent handler on the FocusNode.
-  const behaviorRef = useRef<ExpandableBehavior | null>(null);
+  const { focused, directlyFocused, focusSelf, FocusProvider, node } = useFocusable(
+    fKey,
+    { onFocus, onBlurred, onRegister, onUnregister },
+    (n: FocusNode) => new ExpandableBehavior(n),
+  );
 
-  const { focused, directlyFocused, focusSelf, FocusProvider, node } = useFocusable(fKey);
+  const behavior = node.behavior as ExpandableBehavior;
+  behavior.onChange = setIsExpanded;
 
-  // Attach behavior to node once
-  if (behaviorRef.current === null) {
-    behaviorRef.current = new ExpandableBehavior(node);
-  }
-
-  // Wire behavior's onChange to React state — this is the only bridge between
-  // core and React. Core stays framework-free; the callback is a plain function.
-  behaviorRef.current.onChange = setIsExpanded;
-
-  const expand = () => behaviorRef.current!.expand();
-  const collapse = () => behaviorRef.current!.collapse();
+  const expand = () => behavior.expand();
+  const collapse = () => behavior.collapse();
 
   const contextValue = { isExpanded, expand, collapse };
   const renderProps: ExpandableRenderProps = {

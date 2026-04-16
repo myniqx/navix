@@ -1,10 +1,15 @@
 export { FocusRoot } from './FocusRoot';
 export { useFocusable } from './useFocusable';
-export { HorizontalList, VerticalList, Grid, Button } from './components';
 export { FocusContext } from './FocusContext';
+export type { ItemAction, BaseComponentProps } from './types';
+
+export { HorizontalList } from './horizontal-list';
+export { VerticalList } from './vertical-list';
+export { Grid } from './grid';
+export { Button } from './button';
+
 export { Expandable, useExpandable } from './expandable';
 export type { ExpandableRenderProps, ExpandableContextValue } from './expandable';
+
 export { PaginatedList } from './paginated-list';
-export type { PaginatedListAction } from './paginated-list';
 export { PaginatedGrid } from './paginated-grid';
-export type { PaginatedGridAction } from './paginated-grid';

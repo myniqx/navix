@@ -32,6 +32,10 @@ export class ExpandableBehavior implements IFocusNodeBehavior {
 
   // Called whenever expanded state changes. Assign from the adapter layer.
   onChange: ((expanded: boolean) => void) | null = null;
+  onChildRegistered?: ((child: FocusNode) => void) | undefined;
+  onChildUnregistered?: ((child: FocusNode) => void) | undefined;
+  onBlurred?: ((child: FocusNode) => void) | undefined;
+  onFocus?: ((child: FocusNode) => void) | undefined;
 
   // Stored node reference so public expand() can trigger the tree walk
   private _node: FocusNode;
@@ -39,25 +43,25 @@ export class ExpandableBehavior implements IFocusNodeBehavior {
   constructor(node: FocusNode) {
     this._node = node;
     node.behavior = this;
+  }
 
-    node.onEvent = (e: NavEvent): boolean => {
-      if (!this.isExpanded) {
-        if (e.action === 'enter' && e.type === 'press') {
-          this.expand();
-          return true;
-        }
-        return false;
-      }
-
-      if (e.action === 'back' && e.type === 'press') {
-        this.collapse();
+  onEvent = (e: NavEvent): boolean => {
+    if (!this.isExpanded) {
+      if (e.action === 'enter' && e.type === 'press') {
+        this.expand();
         return true;
       }
+      return false;
+    }
 
-      // Expanded: swallow all other events — focus is trapped inside this node.
+    if (e.action === 'back' && e.type === 'press') {
+      this.collapse();
       return true;
-    };
-  }
+    }
+
+    // Expanded: swallow all other events — focus is trapped inside this node.
+    return true;
+  };
 
   onUnregister(): void {
     this.isExpanded = false

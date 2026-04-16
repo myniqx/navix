@@ -1,18 +1,12 @@
-import { useState, useRef } from 'react';
 import { PaginatedGrid } from '@navix/react';
-import type { PaginatedGridAction } from '@navix/react';
 import { MOVIE_CHANNELS } from '../data';
-import type { ContentItem } from '../data';
-import { MovieCard } from './MovieCard';
+import { MediaCard } from './MediaCard';
 
 const ROWS = 4;
 const COLUMNS = 6;
 const THRESHOLD = 1;
 
 export function MovieView() {
-  const actionsRef = useRef<Map<string, PaginatedGridAction>>(new Map());
-  const [, setTick] = useState(0);
-
   return (
     <div style={{ padding: '24px 32px 0' }}>
       <div style={{
@@ -36,7 +30,7 @@ export function MovieView() {
       </div>
 
       <PaginatedGrid
-        fKey="live-grid"
+        fKey="movie-grid"
         rows={ROWS}
         columns={COLUMNS}
         threshold={THRESHOLD}
@@ -44,16 +38,8 @@ export function MovieView() {
         gap={8}
         outerStyle={{ padding: '12px 4px', height: 'calc(90vh - 120px)' }}
         slotStyle={{ alignItems: 'stretch' }}
-        onItemAction={(action, item) => {
-          actionsRef.current.set(item.id, action);
-          setTick((n) => n + 1);
-        }}
         renderItem={(item, fKey) => (
-          <MovieCard
-            fKey={fKey}
-            item={item}
-            action={actionsRef.current.get(item.id) ?? null}
-          />
+          <MediaCard fKey={fKey} item={item} variant="movie" />
         )}
       />
     </div>

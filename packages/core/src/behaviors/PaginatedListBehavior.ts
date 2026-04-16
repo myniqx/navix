@@ -9,10 +9,14 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
   threshold: number;
   activeIndex: number = 0;
   viewOffset: number = 0;
+  prev: string;
+  next: string;
 
   onChange: ((activeIndex: number, viewOffset: number) => void) | null = null;
   onChildRegistered?: ((child: FocusNode) => void) | undefined;
   onChildUnregistered?: ((child: FocusNode) => void) | undefined;
+  onBlurred?: ((child: FocusNode) => void) | undefined;
+  onFocus?: ((child: FocusNode) => void) | undefined;
 
   constructor(
     node: FocusNode,
@@ -26,18 +30,18 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
     this.threshold = threshold;
     node.behavior = this;
 
-    const prev = orientation === 'horizontal' ? 'left' : 'up';
-    const next = orientation === 'horizontal' ? 'right' : 'down';
-
-    node.onEvent = (event: NavEvent): boolean => {
-      if (event.type !== 'press') return false;
-
-      if (event.action === prev) return this._moveTo(this.activeIndex - 1);
-      if (event.action === next) return this._moveTo(this.activeIndex + 1);
-
-      return false;
-    };
+    this.prev = orientation === 'horizontal' ? 'left' : 'up';
+    this.next = orientation === 'horizontal' ? 'right' : 'down';
   }
+
+  onEvent = (event: NavEvent): boolean => {
+    if (event.type !== 'press') return false;
+
+    if (event.action === this.prev) return this._moveTo(this.activeIndex - 1);
+    if (event.action === this.next) return this._moveTo(this.activeIndex + 1);
+
+    return false;
+  };
 
   private _moveTo(newIndex: number): boolean {
     if (newIndex < 0 || newIndex >= this.totalCount) return false;

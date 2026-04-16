@@ -2,11 +2,9 @@ import { useState, useRef, useEffect, useCallback, useMemo, type ReactNode, type
 import { PaginatedListBehavior } from '@navix/core';
 import type { FocusNode, PaginatedListOrientation } from '@navix/core';
 import { useFocusable } from '../useFocusable';
+import type { BaseComponentProps } from '../types';
 
-export type PaginatedListAction = 'visible' | 'hidden' | 'focused' | 'blurred';
-
-interface PaginatedListProps<T> {
-  fKey: string;
+interface PaginatedListProps<T> extends BaseComponentProps {
   orientation?: PaginatedListOrientation;
   visibleCount: number;
   threshold: number;
@@ -14,7 +12,6 @@ interface PaginatedListProps<T> {
   renderItem: (item: T, fKey: string) => ReactNode;
   gap?: number;
   buffer?: number;
-  onItemAction?: (action: PaginatedListAction, item: T) => void;
   outerStyle?: CSSProperties;
   innerStyle?: CSSProperties;
   slotStyle?: CSSProperties;
@@ -29,20 +26,28 @@ export function PaginatedList<T>({
   renderItem,
   gap = 0,
   buffer = 2,
-  onItemAction,
+  onFocus,
+  onBlurred,
+  onRegister,
+  onUnregister,
   outerStyle: outerStyleProp,
   innerStyle: innerStyleProp,
   slotStyle: slotStyleProp,
 }: PaginatedListProps<T>) {
-  const [activeIndex, setActiveIndex] = useState(0);
   const [viewOffset, setViewOffset] = useState(0);
   const [containerSize, setContainerSize] = useState(0);
   const outerRef = useRef<HTMLDivElement | null>(null);
   const pendingFocusKeyRef = useRef<string | null>(null);
-  const onItemActionRef = useRef(onItemAction);
-  onItemActionRef.current = onItemAction;
+  const behaviorRef = useRef<PaginatedListBehavior | null>(null);
 
-  const { node, FocusProvider } = useFocusable(fKey);
+  const { node, FocusProvider } = useFocusable(
+    fKey,
+    { onFocus, onBlurred, onRegister, onUnregister },
+    (n: FocusNode) => {
+      behaviorRef.current = new PaginatedListBehavior(n, orientation, items.length, visibleCount, threshold);
+      return behaviorRef.current;
+    },
+  );
 
   // Stable keys tied to this items array reference.
   // When items changes (new array), prefix regenerates — all children remount.
@@ -51,37 +56,13 @@ export function PaginatedList<T>({
     return items.map((_, i) => `${fKey}-${prefix}-${i}`);
   }, [items]);
 
-  // Reverse lookup: itemKey → item (for callbacks)
-  const keyToItem = useMemo(() => {
-    const map = new Map<string, T>();
-    items.forEach((item, i) => map.set(itemKeys[i]!, item));
-    return map;
-  }, [itemKeys, items]);
-
-  const behaviorRef = useRef<PaginatedListBehavior | null>(null);
-  if (behaviorRef.current === null) {
-    behaviorRef.current = new PaginatedListBehavior(
-      node, orientation, items.length, visibleCount, threshold,
-    );
-  }
-
-  const behavior = behaviorRef.current;
+  const behavior = behaviorRef.current!;
   behavior.totalCount = items.length;
   behavior.visibleCount = visibleCount;
   behavior.threshold = threshold;
 
   behavior.onChange = (newIndex: number, newOffset: number) => {
-    const prevIndex = behavior.activeIndex === newIndex ? null : behavior.activeIndex;
-
-    setActiveIndex(newIndex);
     setViewOffset(newOffset);
-
-    if (prevIndex !== null) {
-      const blurredItem = items[prevIndex];
-      if (blurredItem) onItemActionRef.current?.('blurred', blurredItem);
-    }
-    const focusedItem = items[newIndex];
-    if (focusedItem) onItemActionRef.current?.('focused', focusedItem);
 
     const targetKey = itemKeys[newIndex]!;
     const child = node.children.find((c: FocusNode) => c.key === targetKey);
@@ -93,18 +74,10 @@ export function PaginatedList<T>({
   };
 
   behavior.onChildRegistered = (child: FocusNode) => {
-    const item = keyToItem.get(child.key);
-    if (item) onItemActionRef.current?.('visible', item);
-
     if (pendingFocusKeyRef.current !== null && child.key === pendingFocusKeyRef.current) {
       pendingFocusKeyRef.current = null;
       node.focusChild(child.id);
     }
-  };
-
-  behavior.onChildUnregistered = (child: FocusNode) => {
-    const item = keyToItem.get(child.key);
-    if (item) onItemActionRef.current?.('hidden', item);
   };
 
   const isHorizontal = orientation === 'horizontal';

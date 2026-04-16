@@ -11,10 +11,8 @@ export class FocusNode {
   isFocused: boolean = false;
   isDirectlyFocused: boolean = false;
 
-  onEvent?: (event: NavEvent) => boolean;
-
   // Attached behavior — set by behavior constructors via node.behavior = this
-  behavior?: IFocusNodeBehavior;
+  behavior: IFocusNodeBehavior | null = null;
 
   // Subscribers notified on any state change (used by React adapter)
   private subscribers: Set<() => void> = new Set();
@@ -95,8 +93,8 @@ export class FocusNode {
       if (consumed) return true;
     }
 
-    if (this.onEvent) {
-      return this.onEvent(event);
+    if (this.behavior) {
+      return this.behavior.onEvent(event);
     }
 
     return false;
@@ -180,7 +178,13 @@ export class FocusNode {
 
     if (this.isFocused !== newFocused || this.isDirectlyFocused !== newDirectly) {
       this.isFocused = newFocused;
-      this.isDirectlyFocused = newDirectly;
+      if (this.isDirectlyFocused !== newDirectly) {
+        this.isDirectlyFocused = newDirectly;
+        if (newDirectly)
+          this.behavior?.onFocus?.(this)
+        else
+          this.behavior?.onBlurred?.(this)
+      }
       toNotify.push(this);
     }
 
@@ -194,7 +198,10 @@ export class FocusNode {
   private _clearFocusFlags(): void {
     if (this.isFocused || this.isDirectlyFocused) {
       this.isFocused = false;
-      this.isDirectlyFocused = false;
+      if (this.isDirectlyFocused) {
+        this.isDirectlyFocused = false;
+        this.behavior?.onBlurred?.(this)
+      }
       this.notify();
     }
     for (const child of this.children) {

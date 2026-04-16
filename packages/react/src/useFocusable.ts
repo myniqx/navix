@@ -8,39 +8,53 @@ import {
   createElement,
 } from 'react';
 import { FocusNode } from '@navix/core';
-import type { NavEvent } from '@navix/core';
+import type { IFocusNodeBehavior } from '@navix/core';
 import { FocusContext } from './FocusContext';
 
-interface UseFocusableOptions {
-  onEvent?: (event: NavEvent) => boolean;
+interface UseFocusableCallbacks {
+  onFocus?: (key: string) => void;
+  onBlurred?: (key: string) => void;
+  onRegister?: (key: string) => void;
+  onUnregister?: (key: string) => void;
 }
 
 interface UseFocusableResult {
   node: FocusNode;
   focused: boolean;
   directlyFocused: boolean;
-  // Call on onMouseEnter to move focus to this node via mouse/pointer
   focusSelf: () => void;
   FocusProvider: React.FC<{ children: ReactNode }>;
 }
 
 export function useFocusable(
   key: string,
-  options?: UseFocusableOptions,
+  callbacks?: UseFocusableCallbacks,
+  createBehavior?: (node: FocusNode) => IFocusNodeBehavior,
 ): UseFocusableResult {
   const parent = useContext(FocusContext);
   const nodeRef = useRef<FocusNode | null>(null);
+  const callbacksRef = useRef<UseFocusableCallbacks>({});
+  callbacksRef.current = callbacks ?? {};
 
   if (nodeRef.current === null) {
     nodeRef.current = new FocusNode(key);
+    if (createBehavior !== undefined) {
+      createBehavior(nodeRef.current);
+    } else {
+      // Default behavior — only needed for callback wiring
+      nodeRef.current.behavior = {
+        onEvent: () => false
+      };
+    }
   }
 
   const node = nodeRef.current;
 
-  // Only set onEvent if explicitly provided — do NOT overwrite behavior-set onEvent
-  if (options?.onEvent !== undefined) {
-    node.onEvent = options.onEvent;
-  }
+  // Wire callbacks into behavior — updated every render so closures stay fresh
+  node.behavior!.onFocus = () => callbacksRef.current.onFocus?.(key);
+  node.behavior!.onBlurred = () => callbacksRef.current.onBlurred?.(key);
+  node.behavior!.onRegister = () => callbacksRef.current.onRegister?.(key);
+  node.behavior!.onUnregister = () => callbacksRef.current.onUnregister?.(key);
 
   // Register/unregister with parent
   useEffect(() => {
@@ -74,9 +88,6 @@ export function useFocusable(
     [node],
   );
 
-  // Moves focus to this node from mouse/pointer interaction.
-  // Walks up the tree via requestFocus() so all ancestors update their activeChildId,
-  // ensuring only one active path exists in the tree at any time.
   const focusSelf = useCallback(() => node.requestFocus(), [node]);
 
   return { node, focused, directlyFocused, focusSelf, FocusProvider };

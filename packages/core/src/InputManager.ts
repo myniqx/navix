@@ -2,12 +2,12 @@ import type { NavEvent, InputConfig, ActionConfig } from './types';
 
 export const DEFAULT_INPUT_CONFIG: InputConfig = {
   actions: {
-    left:  { keys: ['ArrowLeft'] },
+    left: { keys: ['ArrowLeft'] },
     right: { keys: ['ArrowRight'] },
-    up:    { keys: ['ArrowUp'] },
-    down:  { keys: ['ArrowDown'] },
+    up: { keys: ['ArrowUp'] },
+    down: { keys: ['ArrowDown'] },
     enter: { keys: ['Enter'], longpress: true, longpressMs: 500 },
-    back:  { keys: ['Backspace', 'Escape'] },
+    back: { keys: ['Backspace', 'Escape'] },
   },
 };
 
@@ -44,7 +44,6 @@ export class InputManager {
   }
 
   handleKeyDown(code: string): void {
-    console.log('[InputManager] handleKeyDown:', code, '| mapped to:', this.keyToAction.get(code) ?? 'NO MATCH', '| keyMap:', [...this.keyToAction.entries()]);
     const action = this.keyToAction.get(code);
     if (!action) return;
 
