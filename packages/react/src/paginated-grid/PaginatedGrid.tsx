@@ -40,28 +40,23 @@ export function PaginatedGrid<T>({
   const [containerMainSize, setContainerMainSize] = useState(0);
   const [containerCrossSize, setContainerCrossSize] = useState(0);
   const outerRef = useRef<HTMLDivElement | null>(null);
-  const pendingFocusKeyRef = useRef<string | null>(null);
   const isHorizontal = orientation === 'horizontal';
   const sliceSize = isHorizontal ? rows : columns;
   const visibleSlices = isHorizontal ? columns : rows;
 
-  const behaviorRef = useRef<PaginatedGridBehavior | null>(null);
-
   const { node, FocusProvider } = useFocusable(
     fKey,
     { onFocus, onBlurred, onRegister, onUnregister },
-    (n: FocusNode) => {
-      behaviorRef.current = new PaginatedGridBehavior(n, orientation, items.length, rows, columns, threshold);
-      return behaviorRef.current;
-    },
+    (n: FocusNode) => new PaginatedGridBehavior(n, orientation, items.length, rows, columns, threshold),
   );
+
+  const behavior = node.behavior as PaginatedGridBehavior;
 
   const itemKeys = useMemo(() => {
     const prefix = Math.random().toString(36).slice(2);
     return items.map((_, i) => `${fKey}-${prefix}-${i}`);
   }, [items]);
 
-  const behavior = behaviorRef.current!;
   behavior.totalCount = items.length;
   behavior.rows = rows;
   behavior.columns = columns;
@@ -69,21 +64,7 @@ export function PaginatedGrid<T>({
 
   behavior.onChange = (newIndex: number, newOffset: number) => {
     setViewOffset(newOffset);
-
-    const targetKey = itemKeys[newIndex]!;
-    const child = node.children.find((c: FocusNode) => c.key === targetKey);
-    if (child) {
-      node.focusChild(child.id);
-    } else {
-      pendingFocusKeyRef.current = targetKey;
-    }
-  };
-
-  behavior.onChildRegistered = (child: FocusNode) => {
-    if (pendingFocusKeyRef.current !== null && child.key === pendingFocusKeyRef.current) {
-      pendingFocusKeyRef.current = null;
-      node.focusChild(child.id);
-    }
+    behavior.focusByKey(itemKeys[newIndex]!);
   };
 
   const measureRef = useCallback((el: HTMLDivElement | null) => {

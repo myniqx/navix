@@ -9,6 +9,8 @@ export { Grid } from './grid';
 export { Button } from './button';
 
 export { Expandable, useExpandable } from './expandable';
+export { Dropdown } from './dropdown';
+export type { DropdownOption } from './dropdown';
 export type { ExpandableRenderProps, ExpandableContextValue } from './expandable';
 
 export { PaginatedList } from './paginated-list';

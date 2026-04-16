@@ -1,7 +1,23 @@
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { VerticalList, HorizontalList, Button } from '@navix/react';
+import { VerticalList, HorizontalList, Button, Dropdown } from '@navix/react';
 import { OPTIONS_CONFIG } from '../data';
 import type { OptionsState, OptionKey } from '../data';
+
+const LANGUAGES = [
+  { value: 'en', label: 'English' },
+  { value: 'tr', label: 'Türkçe' },
+  { value: 'de', label: 'Deutsch' },
+  { value: 'fr', label: 'Français' },
+  { value: 'es', label: 'Español' },
+  { value: 'it', label: 'Italiano' },
+  { value: 'pt', label: 'Português' },
+  { value: 'nl', label: 'Nederlands' },
+  { value: 'pl', label: 'Polski' },
+  { value: 'ru', label: 'Русский' },
+  { value: 'ja', label: '日本語' },
+  { value: 'ko', label: '한국어' },
+];
 
 interface OptionsModalProps {
   options: OptionsState;
@@ -10,6 +26,8 @@ interface OptionsModalProps {
 }
 
 export function OptionsModal({ options, onChange, onClose }: OptionsModalProps) {
+  const [language, setLanguage] = useState(['en']);
+
   return createPortal(
     <div
       style={{
@@ -37,6 +55,18 @@ export function OptionsModal({ options, onChange, onClose }: OptionsModalProps) 
         </div>
 
         <VerticalList fKey="options-list">
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
+            <div style={{ width: 100, fontSize: 13, color: '#666', flexShrink: 0 }}>Language</div>
+            <Dropdown
+              fKey="options-language"
+              options={LANGUAGES}
+              value={language}
+              onChange={setLanguage}
+              maxVisible={5}
+              position="bottom"
+            />
+          </div>
+
           {OPTIONS_CONFIG.map((row) => (
             <OptionRow
               key={row.key}

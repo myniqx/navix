@@ -12,11 +12,12 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
   viewOffset: number = 0;
   orientation: PaginatedGridOrientation;
 
-  onChange: ((activeIndex: number, viewOffset: number) => void) | null = null;
-  onChildRegistered?: ((child: FocusNode) => void) | undefined;
-  onChildUnregistered?: ((child: FocusNode) => void) | undefined;
-  onBlurred?: ((child: FocusNode) => void) | undefined;
-  onFocus?: ((child: FocusNode) => void) | undefined;
+  // Called with (newIndex, newOffset) after every navigation step.
+  // React adapter uses this to sync viewOffset state and resolve focusChild.
+  onChange: ((newIndex: number, newOffset: number) => void) | null = null;
+
+  private _node: FocusNode;
+  private _pendingFocusKey: string | null = null;
 
   constructor(
     node: FocusNode,
@@ -26,6 +27,7 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
     columns: number,
     threshold: number,
   ) {
+    this._node = node;
     this.orientation = orientation;
     this.totalCount = totalCount;
     this.rows = rows;
@@ -38,17 +40,11 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
     if (event.type !== 'press') return false;
 
     if (this.orientation === 'horizontal') {
-      // Columns are the pagination axis, rows are fixed per column
-      // up/down = move within same column (±1)
-      // left/right = move to prev/next column (±rows)
       if (event.action === 'up') return this._moveTo(this.activeIndex - 1, 'cross');
       if (event.action === 'down') return this._moveTo(this.activeIndex + 1, 'cross');
       if (event.action === 'left') return this._moveTo(this.activeIndex - this.rows, 'main');
       if (event.action === 'right') return this._moveTo(this.activeIndex + this.rows, 'main');
     } else {
-      // Rows are the pagination axis, columns are fixed per row
-      // left/right = move within same row (±1)
-      // up/down = move to prev/next row (±columns)
       if (event.action === 'left') return this._moveTo(this.activeIndex - 1, 'cross');
       if (event.action === 'right') return this._moveTo(this.activeIndex + 1, 'cross');
       if (event.action === 'up') return this._moveTo(this.activeIndex - this.columns, 'main');
@@ -58,7 +54,24 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
     return false;
   };
 
-  // axis: 'main' = pagination direction, 'cross' = within a page slice
+  // Called by React adapter after resolving the key for newIndex.
+  // Focuses the child if mounted, otherwise stores as pending.
+  focusByKey(key: string): void {
+    const child = this._node.children.find((c) => c.key === key);
+    if (child) {
+      this._node.focusChild(child.id);
+    } else {
+      this._pendingFocusKey = key;
+    }
+  }
+
+  onChildRegistered = (child: FocusNode): void => {
+    if (this._pendingFocusKey !== null && child.key === this._pendingFocusKey) {
+      this._pendingFocusKey = null;
+      this._node.focusChild(child.id);
+    }
+  };
+
   private _moveTo(newIndex: number, axis: 'main' | 'cross'): boolean {
     if (newIndex < 0 || newIndex >= this.totalCount) return false;
 
@@ -77,7 +90,6 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
   }
 
   private _updateOffset(): void {
-    // Page slice = one column (horizontal) or one row (vertical)
     const sliceSize = this.orientation === 'horizontal' ? this.rows : this.columns;
     const visibleSlices = this.orientation === 'horizontal' ? this.columns : this.rows;
     const totalSlices = Math.ceil(this.totalCount / sliceSize);
@@ -85,7 +97,6 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
 
     const currentSlice = Math.floor(this.activeIndex / sliceSize);
     let offset = this.viewOffset;
-
     const positionInView = currentSlice - offset;
 
     if (positionInView < this.threshold) {

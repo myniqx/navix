@@ -37,17 +37,14 @@ export function PaginatedList<T>({
   const [viewOffset, setViewOffset] = useState(0);
   const [containerSize, setContainerSize] = useState(0);
   const outerRef = useRef<HTMLDivElement | null>(null);
-  const pendingFocusKeyRef = useRef<string | null>(null);
-  const behaviorRef = useRef<PaginatedListBehavior | null>(null);
 
   const { node, FocusProvider } = useFocusable(
     fKey,
     { onFocus, onBlurred, onRegister, onUnregister },
-    (n: FocusNode) => {
-      behaviorRef.current = new PaginatedListBehavior(n, orientation, items.length, visibleCount, threshold);
-      return behaviorRef.current;
-    },
+    (n: FocusNode) => new PaginatedListBehavior(n, orientation, items.length, visibleCount, threshold),
   );
+
+  const behavior = node.behavior as PaginatedListBehavior;
 
   // Stable keys tied to this items array reference.
   // When items changes (new array), prefix regenerates — all children remount.
@@ -56,28 +53,13 @@ export function PaginatedList<T>({
     return items.map((_, i) => `${fKey}-${prefix}-${i}`);
   }, [items]);
 
-  const behavior = behaviorRef.current!;
   behavior.totalCount = items.length;
   behavior.visibleCount = visibleCount;
   behavior.threshold = threshold;
 
   behavior.onChange = (newIndex: number, newOffset: number) => {
     setViewOffset(newOffset);
-
-    const targetKey = itemKeys[newIndex]!;
-    const child = node.children.find((c: FocusNode) => c.key === targetKey);
-    if (child) {
-      node.focusChild(child.id);
-    } else {
-      pendingFocusKeyRef.current = targetKey;
-    }
-  };
-
-  behavior.onChildRegistered = (child: FocusNode) => {
-    if (pendingFocusKeyRef.current !== null && child.key === pendingFocusKeyRef.current) {
-      pendingFocusKeyRef.current = null;
-      node.focusChild(child.id);
-    }
+    behavior.focusByKey(itemKeys[newIndex]!);
   };
 
   const isHorizontal = orientation === 'horizontal';
