@@ -1,75 +1,81 @@
 /**
  * App
  *
- * Root composition component. Wires together the focus tree and the UI layout.
+ * Root composition component. Menu selection drives which view is rendered
+ * below. Each view mounts/unmounts its own focus nodes — the tree is always
+ * in sync with what is visible on screen.
  *
- * Focus tree structure:
- *   FocusRoot (creates FocusTree + listens to keyboard events)
- *   └─ VerticalList "app"          (up/down moves between rows)
- *      ├─ MenuRow                  (HorizontalList "menu")
+ * Focus tree structure (example: Home tab active):
+ *   FocusRoot
+ *   └─ VerticalList "app"
+ *      ├─ MenuRow               (HorizontalList "menu")
  *      │  ├─ MenuItem "menu-Home"
- *      │  ├─ MenuItem "menu-Favourites"
  *      │  └─ ...
- *      ├─ ContentRow "row-0"       (HorizontalList, Action shelf)
- *      │  ├─ ContentCard "row-0-Action-0"
- *      │  └─ ...
- *      ├─ ContentRow "row-1"       (Series shelf)
- *      └─ ContentRow "row-2"       (Live TV shelf)
+ *      ├─ ContentRow "home-row-0"   ← HomeView renders these
+ *      ├─ ContentRow "home-row-1"
+ *      └─ ContentRow "home-row-2"
+ *
+ * When the user switches to Favourites, HomeView unmounts (rows unregister),
+ * FavouritesView mounts (grid registers). The tree updates automatically —
+ * no manual focus management needed.
  */
 
 import { useState } from 'react';
 import { FocusRoot, VerticalList } from '@navix/react';
-import { ROWS } from './data';
+import type { ContentItem } from './data';
 import { MenuRow } from './components/MenuRow';
-import { ContentRow } from './components/ContentRow';
+import { HomeView } from './components/HomeView';
+import { MovieView } from './components/MovieView';
+import { SeriesView } from './components/SeriesView';
+import { LiveView } from './components/LiveView';
 import { EventLog } from './components/EventLog';
 
+// Maps each menu label to its tab key for strict typing
+type TabKey = 'Home' | 'Movie' | 'Series' | 'Live';
+
 export function App() {
+  const [activeTab, setActiveTab] = useState<TabKey>('Home');
   const [log, setLog] = useState<string[]>([]);
 
-  // Prepend new entries and keep the last 30
   const emit = (msg: string) =>
     setLog((prev) => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev.slice(0, 29)]);
 
+  const handleMenuSelect = (item: string) => {
+    setActiveTab(item as TabKey);
+    emit(`Menu: ${item}`);
+  };
+
+  const handlePlay = (item: ContentItem) => {
+    emit(`Play: ${item.title} (${item.year})`);
+  };
+
   return (
-    <div
-      style={{
-        fontFamily: "'Segoe UI', system-ui, sans-serif",
-        background: '#0a0a0f',
-        color: '#eee',
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      {/*
-        FocusRoot:
-          - Creates the FocusTree (root FocusNode + InputManager)
-          - Attaches document keydown/keyup listeners
-          - Provides the root FocusNode via React context
-      */}
+    <div style={{
+      fontFamily: "'Segoe UI', system-ui, sans-serif",
+      background: '#0a0a0f',
+      color: '#eee',
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+    }}>
       <FocusRoot>
-        {/*
-          VerticalList:
-            - Registers itself into FocusRoot's context
-            - Handles up/down arrow keys to switch between its children
-            - Provides its own node as context so children can register into it
-        */}
         <VerticalList fKey="app">
-          <MenuRow onSelect={(item) => emit(`Menu: ${item}`)} />
-          {ROWS.map((row, i) => (
-            <ContentRow
-              key={row.label}
-              rowKey={`row-${i}`}
-              label={row.label}
-              items={row.items}
-              onPlay={(item) => emit(`Play: ${item.title} (${item.year})`)}
-            />
-          ))}
+          {/* Menu is always mounted — tab switch happens on Enter */}
+          <MenuRow onSelect={handleMenuSelect} />
+
+          {/*
+            Only the active tab's view is mounted at any given time.
+            When a view unmounts, all its focus nodes unregister from the tree.
+            When a new view mounts, its nodes register and the first one gets focus.
+            This gives correct focus behavior for free — no manual wiring needed.
+          */}
+          {activeTab === 'Home'   && <HomeView onPlay={handlePlay} />}
+          {activeTab === 'Movie'  && <MovieView />}
+          {activeTab === 'Series' && <SeriesView onPlay={handlePlay} />}
+          {activeTab === 'Live'   && <LiveView onPlay={handlePlay} />}
         </VerticalList>
       </FocusRoot>
 
-      {/* EventLog sits outside FocusRoot — it is purely presentational */}
       <EventLog entries={log} />
     </div>
   );

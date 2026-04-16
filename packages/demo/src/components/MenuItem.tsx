@@ -19,12 +19,12 @@ import type { NavEvent } from '@navix/core';
 interface MenuItemProps {
   fKey: string;
   label: string;
-  onPress: () => void;
+  onClick: () => void;
 }
 
-export function MenuItem({ fKey, label, onPress }: MenuItemProps) {
-  const onPressRef = useRef(onPress);
-  onPressRef.current = onPress;
+export function MenuItem({ fKey, label, onClick }: MenuItemProps) {
+  const onPressRef = useRef(onClick);
+  onPressRef.current = onClick;
 
   const { directlyFocused, focusSelf, FocusProvider } = useFocusable(fKey, {
     onEvent: (e: NavEvent) => {
@@ -40,6 +40,7 @@ export function MenuItem({ fKey, label, onPress }: MenuItemProps) {
     <FocusProvider>
       <div
         onMouseEnter={focusSelf}
+        onClick={() => onPressRef.current()}
         style={{
           padding: '8px 20px',
           fontSize: 14,

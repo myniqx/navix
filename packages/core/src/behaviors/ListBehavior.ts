@@ -12,23 +12,8 @@ export class ListBehavior implements IFocusNodeBehavior {
     node.onEvent = (event: NavEvent): boolean => {
       if (event.type !== 'press') return false;
 
-      if (event.action === prev) {
-        // Wrap around: if focusPrev fails (already at first), jump to last
-        if (!node.focusPrev()) {
-          const last = node.children[node.children.length - 1];
-          if (last) return node.focusChild(last.id);
-        }
-        return true;
-      }
-
-      if (event.action === next) {
-        // Wrap around: if focusNext fails (already at last), jump to first
-        if (!node.focusNext()) {
-          const first = node.children[0];
-          if (first) return node.focusChild(first.id);
-        }
-        return true;
-      }
+      if (event.action === prev) return node.focusPrev();
+      if (event.action === next) return node.focusNext();
 
       return false;
     };

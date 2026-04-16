@@ -7,5 +7,9 @@ export type { ListOrientation } from './behaviors/ListBehavior';
 export { GridBehavior } from './behaviors/GridBehavior';
 export { ButtonBehavior } from './behaviors/ButtonBehavior';
 export { ExpandableBehavior } from './behaviors/ExpandableBehavior';
+export { PaginatedListBehavior } from './behaviors/PaginatedListBehavior';
+export type { PaginatedListOrientation } from './behaviors/PaginatedListBehavior';
+export { PaginatedGridBehavior } from './behaviors/PaginatedGridBehavior';
+export type { PaginatedGridOrientation } from './behaviors/PaginatedGridBehavior';
 
 export type { NavEvent, ActionConfig, InputConfig, IFocusNodeBehavior } from './types';

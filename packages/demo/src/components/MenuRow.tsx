@@ -11,15 +11,20 @@
  *   onSelect — called with the label string when the user presses Enter on an item.
  */
 
-import { HorizontalList } from '@navix/react';
-import { MENU_ITEMS } from '../data';
+import { useState } from 'react';
+import { HorizontalList, Expandable } from '@navix/react';
+import { MENU_ITEMS, DEFAULT_OPTIONS } from '../data';
+import type { OptionsState } from '../data';
 import { MenuItem } from './MenuItem';
+import { OptionsModal } from './OptionsModal';
 
 interface MenuRowProps {
   onSelect: (item: string) => void;
 }
 
 export function MenuRow({ onSelect }: MenuRowProps) {
+  const [options, setOptions] = useState<OptionsState>(DEFAULT_OPTIONS);
+
   return (
     <div
       style={{
@@ -35,15 +40,48 @@ export function MenuRow({ onSelect }: MenuRowProps) {
       */}
       <HorizontalList fKey="menu">
         <div style={{ display: 'flex', gap: 4 }}>
-          {MENU_ITEMS.map((item) => (
-            <MenuItem
-              key={item}
-              // fKey must be unique within this HorizontalList's children
-              fKey={`menu-${item}`}
-              label={item}
-              onPress={() => onSelect(item)}
-            />
-          ))}
+          {MENU_ITEMS.map((item) =>
+            item === 'Options' ? (
+              <Expandable key={item} fKey="menu-Options">
+                {({ isExpanded, directlyFocused, focused, collapse }) => (
+                  <>
+                    <div
+                      style={{
+                        padding: '8px 20px',
+                        fontSize: 14,
+                        fontWeight: 600,
+                        letterSpacing: '0.05em',
+                        color: directlyFocused || (focused && isExpanded) ? '#fff' : '#888',
+                        borderBottom: directlyFocused || (focused && isExpanded)
+                          ? '2px solid #4fc3f7'
+                          : '2px solid transparent',
+                        transition: 'all 0.15s',
+                        cursor: 'pointer',
+                        userSelect: 'none',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      Options
+                    </div>
+                    {isExpanded && (
+                      <OptionsModal
+                        options={options}
+                        onChange={(key, value) => setOptions((prev) => ({ ...prev, [key]: value }))}
+                        onClose={collapse}
+                      />
+                    )}
+                  </>
+                )}
+              </Expandable>
+            ) : (
+              <MenuItem
+                key={item}
+                fKey={`menu-${item}`}
+                label={item}
+                onClick={() => onSelect(item)}
+              />
+            )
+          )}
         </div>
       </HorizontalList>
     </div>

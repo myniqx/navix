@@ -38,14 +38,22 @@ export class FocusNode {
     child.parent = this;
     this.children.push(child);
 
-    // Auto-focus first registered child
-    if (this.activeChildId === null) {
+    const becameFirstChild = this.activeChildId === null;
+    if (becameFirstChild) {
       this.activeChildId = child.id;
-      this._propagateFocus();
     }
 
     child.behavior?.onRegister?.();
-    this.notify();
+    this.behavior?.onChildRegistered?.(child);
+
+    // If this node was the leaf of the active path, the new child extends
+    // the path and must take over as the direct-focus leaf. Recompute flags
+    // from root so every ancestor/descendant reflects the new path.
+    if (becameFirstChild && this.isDirectlyFocused) {
+      this._propagateFocus();
+    } else {
+      this.notify();
+    }
   }
 
   unregister(child: FocusNode): void {
@@ -53,18 +61,30 @@ export class FocusNode {
     if (idx === -1) return;
 
     child.behavior?.onUnregister?.();
+    this.behavior?.onChildUnregistered?.(child);
+
+    const wasOnActivePath = child.isFocused;
 
     this.children.splice(idx, 1);
     child.parent = null;
 
+    // Clear stale focus flags on the detached subtree — _propagateFocus
+    // below can no longer reach these nodes to reset them.
+    child._clearFocusFlags();
+
     if (this.activeChildId === child.id) {
-      // Fall back to nearest sibling
       const fallback = this.children[idx] ?? this.children[idx - 1] ?? null;
       this.activeChildId = fallback ? fallback.id : null;
-      this._propagateFocus();
     }
 
-    this.notify();
+    // If the removed child was on the active path, the path is now broken.
+    // Recompute from root so the nearest surviving ancestor becomes the leaf
+    // (or a fallback sibling, depending on activeChildId above).
+    if (wasOnActivePath) {
+      this._propagateFocus();
+    } else {
+      this.notify();
+    }
   }
 
   handleEvent(event: NavEvent): boolean {
@@ -135,17 +155,50 @@ export class FocusNode {
     return path;
   }
 
-  // Walk up to root and recompute isFocused / isDirectlyFocused for the whole tree
+  // Walk up to root and recompute isFocused / isDirectlyFocused for the whole tree.
+  // Reset and set happen in a single pass — no notify is called until all flags are
+  // correct, preventing React from seeing an intermediate state where every node
+  // appears focused or unfocused at the same time.
   private _propagateFocus(): void {
     const root = this.getRoot();
-    root._resetFocusFlags();
     const path = root.getActivePath();
+    const pathSet = new Set(path);
 
-    for (let i = 0; i < path.length; i++) {
-      const node = path[i]!;
-      node.isFocused = true;
-      node.isDirectlyFocused = i === path.length - 1;
-      node.notify();
+    // Single traversal: set correct flags everywhere, then notify all at once
+    const toNotify: FocusNode[] = [];
+    root._applyFocusFlags(pathSet, path, toNotify);
+    for (const node of toNotify) node.notify();
+  }
+
+  private _applyFocusFlags(
+    pathSet: Set<FocusNode>,
+    path: FocusNode[],
+    toNotify: FocusNode[],
+  ): void {
+    const newFocused = pathSet.has(this);
+    const newDirectly = newFocused && path[path.length - 1] === this;
+
+    if (this.isFocused !== newFocused || this.isDirectlyFocused !== newDirectly) {
+      this.isFocused = newFocused;
+      this.isDirectlyFocused = newDirectly;
+      toNotify.push(this);
+    }
+
+    for (const child of this.children) {
+      child._applyFocusFlags(pathSet, path, toNotify);
+    }
+  }
+
+  // Recursively clear focus flags on this node and all its descendants.
+  // Called when a subtree is detached (unregister) so stale flags don't persist.
+  private _clearFocusFlags(): void {
+    if (this.isFocused || this.isDirectlyFocused) {
+      this.isFocused = false;
+      this.isDirectlyFocused = false;
+      this.notify();
+    }
+    for (const child of this.children) {
+      child._clearFocusFlags();
     }
   }
 
@@ -194,14 +247,6 @@ export class FocusNode {
     return false;
   }
 
-  private _resetFocusFlags(): void {
-    this.isFocused = false;
-    this.isDirectlyFocused = false;
-    this.notify();
-    for (const child of this.children) {
-      child._resetFocusFlags();
-    }
-  }
 
   destroy(): void {
     if (this.parent) {

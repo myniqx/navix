@@ -4,3 +4,7 @@ export { HorizontalList, VerticalList, Grid, Button } from './components';
 export { FocusContext } from './FocusContext';
 export { Expandable, useExpandable } from './expandable';
 export type { ExpandableRenderProps, ExpandableContextValue } from './expandable';
+export { PaginatedList } from './paginated-list';
+export type { PaginatedListAction } from './paginated-list';
+export { PaginatedGrid } from './paginated-grid';
+export type { PaginatedGridAction } from './paginated-grid';

@@ -28,11 +28,11 @@ export function VerticalList({ fKey, children }: { fKey: string; children: React
 // Grid container — 4-direction navigation with column count for row wrapping
 export function Grid({ fKey, columns, children }: { fKey: string; columns: number; children: ReactNode }) {
   const { node, FocusProvider } = useFocusable(fKey);
-  const behaviorRef = useRef(false);
-  if (!behaviorRef.current) {
-    new GridBehavior(node, columns);
-    behaviorRef.current = true;
+  const behaviorRef = useRef<GridBehavior | null>(null);
+  if (behaviorRef.current === null) {
+    behaviorRef.current = new GridBehavior(node, columns);
   }
+  behaviorRef.current.columns = columns;
   return <FocusProvider>{children}</FocusProvider>;
 }
 

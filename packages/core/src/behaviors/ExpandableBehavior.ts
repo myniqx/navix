@@ -65,8 +65,9 @@ export class ExpandableBehavior implements IFocusNodeBehavior {
 
   expand(): void {
     if (this.isExpanded) return;
-    // Collapse all other expandables first — clears any active trap
-    this._walkCollapse(this._node.getRoot());
+    // Ancestors must not be collapsed — we are expanding inside them.
+    const ancestors = this._getAncestors();
+    this._walkCollapse(this._node.getRoot(), ancestors);
     // Request focus before setting isExpanded — trap is not yet active so
     // _findTrap won't block this node's own requestFocus call
     this._node.requestFocus();
@@ -80,13 +81,23 @@ export class ExpandableBehavior implements IFocusNodeBehavior {
     this.onChange?.(false);
   }
 
-  // Recursively walk the tree and collapse all expandables except self
-  private _walkCollapse(current: FocusNode): void {
-    if (current !== this._node) {
+  private _getAncestors(): Set<FocusNode> {
+    const set = new Set<FocusNode>();
+    let current = this._node.parent;
+    while (current !== null) {
+      set.add(current);
+      current = current.parent;
+    }
+    return set;
+  }
+
+  // Recursively walk the tree and collapse all expandables except self and ancestors
+  private _walkCollapse(current: FocusNode, ancestors: Set<FocusNode>): void {
+    if (current !== this._node && !ancestors.has(current)) {
       current.behavior?.collapse?.();
     }
     for (const child of current.children) {
-      this._walkCollapse(child);
+      this._walkCollapse(child, ancestors);
     }
   }
 }
