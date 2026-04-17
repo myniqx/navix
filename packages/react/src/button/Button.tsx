@@ -3,6 +3,7 @@ import type React from 'react';
 import { ButtonBehavior } from '@navix/core';
 import type { FocusNode } from '@navix/core';
 import { useFocusable } from '../useFocusable';
+import { mergeClassName } from '../mergeClassName';
 import type { BaseComponentProps } from '../types';
 
 type ButtonRenderFn = (props: { focused: boolean }) => ReactNode;
@@ -13,6 +14,8 @@ interface ButtonProps extends BaseComponentProps {
   onDoublePress?: () => void;
   style?: React.CSSProperties;
   focusedStyle?: React.CSSProperties;
+  className?: string;
+  focusedClassName?: string;
   children: ReactNode | ButtonRenderFn;
 }
 
@@ -50,9 +53,11 @@ export function Button({
   onUnregister,
   style,
   focusedStyle,
+  className,
+  focusedClassName,
   children,
   ...rest
-}: ButtonProps & Omit<React.HTMLAttributes<HTMLDivElement>, 'onClick' | 'style' | 'children'>) {
+}: ButtonProps & Omit<React.HTMLAttributes<HTMLDivElement>, 'onClick' | 'style' | 'children' | 'className'>) {
   const onClickRef = useRef(onClick);
   const onLongPressRef = useRef(onLongPress);
   const onDoublePressRef = useRef(onDoublePress);
@@ -77,6 +82,8 @@ export function Button({
     ...(directlyFocused ? focusedStyle : undefined),
   };
 
+  const mergedClassName = mergeClassName(className, directlyFocused ? focusedClassName : undefined);
+
   const rendered = typeof children === 'function'
     ? (children as ButtonRenderFn)({ focused: directlyFocused })
     : children;
@@ -86,6 +93,7 @@ export function Button({
       {...rest}
       data-focused={directlyFocused}
       style={mergedStyle}
+      className={mergedClassName || undefined}
       onMouseEnter={focusSelf}
       onClick={(e) => { e.stopPropagation(); onClickRef.current?.(); }}
     >

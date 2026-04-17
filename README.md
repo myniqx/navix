@@ -60,13 +60,14 @@ React 18+ adapter. Peer dependency on `react` and `react-dom`.
 |---|---|
 | `FocusRoot` | Creates the `FocusTree`, attaches `keydown`/`keyup` listeners to `document`, provides root node via context. |
 | `useFocusable(key, callbacks?, createBehavior?)` | Hook. Creates a `FocusNode`, registers it with the nearest parent, returns `focused`, `directlyFocused`, `focusSelf`, `FocusProvider`. Accepts lifecycle callbacks and an optional behavior factory. |
-| `HorizontalList` | Node + `ListBehavior('horizontal')`. |
-| `VerticalList` | Node + `ListBehavior('vertical')`. |
-| `Grid` | Node + `GridBehavior(columns)`. Syncs `columns` prop on every render. |
-| `Button` | Leaf node. Handles enter events. Supports `onClick`, `onLongPress`, `onDoublePress`, `focusedStyle`, and render prop children. |
+| `HorizontalList` | Node + `ListBehavior('horizontal')`. Accepts `className`, `focusedClassName`, `style`, `focusedStyle` — renders a wrapper div only when any of these are provided. |
+| `VerticalList` | Node + `ListBehavior('vertical')`. Accepts `className`, `focusedClassName`, `style`, `focusedStyle` — renders a wrapper div only when any of these are provided. |
+| `Grid` | Node + `GridBehavior(columns)`. Syncs `columns` prop on every render. Accepts `className`, `focusedClassName`, `style`, `focusedStyle`. |
+| `Button` | Leaf node. Handles enter events. Supports `onClick`, `onLongPress`, `onDoublePress`, `style`, `focusedStyle`, `className`, `focusedClassName`, and render prop children. |
 | `Expandable` | Node + `ExpandableBehavior`. Render prop exposes `isExpanded`, `focused`, `directlyFocused`, `expand`, `collapse`. |
-| `PaginatedList` | Virtualized 1D list with sliding window pagination. Items are rendered only within the visible window + buffer. |
-| `PaginatedGrid` | Virtualized 2D grid with sliding window pagination. Supports horizontal (column-major) and vertical (row-major) orientation. |
+| `Dropdown` | Node + `ExpandableBehavior`. Render prop exposes `isExpanded`, `focused`, `directlyFocused`, `collapse`. Supports single/multi-select, custom trigger and option renderers, top/bottom position. |
+| `PaginatedList` | Virtualized 1D list with sliding window pagination. Items are rendered only within the visible window + buffer. Accepts `outerClassName`, `innerClassName`, `slotClassName`. |
+| `PaginatedGrid` | Virtualized 2D grid with sliding window pagination. Supports horizontal (column-major) and vertical (row-major) orientation. Accepts `outerClassName`, `innerClassName`, `slotClassName`. |
 | `BaseComponentProps` | Shared interface all components extend: `fKey`, `onFocus`, `onBlurred`, `onRegister`, `onUnregister`. |
 | `ItemAction` | `'visible' \| 'hidden' \| 'focused' \| 'blurred'` — action type used by paginated components. |
 
@@ -204,18 +205,50 @@ function App() {
 
 ### Focus styling
 
-`Button` accepts a `focusedStyle` prop merged when focused, or a render prop for full control:
+Three ways to style focused state:
 
 ```tsx
-// focusedStyle prop
+// 1. focusedStyle — merged onto the wrapper when focused
 <Button fKey="play" style={{ background: '#222' }} focusedStyle={{ background: '#4fc3f7' }}>
   ▶ Play
 </Button>
 
-// render prop
+// 2. focusedClassName — merged onto className when focused (use with Tailwind)
+<Button fKey="play" className="bg-card px-4 py-2 rounded" focusedClassName="ring-2 ring-primary">
+  ▶ Play
+</Button>
+
+// 3. Render prop — full control via focused boolean
 <Button fKey="play">
   {({ focused }) => <div style={{ color: focused ? '#fff' : '#888' }}>▶ Play</div>}
 </Button>
+```
+
+`style` is always applied as an inline style — it wins over `className` when both target the same property (standard browser behavior).
+
+### Tailwind support
+
+Pass `tailwind-merge`'s `twMerge` to `FocusRoot` via the `mergeClassName` prop. Navix will use it to merge `className` and `focusedClassName` conflict-free. Without it, classes are joined with a plain space — sufficient when there are no conflicting utilities.
+
+```tsx
+import { twMerge } from 'tailwind-merge';
+
+<FocusRoot mergeClassName={twMerge}>
+  {/* all Navix components inside will use twMerge */}
+</FocusRoot>
+```
+
+```tsx
+// Without mergeClassName — plain join, works when no conflicts
+<Button
+  fKey="play"
+  className="border border-transparent"
+  focusedClassName="border-primary"
+/>
+// focused: "border border-transparent border-primary" — browser applies last, may vary
+
+// With mergeClassName={twMerge} — conflict resolved correctly
+// focused: "border border-primary"
 ```
 
 ### Focus lifecycle callbacks
@@ -371,7 +404,7 @@ Navigate with arrow keys. `Enter` to select. `Backspace` or `Escape` to go back.
 | Movie | `PaginatedGrid` | Movies in a paginated 4×6 grid with trailer preview simulation. |
 | Series | `HorizontalList` | Classic horizontal shelves. |
 | Live | `Grid` | Fixed grid of live channels. |
-| Options | `Expandable` modal | Settings modal with persistent state, navigable with arrow keys. |
+| Options | `Expandable` + `Dropdown` | Settings modal with persistent state. Contains dropdowns for single and multi-select options, navigable with arrow keys. |
 
 ---
 

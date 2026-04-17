@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback, useMemo, type ReactNode, type
 import { PaginatedListBehavior } from '@navix/core';
 import type { FocusNode, PaginatedListOrientation } from '@navix/core';
 import { useFocusable } from '../useFocusable';
+import { mergeClassName } from '../mergeClassName';
 import type { BaseComponentProps } from '../types';
 
 interface PaginatedListProps<T> extends BaseComponentProps {
@@ -13,8 +14,11 @@ interface PaginatedListProps<T> extends BaseComponentProps {
   gap?: number;
   buffer?: number;
   outerStyle?: CSSProperties;
+  outerClassName?: string;
   innerStyle?: CSSProperties;
+  innerClassName?: string;
   slotStyle?: CSSProperties;
+  slotClassName?: string;
 }
 
 export function PaginatedList<T>({
@@ -31,8 +35,11 @@ export function PaginatedList<T>({
   onRegister,
   onUnregister,
   outerStyle: outerStyleProp,
+  outerClassName,
   innerStyle: innerStyleProp,
+  innerClassName,
   slotStyle: slotStyleProp,
+  slotClassName,
 }: PaginatedListProps<T>) {
   const [viewOffset, setViewOffset] = useState(0);
   const [containerSize, setContainerSize] = useState(0);
@@ -126,14 +133,14 @@ export function PaginatedList<T>({
 
   return (
     <FocusProvider>
-      <div ref={measureRef} style={outerStyle}>
-        <div style={innerStyle}>
+      <div ref={measureRef} style={outerStyle} className={outerClassName}>
+        <div style={innerStyle} className={innerClassName}>
           {paddingBefore > 0 && <div style={spacerStyle} />}
           {items.slice(renderStart, renderEnd).map((item, localIdx) => {
             const globalIdx = renderStart + localIdx;
             const itemKey = itemKeys[globalIdx]!;
             return (
-              <div key={itemKey} style={slotStyle}>
+              <div key={itemKey} style={slotStyle} className={slotClassName}>
                 {renderItem(item, itemKey)}
               </div>
             );

@@ -78,8 +78,8 @@ export function Expandable({ fKey, onFocus, onBlurred, onRegister, onUnregister,
   return (
     <ExpandableContext.Provider value={contextValue}>
       <FocusProvider>
-        {/* Mouse click mirrors keyboard enter/back — toggle expand state */}
-        <div style={{ display: 'contents' }} onMouseEnter={focusSelf} onClick={() => isExpanded ? collapse() : expand()}>
+        {/* Mouse click mirrors keyboard enter — only expands, never collapses (expanded children handle their own click area) */}
+        <div style={{ display: 'contents' }} onMouseEnter={focusSelf} onClick={() => { if (!isExpanded) expand(); }}>
           {children(renderProps)}
         </div>
       </FocusProvider>

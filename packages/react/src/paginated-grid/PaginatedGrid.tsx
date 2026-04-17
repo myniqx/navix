@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback, useMemo, type ReactNode, type
 import { PaginatedGridBehavior } from '@navix/core';
 import type { FocusNode, PaginatedGridOrientation } from '@navix/core';
 import { useFocusable } from '../useFocusable';
+import { mergeClassName } from '../mergeClassName';
 import type { BaseComponentProps } from '../types';
 
 interface PaginatedGridProps<T> extends BaseComponentProps {
@@ -14,8 +15,11 @@ interface PaginatedGridProps<T> extends BaseComponentProps {
   gap?: number;
   buffer?: number;
   outerStyle?: CSSProperties;
+  outerClassName?: string;
   innerStyle?: CSSProperties;
+  innerClassName?: string;
   slotStyle?: CSSProperties;
+  slotClassName?: string;
 }
 
 export function PaginatedGrid<T>({
@@ -33,8 +37,11 @@ export function PaginatedGrid<T>({
   onRegister,
   onUnregister,
   outerStyle: outerStyleProp,
+  outerClassName,
   innerStyle: innerStyleProp,
+  innerClassName,
   slotStyle: slotStyleProp,
+  slotClassName,
 }: PaginatedGridProps<T>) {
   const [viewOffset, setViewOffset] = useState(0);
   const [containerMainSize, setContainerMainSize] = useState(0);
@@ -162,15 +169,15 @@ export function PaginatedGrid<T>({
 
   return (
     <FocusProvider>
-      <div ref={measureRef} style={outerStyle}>
-        <div style={mainContainerStyle}>
+      <div ref={measureRef} style={outerStyle} className={outerClassName}>
+        <div style={mainContainerStyle} className={innerClassName}>
           {paddingBefore > 0 && <div style={spacerStyle} />}
           {slices.map((slice, sliceIdx) => (
             <div key={renderStartSlice + sliceIdx} style={sliceStyle}>
               {slice.items.map(({ item, globalIndex }) => {
                 const itemKey = itemKeys[globalIndex]!;
                 return (
-                  <div key={itemKey} style={slotStyle}>
+                  <div key={itemKey} style={slotStyle} className={slotClassName}>
                     {renderItem(item, itemKey)}
                   </div>
                 );

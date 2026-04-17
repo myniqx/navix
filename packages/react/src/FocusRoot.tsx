@@ -3,13 +3,16 @@ import { FocusTree } from '@navix/core';
 import type { InputConfig } from '@navix/core';
 import type { FocusNode } from '@navix/core';
 import { FocusContext } from './FocusContext';
+import { setMergeClassName } from './mergeClassName';
 
 interface FocusRootProps {
   children: ReactNode;
   inputConfig?: InputConfig;
+  mergeClassName?: (...classes: (string | undefined)[]) => string;
 }
 
-export function FocusRoot({ children, inputConfig }: FocusRootProps) {
+export function FocusRoot({ children, inputConfig, mergeClassName }: FocusRootProps) {
+  setMergeClassName(mergeClassName);
   const treeRef = useRef<FocusTree | null>(null);
   const [root, setRoot] = useState<FocusNode>(() => {
     treeRef.current = new FocusTree(inputConfig);
