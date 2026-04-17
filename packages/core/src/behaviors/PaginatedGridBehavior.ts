@@ -5,12 +5,25 @@ export type PaginatedGridOrientation = 'horizontal' | 'vertical';
 
 export class PaginatedGridBehavior implements IFocusNodeBehavior {
   totalCount: number;
-  rows: number;
-  columns: number;
-  threshold: number;
   activeIndex: number = 0;
   viewOffset: number = 0;
   orientation: PaginatedGridOrientation;
+
+  private _rows: number = 3;
+  private _columns: number = 3;
+  private _threshold: number = 1;
+
+  get rows(): number { return this._rows; }
+  set rows(value: number) { this._rows = Math.max(3, value); }
+
+  get columns(): number { return this._columns; }
+  set columns(value: number) { this._columns = Math.max(3, value); }
+
+  get threshold(): number { return this._threshold; }
+  set threshold(value: number) {
+    const visibleSlices = this.orientation === 'horizontal' ? this._columns : this._rows;
+    this._threshold = Math.max(1, Math.min(value, visibleSlices - 2));
+  }
 
   // Called with (newIndex, newOffset) after every navigation step.
   // React adapter uses this to sync viewOffset state and resolve focusChild.
@@ -32,7 +45,7 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
     this.totalCount = totalCount;
     this.rows = rows;
     this.columns = columns;
-    this.threshold = threshold;
+    this.threshold = threshold; // setter clamps the value
     node.behavior = this;
   }
 

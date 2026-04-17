@@ -1,7 +1,8 @@
-import { useState, type ReactNode } from 'react';
-import { ExpandableBehavior, PaginatedListBehavior, ButtonBehavior } from '@navix/core';
+import { useState, useRef, type ReactNode } from 'react';
+import { ExpandableBehavior, ButtonBehavior } from '@navix/core';
 import type { FocusNode } from '@navix/core';
 import { useFocusable } from '../useFocusable';
+import { PaginatedList } from '../paginated-list/PaginatedList';
 import type { BaseComponentProps } from '../types';
 
 export interface DropdownOption {
@@ -112,9 +113,6 @@ export function Dropdown({
   renderTrigger,
 }: DropdownProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [viewOffset, setViewOffset] = useState(0);
-
-  const optionKeys = options.map((_, i) => `${fKey}-opt-${i}`);
   const listFKey = `${fKey}-list`;
 
   const { focused, directlyFocused, focusSelf, FocusProvider, node } = useFocusable(
@@ -126,7 +124,6 @@ export function Dropdown({
   const expandable = node.behavior as ExpandableBehavior;
   expandable.onChange = (expanded) => {
     setIsExpanded(expanded);
-    if (!expanded) setViewOffset(0);
   };
 
   const handleSelect = (index: number) => {
@@ -150,9 +147,6 @@ export function Dropdown({
       : `${value.length} selected`;
 
   const listHeight = Math.min(options.length, maxVisible) * SLOT_HEIGHT;
-  const renderStart = viewOffset;
-  const renderEnd = Math.min(options.length, viewOffset + maxVisible);
-  const paddingBefore = renderStart * SLOT_HEIGHT;
 
   return (
     <FocusProvider>
@@ -182,99 +176,32 @@ export function Dropdown({
             overflow: 'hidden',
             zIndex: 100,
           }}>
-            <OptionList
+            <PaginatedList
               fKey={listFKey}
-              options={options}
-              optionKeys={optionKeys}
-              value={value}
-              maxVisible={maxVisible}
-              viewOffset={viewOffset}
-              renderStart={renderStart}
-              renderEnd={renderEnd}
-              paddingBefore={paddingBefore}
-              renderOption={renderOption}
-              onChangeOffset={(newIndex, newOffset) => setViewOffset(newOffset)}
-              onSelect={handleSelect}
+              orientation="vertical"
+              visibleCount={maxVisible}
+              threshold={1}
+              items={options}
+              outerStyle={{ height: listHeight }}
+              renderItem={(option, itemFKey) => {
+                const index = options.indexOf(option);
+                const isSelected = value.includes(option.value);
+                return (
+                  <OptionButton
+                    fKey={itemFKey}
+                    height={SLOT_HEIGHT}
+                    onSelect={() => handleSelect(index)}
+                  >
+                    {(isFocused) => renderOption
+                      ? renderOption({ option, selected: isSelected, focused: isFocused, index })
+                      : <DefaultOption option={option} selected={isSelected} focused={isFocused} />
+                    }
+                  </OptionButton>
+                );
+              }}
             />
           </div>
         )}
-      </div>
-    </FocusProvider>
-  );
-}
-
-// Separate component so it mounts/unmounts with the panel
-// and useFocusable registers fresh each time the dropdown opens
-function OptionList({
-  fKey,
-  options,
-  optionKeys,
-  value,
-  maxVisible,
-  viewOffset,
-  renderStart,
-  renderEnd,
-  paddingBefore,
-  renderOption,
-  onChangeOffset,
-  onSelect,
-}: {
-  fKey: string;
-  options: DropdownOption[];
-  optionKeys: string[];
-  value: string[];
-  maxVisible: number;
-  viewOffset: number;
-  renderStart: number;
-  renderEnd: number;
-  paddingBefore: number;
-  renderOption?: DropdownRenderOptionFn;
-  onChangeOffset: (newIndex: number, newOffset: number) => void;
-  onSelect: (index: number) => void;
-}) {
-  const { node, FocusProvider } = useFocusable(
-    fKey,
-    undefined,
-    (n: FocusNode) => new PaginatedListBehavior(n, 'vertical', options.length, maxVisible, 0),
-  );
-
-  const behavior = node.behavior as PaginatedListBehavior;
-  behavior.totalCount = options.length;
-  behavior.visibleCount = maxVisible;
-
-  behavior.onChange = (newIndex: number, newOffset: number) => {
-    onChangeOffset(newIndex, newOffset);
-    behavior.focusByKey(optionKeys[newIndex]!);
-  };
-
-  return (
-    <FocusProvider>
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        transform: `translateY(${-viewOffset * SLOT_HEIGHT}px)`,
-        transition: 'transform 0.15s ease',
-      }}>
-        {paddingBefore > 0 && <div style={{ minHeight: paddingBefore, flexShrink: 0 }} />}
-        {options.slice(renderStart, renderEnd).map((option, localIdx) => {
-          const globalIdx = renderStart + localIdx;
-          const optKey = optionKeys[globalIdx]!;
-          const isSelected = value.includes(option.value);
-
-          return (
-            <OptionButton
-              key={optKey}
-              fKey={optKey}
-              height={SLOT_HEIGHT}
-              onSelect={() => onSelect(globalIdx)}
-            >
-              {(focused) => renderOption
-                ? renderOption({ option, selected: isSelected, focused, index: globalIdx })
-                : <DefaultOption option={option} selected={isSelected} focused={focused} />
-              }
-            </OptionButton>
-          );
-        })}
       </div>
     </FocusProvider>
   );
@@ -286,7 +213,7 @@ function OptionButton({ fKey, height, onSelect, children }: {
   onSelect: () => void;
   children: (focused: boolean) => ReactNode;
 }) {
-  const onSelectRef = { current: onSelect };
+  const onSelectRef = useRef(onSelect);
   onSelectRef.current = onSelect;
 
   const { directlyFocused, focusSelf } = useFocusable(
@@ -297,7 +224,7 @@ function OptionButton({ fKey, height, onSelect, children }: {
 
   return (
     <div
-      style={{ height, flexShrink: 0 }}
+      style={{ height, flexShrink: 0, width: '100%' }}
       onMouseEnter={focusSelf}
       onClick={(e) => { e.stopPropagation(); onSelect(); }}
     >

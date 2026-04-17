@@ -5,10 +5,21 @@ export type PaginatedListOrientation = 'horizontal' | 'vertical';
 
 export class PaginatedListBehavior implements IFocusNodeBehavior {
   totalCount: number;
-  visibleCount: number;
-  threshold: number;
   activeIndex: number = 0;
   viewOffset: number = 0;
+
+  private _visibleCount: number = 3;
+  private _threshold: number = 1;
+
+  get visibleCount(): number { return this._visibleCount; }
+  set visibleCount(value: number) {
+    this._visibleCount = Math.max(3, value);
+  }
+
+  get threshold(): number { return this._threshold; }
+  set threshold(value: number) {
+    this._threshold = Math.max(1, Math.min(value, this._visibleCount - 2));
+  }
 
   // Called with (newIndex, newOffset) after every navigation step.
   // React adapter uses this to sync viewOffset state and resolve focusChild.
@@ -29,7 +40,7 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
     this._node = node;
     this.totalCount = totalCount;
     this.visibleCount = visibleCount;
-    this.threshold = threshold;
+    this.threshold = threshold; // setter clamps the value
     this._prev = orientation === 'horizontal' ? 'left' : 'up';
     this._next = orientation === 'horizontal' ? 'right' : 'down';
     node.behavior = this;
