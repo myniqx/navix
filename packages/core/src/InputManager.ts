@@ -7,7 +7,7 @@ export const DEFAULT_INPUT_CONFIG: InputConfig = {
     up: { keys: ['ArrowUp'] },
     down: { keys: ['ArrowDown'] },
     enter: { keys: ['Enter'], longpress: true, longpressMs: 500 },
-    back: { keys: ['Backspace', 'Escape'] },
+    back: { keys: ['Escape'] },
   },
 };
 

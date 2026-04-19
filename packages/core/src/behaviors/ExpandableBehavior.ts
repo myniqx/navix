@@ -42,7 +42,6 @@ export class ExpandableBehavior implements IFocusNodeBehavior {
 
   constructor(node: FocusNode) {
     this._node = node;
-    node.behavior = this;
   }
 
   onEvent = (e: NavEvent): boolean => {

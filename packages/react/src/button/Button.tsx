@@ -57,7 +57,7 @@ export function Button({
   focusedClassName,
   children,
   ...rest
-}: ButtonProps & Omit<React.HTMLAttributes<HTMLDivElement>, 'onClick' | 'style' | 'children' | 'className'>) {
+}: ButtonProps & Omit<React.HTMLAttributes<HTMLDivElement>, 'onClick' | 'style' | 'children' | 'className' | 'onFocus'>) {
   const onClickRef = useRef(onClick);
   const onLongPressRef = useRef(onLongPress);
   const onDoublePressRef = useRef(onDoublePress);

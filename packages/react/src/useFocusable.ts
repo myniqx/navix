@@ -46,18 +46,20 @@ export function useFocusable(
   if (nodeRef.current === null) {
     nodeRef.current = new FocusNode(key);
     if (createBehavior !== undefined) {
-      createBehavior(nodeRef.current);
+      const result = createBehavior(nodeRef.current);
+      if (!nodeRef.current.behavior) {
+        nodeRef.current.behavior = result ?? { onEvent: () => false };
+      }
     } else {
-      nodeRef.current.behavior = {
-        onEvent: () => false
-      };
+      nodeRef.current.behavior = { onEvent: () => false };
     }
+    const behavior = nodeRef.current.behavior;
     // Capture behavior's own callbacks once, before we override them
     origCallbacksRef.current = {
-      onFocus: nodeRef.current.behavior!.onFocus?.bind(nodeRef.current.behavior!),
-      onBlurred: nodeRef.current.behavior!.onBlurred?.bind(nodeRef.current.behavior!),
-      onRegister: nodeRef.current.behavior!.onRegister?.bind(nodeRef.current.behavior!),
-      onUnregister: nodeRef.current.behavior!.onUnregister?.bind(nodeRef.current.behavior!),
+      onFocus: behavior.onFocus?.bind(behavior),
+      onBlurred: behavior.onBlurred?.bind(behavior),
+      onRegister: behavior.onRegister?.bind(behavior),
+      onUnregister: behavior.onUnregister?.bind(behavior),
     };
   }
 
@@ -65,10 +67,10 @@ export function useFocusable(
   const orig = origCallbacksRef.current!;
 
   // Wire callbacks into behavior — chain with behavior's own callbacks
-  node.behavior!.onFocus = (n) => { orig.onFocus?.(n); callbacksRef.current.onFocus?.(key); };
-  node.behavior!.onBlurred = (n) => { orig.onBlurred?.(n); callbacksRef.current.onBlurred?.(key); };
-  node.behavior!.onRegister = () => { orig.onRegister?.(); callbacksRef.current.onRegister?.(key); };
-  node.behavior!.onUnregister = () => { orig.onUnregister?.(); callbacksRef.current.onUnregister?.(key); };
+  node.behavior.onFocus = (n) => { orig.onFocus?.(n); callbacksRef.current.onFocus?.(key); };
+  node.behavior.onBlurred = (n) => { orig.onBlurred?.(n); callbacksRef.current.onBlurred?.(key); };
+  node.behavior.onRegister = () => { orig.onRegister?.(); callbacksRef.current.onRegister?.(key); };
+  node.behavior.onUnregister = () => { orig.onUnregister?.(); callbacksRef.current.onUnregister?.(key); };
 
   // Register/unregister with parent
   useEffect(() => {

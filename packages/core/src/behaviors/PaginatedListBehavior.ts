@@ -43,7 +43,6 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
     this.threshold = threshold; // setter clamps the value
     this._prev = orientation === 'horizontal' ? 'left' : 'up';
     this._next = orientation === 'horizontal' ? 'right' : 'down';
-    node.behavior = this;
   }
 
   onEvent = (event: NavEvent): boolean => {

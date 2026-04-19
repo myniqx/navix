@@ -46,7 +46,6 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
     this.rows = rows;
     this.columns = columns;
     this.threshold = threshold; // setter clamps the value
-    node.behavior = this;
   }
 
   onEvent = (event: NavEvent): boolean => {

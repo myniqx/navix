@@ -11,8 +11,8 @@ export class FocusNode {
   isFocused: boolean = false;
   isDirectlyFocused: boolean = false;
 
-  // Attached behavior — set by behavior constructors via node.behavior = this
-  behavior: IFocusNodeBehavior | null = null;
+  // Attached behavior — always set by useFocusable before use
+  behavior!: IFocusNodeBehavior;
 
   // Subscribers notified on any state change (used by React adapter)
   private subscribers: Set<() => void> = new Set();
@@ -93,11 +93,7 @@ export class FocusNode {
       if (consumed) return true;
     }
 
-    if (this.behavior) {
-      return this.behavior.onEvent(event);
-    }
-
-    return false;
+    return this.behavior?.onEvent(event) ?? false;
   }
 
   focusNext(): boolean {

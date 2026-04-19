@@ -9,11 +9,9 @@ interface ButtonHandlers {
 
 export class ButtonBehavior implements IFocusNodeBehavior {
   constructor(
-    node: FocusNode,
+    _node: FocusNode,
     private handlers: ButtonHandlers
-  ) {
-    node.behavior = this;
-  }
+  ) { }
 
   onEvent = (event: NavEvent): boolean => {
     if (event.action !== 'enter') return false;

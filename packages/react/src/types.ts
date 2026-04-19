@@ -1,6 +1,3 @@
-export type ItemAction = 'visible' | 'hidden' | 'focused' | 'blurred';
-
-
 export interface BaseComponentProps {
   fKey: string
   onFocus?: (key: string) => void

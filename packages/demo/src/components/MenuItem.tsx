@@ -26,7 +26,7 @@ export function MenuItem({ fKey, label, onClick }: MenuItemProps) {
   const onPressRef = useRef(onClick);
   onPressRef.current = onClick;
 
-  const { directlyFocused, focusSelf, FocusProvider } = useFocusable(fKey, {
+  const { directlyFocused, focusSelf, FocusProvider } = useFocusable(fKey, {}, () => ({
     onEvent: (e: NavEvent) => {
       if (e.action === 'enter' && e.type === 'press') {
         onPressRef.current();
@@ -34,7 +34,7 @@ export function MenuItem({ fKey, label, onClick }: MenuItemProps) {
       }
       return false;
     },
-  });
+  }));
 
   return (
     <FocusProvider>

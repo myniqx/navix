@@ -10,7 +10,6 @@ export class GridBehavior implements IFocusNodeBehavior {
     public columns: number
   ) {
     this.columns = columns;
-    node.behavior = this;
   }
 
   onEvent = (event: NavEvent): boolean => {

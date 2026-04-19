@@ -11,7 +11,6 @@ export class ListBehavior implements IFocusNodeBehavior {
     private node: FocusNode,
     orientation: ListOrientation
   ) {
-    node.behavior = this;
     this.prev = orientation === 'horizontal' ? 'left' : 'up';
     this.next = orientation === 'horizontal' ? 'right' : 'down';
   }
