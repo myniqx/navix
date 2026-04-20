@@ -11,10 +11,16 @@ export { Switch } from './switch';
 export { Input } from './input';
 export type { InputRenderProps } from './input';
 
+export { MultiLayer } from './multi-layer';
+export type { MultiLayerPanelProps, MultiLayerPanelId } from './multi-layer';
+
 export { Expandable, useExpandable } from './expandable';
 export { Dropdown } from './dropdown';
 export type { DropdownOption } from './dropdown';
-export type { ExpandableRenderProps, ExpandableContextValue } from './expandable';
+export type {
+  ExpandableRenderProps,
+  ExpandableContextValue,
+} from './expandable';
 
 export { PaginatedList } from './paginated-list';
 export { PaginatedGrid } from './paginated-grid';
