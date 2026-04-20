@@ -13,7 +13,9 @@ export interface ExpandableContextValue {
   collapse: () => void;
 }
 
-export const ExpandableContext = createContext<ExpandableContextValue | null>(null);
+export const ExpandableContext = createContext<ExpandableContextValue | null>(
+  null,
+);
 
 /**
  * useExpandable

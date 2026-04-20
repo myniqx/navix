@@ -11,12 +11,16 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
   private _visibleCount: number = 3;
   private _threshold: number = 1;
 
-  get visibleCount(): number { return this._visibleCount; }
+  get visibleCount(): number {
+    return this._visibleCount;
+  }
   set visibleCount(value: number) {
     this._visibleCount = Math.max(3, value);
   }
 
-  get threshold(): number { return this._threshold; }
+  get threshold(): number {
+    return this._threshold;
+  }
   set threshold(value: number) {
     this._threshold = Math.max(1, Math.min(value, this._visibleCount - 2));
   }
@@ -87,7 +91,10 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
     if (positionInView < this.threshold) {
       offset = Math.max(0, this.activeIndex - this.threshold);
     } else if (positionInView > this.visibleCount - 1 - this.threshold) {
-      offset = Math.min(maxOffset, this.activeIndex - (this.visibleCount - 1 - this.threshold));
+      offset = Math.min(
+        maxOffset,
+        this.activeIndex - (this.visibleCount - 1 - this.threshold),
+      );
     }
 
     this.viewOffset = offset;

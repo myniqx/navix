@@ -51,10 +51,14 @@ export function MenuRow({ onSelect }: MenuRowProps) {
                         fontSize: 14,
                         fontWeight: 600,
                         letterSpacing: '0.05em',
-                        color: directlyFocused || (focused && isExpanded) ? '#fff' : '#888',
-                        borderBottom: directlyFocused || (focused && isExpanded)
-                          ? '2px solid #4fc3f7'
-                          : '2px solid transparent',
+                        color:
+                          directlyFocused || (focused && isExpanded)
+                            ? '#fff'
+                            : '#888',
+                        borderBottom:
+                          directlyFocused || (focused && isExpanded)
+                            ? '2px solid #4fc3f7'
+                            : '2px solid transparent',
                         transition: 'all 0.15s',
                         cursor: 'pointer',
                         userSelect: 'none',
@@ -66,7 +70,9 @@ export function MenuRow({ onSelect }: MenuRowProps) {
                     {isExpanded && (
                       <OptionsModal
                         options={options}
-                        onChange={(key, value) => setOptions((prev) => ({ ...prev, [key]: value }))}
+                        onChange={(key, value) =>
+                          setOptions((prev) => ({ ...prev, [key]: value }))
+                        }
                         onClose={collapse}
                       />
                     )}
@@ -80,7 +86,7 @@ export function MenuRow({ onSelect }: MenuRowProps) {
                 label={item}
                 onClick={() => onSelect(item)}
               />
-            )
+            ),
           )}
         </div>
       </HorizontalList>

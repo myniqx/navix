@@ -13,15 +13,26 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
   private _columns: number = 3;
   private _threshold: number = 1;
 
-  get rows(): number { return this._rows; }
-  set rows(value: number) { this._rows = Math.max(3, value); }
+  get rows(): number {
+    return this._rows;
+  }
+  set rows(value: number) {
+    this._rows = Math.max(3, value);
+  }
 
-  get columns(): number { return this._columns; }
-  set columns(value: number) { this._columns = Math.max(3, value); }
+  get columns(): number {
+    return this._columns;
+  }
+  set columns(value: number) {
+    this._columns = Math.max(3, value);
+  }
 
-  get threshold(): number { return this._threshold; }
+  get threshold(): number {
+    return this._threshold;
+  }
   set threshold(value: number) {
-    const visibleSlices = this.orientation === 'horizontal' ? this._columns : this._rows;
+    const visibleSlices =
+      this.orientation === 'horizontal' ? this._columns : this._rows;
     this._threshold = Math.max(1, Math.min(value, visibleSlices - 2));
   }
 
@@ -52,15 +63,23 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
     if (event.type !== 'press') return false;
 
     if (this.orientation === 'horizontal') {
-      if (event.action === 'up') return this._moveTo(this.activeIndex - 1, 'cross');
-      if (event.action === 'down') return this._moveTo(this.activeIndex + 1, 'cross');
-      if (event.action === 'left') return this._moveTo(this.activeIndex - this.rows, 'main');
-      if (event.action === 'right') return this._moveTo(this.activeIndex + this.rows, 'main');
+      if (event.action === 'up')
+        return this._moveTo(this.activeIndex - 1, 'cross');
+      if (event.action === 'down')
+        return this._moveTo(this.activeIndex + 1, 'cross');
+      if (event.action === 'left')
+        return this._moveTo(this.activeIndex - this.rows, 'main');
+      if (event.action === 'right')
+        return this._moveTo(this.activeIndex + this.rows, 'main');
     } else {
-      if (event.action === 'left') return this._moveTo(this.activeIndex - 1, 'cross');
-      if (event.action === 'right') return this._moveTo(this.activeIndex + 1, 'cross');
-      if (event.action === 'up') return this._moveTo(this.activeIndex - this.columns, 'main');
-      if (event.action === 'down') return this._moveTo(this.activeIndex + this.columns, 'main');
+      if (event.action === 'left')
+        return this._moveTo(this.activeIndex - 1, 'cross');
+      if (event.action === 'right')
+        return this._moveTo(this.activeIndex + 1, 'cross');
+      if (event.action === 'up')
+        return this._moveTo(this.activeIndex - this.columns, 'main');
+      if (event.action === 'down')
+        return this._moveTo(this.activeIndex + this.columns, 'main');
     }
 
     return false;
@@ -89,7 +108,8 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
 
     // Cross axis boundary check — don't wrap across slices
     if (axis === 'cross') {
-      const sliceSize = this.orientation === 'horizontal' ? this.rows : this.columns;
+      const sliceSize =
+        this.orientation === 'horizontal' ? this.rows : this.columns;
       const oldSlice = Math.floor(this.activeIndex / sliceSize);
       const newSlice = Math.floor(newIndex / sliceSize);
       if (oldSlice !== newSlice) return false;
@@ -102,8 +122,10 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
   }
 
   private _updateOffset(): void {
-    const sliceSize = this.orientation === 'horizontal' ? this.rows : this.columns;
-    const visibleSlices = this.orientation === 'horizontal' ? this.columns : this.rows;
+    const sliceSize =
+      this.orientation === 'horizontal' ? this.rows : this.columns;
+    const visibleSlices =
+      this.orientation === 'horizontal' ? this.columns : this.rows;
     const totalSlices = Math.ceil(this.totalCount / sliceSize);
     const maxOffset = Math.max(0, totalSlices - visibleSlices);
 
@@ -114,7 +136,10 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
     if (positionInView < this.threshold) {
       offset = Math.max(0, currentSlice - this.threshold);
     } else if (positionInView > visibleSlices - 1 - this.threshold) {
-      offset = Math.min(maxOffset, currentSlice - (visibleSlices - 1 - this.threshold));
+      offset = Math.min(
+        maxOffset,
+        currentSlice - (visibleSlices - 1 - this.threshold),
+      );
     }
 
     this.viewOffset = offset;

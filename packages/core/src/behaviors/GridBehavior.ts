@@ -2,12 +2,11 @@ import type { FocusNode } from '../FocusNode';
 import type { NavEvent, IFocusNodeBehavior } from '../types';
 
 export class GridBehavior implements IFocusNodeBehavior {
-
-  onRegister(): void { }
+  onRegister(): void {}
 
   constructor(
     private node: FocusNode,
-    public columns: number
+    public columns: number,
   ) {
     this.columns = columns;
   }
@@ -15,7 +14,9 @@ export class GridBehavior implements IFocusNodeBehavior {
   onEvent = (event: NavEvent): boolean => {
     if (event.type !== 'press') return false;
 
-    const idx = this.node.children.findIndex((c) => c.id === this.node.activeChildId);
+    const idx = this.node.children.findIndex(
+      (c) => c.id === this.node.activeChildId,
+    );
     if (idx === -1) return false;
 
     if (event.action === 'left') {

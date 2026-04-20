@@ -15,12 +15,25 @@ interface GridProps extends BaseComponentProps {
   focusedStyle?: React.CSSProperties;
 }
 
-export function Grid({ fKey, columns, onFocus, onBlurred, onRegister, onUnregister, children, className, focusedClassName, style, focusedStyle }: GridProps) {
+export function Grid({
+  fKey,
+  columns,
+  onFocus,
+  onBlurred,
+  onRegister,
+  onUnregister,
+  onEvent,
+  children,
+  className,
+  focusedClassName,
+  style,
+  focusedStyle,
+}: GridProps) {
   const behaviorRef = useRef<GridBehavior | null>(null);
 
   const { focused, FocusProvider } = useFocusable(
     fKey,
-    { onFocus, onBlurred, onRegister, onUnregister },
+    { onFocus, onBlurred, onRegister, onUnregister, onEvent },
     (node: FocusNode) => {
       behaviorRef.current = new GridBehavior(node, columns);
       return behaviorRef.current;
@@ -37,15 +50,15 @@ export function Grid({ fKey, columns, onFocus, onBlurred, onRegister, onUnregist
     return <FocusProvider>{children}</FocusProvider>;
   }
 
-  const mergedClassName = mergeClassName(className, focused ? focusedClassName : undefined);
+  const mergedClassName = mergeClassName(
+    className,
+    focused ? focusedClassName : undefined,
+  );
   const mergedStyle = { ...style, ...(focused ? focusedStyle : undefined) };
 
   return (
     <FocusProvider>
-      <div
-        className={mergedClassName || undefined}
-        style={mergedStyle}
-      >
+      <div className={mergedClassName || undefined} style={mergedStyle}>
         {children}
       </div>
     </FocusProvider>

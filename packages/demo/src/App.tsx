@@ -38,7 +38,10 @@ export function App() {
   const [log, setLog] = useState<string[]>([]);
 
   const emit = (msg: string) =>
-    setLog((prev) => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev.slice(0, 29)]);
+    setLog((prev) => [
+      `[${new Date().toLocaleTimeString()}] ${msg}`,
+      ...prev.slice(0, 29),
+    ]);
 
   const handleMenuSelect = (item: string) => {
     setActiveTab(item as TabKey);
@@ -50,29 +53,32 @@ export function App() {
   };
 
   return (
-    <div style={{
-      fontFamily: "'Segoe UI', system-ui, sans-serif",
-      background: '#0a0a0f',
-      color: '#eee',
-      minHeight: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-    }}>
+    <div
+      style={{
+        fontFamily: "'Segoe UI', system-ui, sans-serif",
+        background: '#0a0a0f',
+        color: '#eee',
+        height: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <FocusRoot>
-        <VerticalList fKey="app">
-          {/* Menu is always mounted — tab switch happens on Enter */}
+        <VerticalList
+          fKey="app"
+          style={{
+            flex: 1,
+            minHeight: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'auto',
+          }}
+        >
           <MenuRow onSelect={handleMenuSelect} />
-
-          {/*
-            Only the active tab's view is mounted at any given time.
-            When a view unmounts, all its focus nodes unregister from the tree.
-            When a new view mounts, its nodes register and the first one gets focus.
-            This gives correct focus behavior for free — no manual wiring needed.
-          */}
-          {activeTab === 'Home'   && <HomeView onPlay={handlePlay} />}
-          {activeTab === 'Movie'  && <MovieView />}
+          {activeTab === 'Home' && <HomeView onPlay={handlePlay} />}
+          {activeTab === 'Movie' && <MovieView />}
           {activeTab === 'Series' && <SeriesView onPlay={handlePlay} />}
-          {activeTab === 'Live'   && <LiveView onPlay={handlePlay} />}
+          {activeTab === 'Live' && <LiveView onPlay={handlePlay} />}
         </VerticalList>
       </FocusRoot>
 

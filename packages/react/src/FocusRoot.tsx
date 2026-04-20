@@ -11,7 +11,11 @@ interface FocusRootProps {
   mergeClassName?: (...classes: (string | undefined)[]) => string;
 }
 
-export function FocusRoot({ children, inputConfig, mergeClassName }: FocusRootProps) {
+export function FocusRoot({
+  children,
+  inputConfig,
+  mergeClassName,
+}: FocusRootProps) {
   setMergeClassName(mergeClassName);
   const treeRef = useRef<FocusTree | null>(null);
   const [root, setRoot] = useState<FocusNode>(() => {
@@ -28,7 +32,8 @@ export function FocusRoot({ children, inputConfig, mergeClassName }: FocusRootPr
     }
     const tree = treeRef.current;
 
-    const onKeyDown = (e: KeyboardEvent) => tree.inputManager.handleKeyDown(e.code);
+    const onKeyDown = (e: KeyboardEvent) =>
+      tree.inputManager.handleKeyDown(e.code);
     const onKeyUp = (e: KeyboardEvent) => tree.inputManager.handleKeyUp(e.code);
 
     document.addEventListener('keydown', onKeyDown);
@@ -42,9 +47,5 @@ export function FocusRoot({ children, inputConfig, mergeClassName }: FocusRootPr
     };
   }, []);
 
-  return (
-    <FocusContext.Provider value={root}>
-      {children}
-    </FocusContext.Provider>
-  );
+  return <FocusContext.Provider value={root}>{children}</FocusContext.Provider>;
 }

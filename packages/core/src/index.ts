@@ -8,9 +8,19 @@ export { GridBehavior } from './behaviors/GridBehavior';
 export { ButtonBehavior } from './behaviors/ButtonBehavior';
 export { ExpandableBehavior } from './behaviors/ExpandableBehavior';
 export { InputBehavior } from './behaviors/InputBehavior';
+export { MultiLayerBehavior } from './behaviors/MultiLayerBehavior';
+export type {
+  MultiLayerPanelId,
+  MultiLayerHandlers,
+} from './behaviors/MultiLayerBehavior';
 export { PaginatedListBehavior } from './behaviors/PaginatedListBehavior';
 export type { PaginatedListOrientation } from './behaviors/PaginatedListBehavior';
 export { PaginatedGridBehavior } from './behaviors/PaginatedGridBehavior';
 export type { PaginatedGridOrientation } from './behaviors/PaginatedGridBehavior';
 
-export type { NavEvent, ActionConfig, InputConfig, IFocusNodeBehavior } from './types';
+export type {
+  NavEvent,
+  ActionConfig,
+  InputConfig,
+  IFocusNodeBehavior,
+} from './types';

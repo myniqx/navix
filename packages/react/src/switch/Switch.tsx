@@ -19,11 +19,7 @@ export function Switch({
   ...rest
 }: SwitchProps) {
   return (
-    <Button
-      fKey={fKey}
-      onClick={() => onChange(!checked)}
-      {...rest}
-    >
+    <Button fKey={fKey} onClick={() => onChange(!checked)} {...rest}>
       {({ focused }) => children(checked, focused)}
     </Button>
   );

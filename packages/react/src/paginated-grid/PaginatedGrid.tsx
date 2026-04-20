@@ -1,4 +1,12 @@
-import { useState, useRef, useEffect, useCallback, useMemo, type ReactNode, type CSSProperties } from 'react';
+import {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+  type ReactNode,
+  type CSSProperties,
+} from 'react';
 import { PaginatedGridBehavior } from '@navix/core';
 import type { FocusNode, PaginatedGridOrientation } from '@navix/core';
 import { useFocusable } from '../useFocusable';
@@ -36,6 +44,7 @@ export function PaginatedGrid<T>({
   onBlurred,
   onRegister,
   onUnregister,
+  onEvent,
   outerStyle: outerStyleProp,
   outerClassName,
   innerStyle: innerStyleProp,
@@ -53,8 +62,16 @@ export function PaginatedGrid<T>({
 
   const { node, FocusProvider } = useFocusable(
     fKey,
-    { onFocus, onBlurred, onRegister, onUnregister },
-    (n: FocusNode) => new PaginatedGridBehavior(n, orientation, items.length, rows, columns, threshold),
+    { onFocus, onBlurred, onRegister, onUnregister, onEvent },
+    (n: FocusNode) =>
+      new PaginatedGridBehavior(
+        n,
+        orientation,
+        items.length,
+        rows,
+        columns,
+        threshold,
+      ),
   );
 
   const behavior = node.behavior as PaginatedGridBehavior;
@@ -74,13 +91,16 @@ export function PaginatedGrid<T>({
     behavior.focusByKey(itemKeys[newIndex]!);
   };
 
-  const measureRef = useCallback((el: HTMLDivElement | null) => {
-    outerRef.current = el;
-    if (el) {
-      setContainerMainSize(isHorizontal ? el.offsetWidth : el.offsetHeight);
-      setContainerCrossSize(isHorizontal ? el.offsetHeight : el.offsetWidth);
-    }
-  }, [isHorizontal]);
+  const measureRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      outerRef.current = el;
+      if (el) {
+        setContainerMainSize(isHorizontal ? el.offsetWidth : el.offsetHeight);
+        setContainerCrossSize(isHorizontal ? el.offsetHeight : el.offsetWidth);
+      }
+    },
+    [isHorizontal],
+  );
 
   useEffect(() => {
     const el = outerRef.current;
@@ -89,8 +109,12 @@ export function PaginatedGrid<T>({
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (!entry) return;
-      setContainerMainSize(isHorizontal ? entry.contentRect.width : entry.contentRect.height);
-      setContainerCrossSize(isHorizontal ? entry.contentRect.height : entry.contentRect.width);
+      setContainerMainSize(
+        isHorizontal ? entry.contentRect.width : entry.contentRect.height,
+      );
+      setContainerCrossSize(
+        isHorizontal ? entry.contentRect.height : entry.contentRect.width,
+      );
     });
     observer.observe(el);
     return () => observer.disconnect();
@@ -98,19 +122,24 @@ export function PaginatedGrid<T>({
 
   // Main axis = pagination direction (horizontal → X, vertical → Y)
   const mainGaps = (visibleSlices - 1) * gap;
-  const sliceMainSize = containerMainSize > 0 ? (containerMainSize - mainGaps) / visibleSlices : 0;
+  const sliceMainSize =
+    containerMainSize > 0 ? (containerMainSize - mainGaps) / visibleSlices : 0;
   const mainStep = sliceMainSize + gap;
   const translate = -viewOffset * mainStep;
 
   // Cross axis = within a slice (horizontal → Y rows, vertical → X columns)
   const crossCount = isHorizontal ? rows : columns;
   const crossGaps = (crossCount - 1) * gap;
-  const slotCrossSize = containerCrossSize > 0 ? (containerCrossSize - crossGaps) / crossCount : 0;
+  const slotCrossSize =
+    containerCrossSize > 0 ? (containerCrossSize - crossGaps) / crossCount : 0;
 
   // Determine which slices to render
   const totalSlices = Math.ceil(items.length / sliceSize);
   const renderStartSlice = Math.max(0, viewOffset - buffer);
-  const renderEndSlice = Math.min(totalSlices, viewOffset + visibleSlices + buffer);
+  const renderEndSlice = Math.min(
+    totalSlices,
+    viewOffset + visibleSlices + buffer,
+  );
   const paddingBefore = renderStartSlice * mainStep;
 
   // Build slices from items — items are ordered by slice (column-major for horizontal)
@@ -151,9 +180,7 @@ export function PaginatedGrid<T>({
     flexDirection: isHorizontal ? 'column' : 'row',
     gap,
     flexShrink: 0,
-    ...(isHorizontal
-      ? { width: sliceMainSize }
-      : { height: sliceMainSize }),
+    ...(isHorizontal ? { width: sliceMainSize } : { height: sliceMainSize }),
   };
 
   const slotStyle: CSSProperties = {
@@ -162,9 +189,7 @@ export function PaginatedGrid<T>({
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
-    ...(isHorizontal
-      ? { height: slotCrossSize }
-      : { width: slotCrossSize }),
+    ...(isHorizontal ? { height: slotCrossSize } : { width: slotCrossSize }),
   };
 
   return (
@@ -177,7 +202,11 @@ export function PaginatedGrid<T>({
               {slice.items.map(({ item, globalIndex }) => {
                 const itemKey = itemKeys[globalIndex]!;
                 return (
-                  <div key={itemKey} style={slotStyle} className={slotClassName}>
+                  <div
+                    key={itemKey}
+                    style={slotStyle}
+                    className={slotClassName}
+                  >
                     {renderItem(item, itemKey)}
                   </div>
                 );

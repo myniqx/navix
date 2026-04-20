@@ -53,7 +53,9 @@ export function ContentRow({ rowKey, label, items, onPlay }: ContentRowProps) {
           padding: 12px 4px — reserves space so the scale(1.08) shadow/border
           is not clipped by the parent. Without this, focused cards get cut off.
         */}
-        <div style={{ display: 'flex', overflow: 'visible', padding: '12px 4px' }}>
+        <div
+          style={{ display: 'flex', overflow: 'visible', padding: '12px 4px' }}
+        >
           {items.map((item) => (
             <ContentCard
               key={item.id}

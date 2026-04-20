@@ -1,6 +1,13 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { VerticalList, HorizontalList, Button, Dropdown, Switch, Input } from '@navix/react';
+import {
+  VerticalList,
+  HorizontalList,
+  Button,
+  Dropdown,
+  Switch,
+  Input,
+} from '@navix/react';
 import { OPTIONS_CONFIG } from '../data';
 import type { OptionsState, OptionKey } from '../data';
 
@@ -25,7 +32,11 @@ interface OptionsModalProps {
   onClose: () => void;
 }
 
-export function OptionsModal({ options, onChange, onClose }: OptionsModalProps) {
+export function OptionsModal({
+  options,
+  onChange,
+  onClose,
+}: OptionsModalProps) {
   const [language, setLanguage] = useState(['en']);
   const [notifications, setNotifications] = useState(false);
   const [nickname, setNickname] = useState('');
@@ -52,13 +63,26 @@ export function OptionsModal({ options, onChange, onClose }: OptionsModalProps) 
           boxShadow: '0 24px 80px rgba(0,0,0,0.8)',
         }}
       >
-        <div style={{ fontSize: 18, fontWeight: 700, color: '#eee', marginBottom: 28 }}>
+        <div
+          style={{
+            fontSize: 18,
+            fontWeight: 700,
+            color: '#eee',
+            marginBottom: 28,
+          }}
+        >
           Options
         </div>
 
         <VerticalList fKey="options-list">
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
-            <div style={{ width: 100, fontSize: 13, color: '#666', flexShrink: 0 }}>Language</div>
+          <div
+            style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}
+          >
+            <div
+              style={{ width: 100, fontSize: 13, color: '#666', flexShrink: 0 }}
+            >
+              Language
+            </div>
             <Dropdown
               fKey="options-language"
               options={LANGUAGES}
@@ -75,46 +99,69 @@ export function OptionsModal({ options, onChange, onClose }: OptionsModalProps) 
             onChange={setNotifications}
           >
             {(checked, focused) => (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                marginBottom: 16,
-                padding: '6px 10px',
-                borderRadius: 6,
-                background: focused ? '#1a2a3a' : 'transparent',
-                outline: focused ? '1px solid #4fc3f7' : '1px solid transparent',
-                transition: 'all 0.15s',
-              }}>
-                <div style={{ width: 100, fontSize: 13, color: '#666', flexShrink: 0 }}>Notifications</div>
-                <div style={{
+              <div
+                style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 8,
-                  padding: '4px 14px',
-                  borderRadius: 20,
-                  fontSize: 12,
-                  fontWeight: 600,
-                  background: checked ? '#1e3a2e' : '#1a1a2e',
-                  color: checked ? '#4caf7d' : '#555',
-                  outline: checked ? '1px solid #4caf7d' : '1px solid #333',
-                  transform: focused ? 'scale(1.05)' : 'scale(1)',
+                  marginBottom: 16,
+                  padding: '6px 10px',
+                  borderRadius: 6,
+                  background: focused ? '#1a2a3a' : 'transparent',
+                  outline: focused
+                    ? '1px solid #4fc3f7'
+                    : '1px solid transparent',
                   transition: 'all 0.15s',
-                }}>
-                  <div style={{
-                    width: 7,
-                    height: 7,
-                    borderRadius: '50%',
-                    background: checked ? '#4caf7d' : '#444',
-                    transition: 'background 0.15s',
-                  }} />
+                }}
+              >
+                <div
+                  style={{
+                    width: 100,
+                    fontSize: 13,
+                    color: '#666',
+                    flexShrink: 0,
+                  }}
+                >
+                  Notifications
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '4px 14px',
+                    borderRadius: 20,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    background: checked ? '#1e3a2e' : '#1a1a2e',
+                    color: checked ? '#4caf7d' : '#555',
+                    outline: checked ? '1px solid #4caf7d' : '1px solid #333',
+                    transform: focused ? 'scale(1.05)' : 'scale(1)',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 7,
+                      height: 7,
+                      borderRadius: '50%',
+                      background: checked ? '#4caf7d' : '#444',
+                      transition: 'background 0.15s',
+                    }}
+                  />
                   {checked ? 'On' : 'Off'}
                 </div>
               </div>
             )}
           </Switch>
 
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
-            <div style={{ width: 100, fontSize: 13, color: '#666', flexShrink: 0 }}>Nickname</div>
+          <div
+            style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}
+          >
+            <div
+              style={{ width: 100, fontSize: 13, color: '#666', flexShrink: 0 }}
+            >
+              Nickname
+            </div>
             <Input
               fKey="options-nickname"
               value={nickname}
@@ -152,12 +199,25 @@ export function OptionsModal({ options, onChange, onClose }: OptionsModalProps) 
             />
           ))}
 
-          <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end' }}>
+          <div
+            style={{
+              marginTop: 24,
+              display: 'flex',
+              justifyContent: 'flex-end',
+            }}
+          >
             <HorizontalList fKey="options-actions">
               <div style={{ display: 'flex', gap: 12 }}>
                 <Button
                   fKey="options-close"
-                  style={{ padding: '8px 24px', borderRadius: 6, background: '#1e1e3a', color: '#888', fontSize: 13, fontWeight: 600 }}
+                  style={{
+                    padding: '8px 24px',
+                    borderRadius: 6,
+                    background: '#1e1e3a',
+                    color: '#888',
+                    fontSize: 13,
+                    fontWeight: 600,
+                  }}
                   focusedStyle={{ background: '#4fc3f7', color: '#000' }}
                   onClick={onClose}
                 >
@@ -181,7 +241,13 @@ interface OptionRowProps {
   onSelect: (value: string) => void;
 }
 
-function OptionRow({ fKey, label, choices, selected, onSelect }: OptionRowProps) {
+function OptionRow({
+  fKey,
+  label,
+  choices,
+  selected,
+  onSelect,
+}: OptionRowProps) {
   return (
     <div
       style={{
@@ -190,7 +256,9 @@ function OptionRow({ fKey, label, choices, selected, onSelect }: OptionRowProps)
         marginBottom: 16,
       }}
     >
-      <div style={{ width: 100, fontSize: 13, color: '#666', flexShrink: 0 }}>{label}</div>
+      <div style={{ width: 100, fontSize: 13, color: '#666', flexShrink: 0 }}>
+        {label}
+      </div>
       <HorizontalList fKey={fKey}>
         <div style={{ display: 'flex', gap: 8 }}>
           {choices.map((choice) => {
@@ -206,9 +274,15 @@ function OptionRow({ fKey, label, choices, selected, onSelect }: OptionRowProps)
                   fontWeight: 500,
                   background: isSelected ? '#1e3a2e' : '#1a1a2e',
                   color: isSelected ? '#4caf7d' : '#666',
-                  outline: isSelected ? '1px solid #4caf7d' : '1px solid transparent',
+                  outline: isSelected
+                    ? '1px solid #4caf7d'
+                    : '1px solid transparent',
                 }}
-                focusedStyle={{ background: '#4fc3f7', color: '#000', outline: '1px solid transparent' }}
+                focusedStyle={{
+                  background: '#4fc3f7',
+                  color: '#000',
+                  outline: '1px solid transparent',
+                }}
                 onClick={() => onSelect(choice)}
               >
                 {choice}

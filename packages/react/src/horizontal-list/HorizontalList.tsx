@@ -14,10 +14,22 @@ interface HorizontalListProps extends BaseComponentProps {
   focusedStyle?: React.CSSProperties;
 }
 
-export function HorizontalList({ fKey, onFocus, onBlurred, onRegister, onUnregister, children, className, focusedClassName, style, focusedStyle }: HorizontalListProps) {
+export function HorizontalList({
+  fKey,
+  onFocus,
+  onBlurred,
+  onRegister,
+  onUnregister,
+  onEvent,
+  children,
+  className,
+  focusedClassName,
+  style,
+  focusedStyle,
+}: HorizontalListProps) {
   const { focused, FocusProvider } = useFocusable(
     fKey,
-    { onFocus, onBlurred, onRegister, onUnregister },
+    { onFocus, onBlurred, onRegister, onUnregister, onEvent },
     (node: FocusNode) => new ListBehavior(node, 'horizontal'),
   );
 
@@ -27,15 +39,15 @@ export function HorizontalList({ fKey, onFocus, onBlurred, onRegister, onUnregis
     return <FocusProvider>{children}</FocusProvider>;
   }
 
-  const mergedClassName = mergeClassName(className, focused ? focusedClassName : undefined);
+  const mergedClassName = mergeClassName(
+    className,
+    focused ? focusedClassName : undefined,
+  );
   const mergedStyle = { ...style, ...(focused ? focusedStyle : undefined) };
 
   return (
     <FocusProvider>
-      <div
-        className={mergedClassName || undefined}
-        style={mergedStyle}
-      >
+      <div className={mergedClassName || undefined} style={mergedStyle}>
         {children}
       </div>
     </FocusProvider>

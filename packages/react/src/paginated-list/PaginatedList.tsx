@@ -1,4 +1,12 @@
-import { useState, useRef, useEffect, useCallback, useMemo, type ReactNode, type CSSProperties } from 'react';
+import {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+  type ReactNode,
+  type CSSProperties,
+} from 'react';
 import { PaginatedListBehavior } from '@navix/core';
 import type { FocusNode, PaginatedListOrientation } from '@navix/core';
 import { useFocusable } from '../useFocusable';
@@ -34,6 +42,7 @@ export function PaginatedList<T>({
   onBlurred,
   onRegister,
   onUnregister,
+  onEvent,
   outerStyle: outerStyleProp,
   outerClassName,
   innerStyle: innerStyleProp,
@@ -47,8 +56,15 @@ export function PaginatedList<T>({
 
   const { node, FocusProvider } = useFocusable(
     fKey,
-    { onFocus, onBlurred, onRegister, onUnregister },
-    (n: FocusNode) => new PaginatedListBehavior(n, orientation, items.length, visibleCount, threshold),
+    { onFocus, onBlurred, onRegister, onUnregister, onEvent },
+    (n: FocusNode) =>
+      new PaginatedListBehavior(
+        n,
+        orientation,
+        items.length,
+        visibleCount,
+        threshold,
+      ),
   );
 
   const behavior = node.behavior as PaginatedListBehavior;
@@ -71,12 +87,15 @@ export function PaginatedList<T>({
 
   const isHorizontal = orientation === 'horizontal';
 
-  const measureRef = useCallback((el: HTMLDivElement | null) => {
-    outerRef.current = el;
-    if (el) {
-      setContainerSize(isHorizontal ? el.offsetWidth : el.offsetHeight);
-    }
-  }, [isHorizontal]);
+  const measureRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      outerRef.current = el;
+      if (el) {
+        setContainerSize(isHorizontal ? el.offsetWidth : el.offsetHeight);
+      }
+    },
+    [isHorizontal],
+  );
 
   useEffect(() => {
     const el = outerRef.current;
@@ -85,14 +104,17 @@ export function PaginatedList<T>({
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (!entry) return;
-      setContainerSize(isHorizontal ? entry.contentRect.width : entry.contentRect.height);
+      setContainerSize(
+        isHorizontal ? entry.contentRect.width : entry.contentRect.height,
+      );
     });
     observer.observe(el);
     return () => observer.disconnect();
   }, [isHorizontal]);
 
   const totalGap = (visibleCount - 1) * gap;
-  const slotWidth = containerSize > 0 ? (containerSize - totalGap) / visibleCount : 0;
+  const slotWidth =
+    containerSize > 0 ? (containerSize - totalGap) / visibleCount : 0;
   const step = slotWidth + gap;
   const translate = -viewOffset * step;
 

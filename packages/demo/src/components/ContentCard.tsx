@@ -121,7 +121,16 @@ export function ContentCard({ fKey, item, onPlay }: ContentCardProps) {
                 <div style={{ display: 'flex' }}>
                   <Button
                     fKey={`${fKey}-play`}
-                    style={{ flex: 1, padding: '8px 4px', textAlign: 'center', fontSize: 11, fontWeight: 600, background: '#1a2a3a', color: '#aaa', transition: 'all 0.15s' }}
+                    style={{
+                      flex: 1,
+                      padding: '8px 4px',
+                      textAlign: 'center',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      background: '#1a2a3a',
+                      color: '#aaa',
+                      transition: 'all 0.15s',
+                    }}
                     focusedStyle={{ background: '#4fc3f7', color: '#000' }}
                     onClick={() => {
                       setPosterColor(COLOR_PLAY);
@@ -132,7 +141,16 @@ export function ContentCard({ fKey, item, onPlay }: ContentCardProps) {
                   </Button>
                   <Button
                     fKey={`${fKey}-info`}
-                    style={{ flex: 1, padding: '8px 4px', textAlign: 'center', fontSize: 11, fontWeight: 600, background: '#1a2a3a', color: '#aaa', transition: 'all 0.15s' }}
+                    style={{
+                      flex: 1,
+                      padding: '8px 4px',
+                      textAlign: 'center',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      background: '#1a2a3a',
+                      color: '#aaa',
+                      transition: 'all 0.15s',
+                    }}
                     focusedStyle={{ background: '#4fc3f7', color: '#000' }}
                     onClick={() => {
                       setPosterColor(COLOR_INFO);

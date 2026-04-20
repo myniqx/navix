@@ -8,6 +8,11 @@ export const DEFAULT_INPUT_CONFIG: InputConfig = {
     down: { keys: ['ArrowDown'] },
     enter: { keys: ['Enter'], longpress: true, longpressMs: 500 },
     back: { keys: ['Escape'] },
+    play: { keys: ['MediaPlay'] },
+    pause: { keys: ['MediaPause'] },
+    playpause: { keys: ['MediaPlayPause', 'Space'] },
+    programup: { keys: ['PageUp'] },
+    programdown: { keys: ['PageDown'] },
   },
 };
 

@@ -172,14 +172,15 @@ export class FocusNode {
     const newFocused = pathSet.has(this);
     const newDirectly = newFocused && path[path.length - 1] === this;
 
-    if (this.isFocused !== newFocused || this.isDirectlyFocused !== newDirectly) {
+    if (
+      this.isFocused !== newFocused ||
+      this.isDirectlyFocused !== newDirectly
+    ) {
       this.isFocused = newFocused;
       if (this.isDirectlyFocused !== newDirectly) {
         this.isDirectlyFocused = newDirectly;
-        if (newDirectly)
-          this.behavior?.onFocus?.(this)
-        else
-          this.behavior?.onBlurred?.(this)
+        if (newDirectly) this.behavior?.onFocus?.(this);
+        else this.behavior?.onBlurred?.(this);
       }
       toNotify.push(this);
     }
@@ -196,7 +197,7 @@ export class FocusNode {
       this.isFocused = false;
       if (this.isDirectlyFocused) {
         this.isDirectlyFocused = false;
-        this.behavior?.onBlurred?.(this)
+        this.behavior?.onBlurred?.(this);
       }
       this.notify();
     }
@@ -249,7 +250,6 @@ export class FocusNode {
     }
     return false;
   }
-
 
   destroy(): void {
     if (this.parent) {

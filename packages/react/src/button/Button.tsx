@@ -51,13 +51,18 @@ export function Button({
   onBlurred,
   onRegister,
   onUnregister,
+  onEvent,
   style,
   focusedStyle,
   className,
   focusedClassName,
   children,
   ...rest
-}: ButtonProps & Omit<React.HTMLAttributes<HTMLDivElement>, 'onClick' | 'style' | 'children' | 'className' | 'onFocus'>) {
+}: ButtonProps &
+  Omit<
+    React.HTMLAttributes<HTMLDivElement>,
+    'onClick' | 'style' | 'children' | 'className' | 'onFocus'
+  >) {
   const onClickRef = useRef(onClick);
   const onLongPressRef = useRef(onLongPress);
   const onDoublePressRef = useRef(onDoublePress);
@@ -67,12 +72,13 @@ export function Button({
 
   const { directlyFocused, focusSelf } = useFocusable(
     fKey,
-    { onFocus, onBlurred, onRegister, onUnregister },
-    (node: FocusNode) => new ButtonBehavior(node, {
-      onPress: () => onClickRef.current?.(),
-      onLongPress: () => onLongPressRef.current?.(),
-      onDoublePress: () => onDoublePressRef.current?.(),
-    }),
+    { onFocus, onBlurred, onRegister, onUnregister, onEvent },
+    (node: FocusNode) =>
+      new ButtonBehavior(node, {
+        onPress: () => onClickRef.current?.(),
+        onLongPress: () => onLongPressRef.current?.(),
+        onDoublePress: () => onDoublePressRef.current?.(),
+      }),
   );
 
   const mergedStyle: React.CSSProperties = {
@@ -82,11 +88,15 @@ export function Button({
     ...(directlyFocused ? focusedStyle : undefined),
   };
 
-  const mergedClassName = mergeClassName(className, directlyFocused ? focusedClassName : undefined);
+  const mergedClassName = mergeClassName(
+    className,
+    directlyFocused ? focusedClassName : undefined,
+  );
 
-  const rendered = typeof children === 'function'
-    ? (children as ButtonRenderFn)({ focused: directlyFocused })
-    : children;
+  const rendered =
+    typeof children === 'function'
+      ? (children as ButtonRenderFn)({ focused: directlyFocused })
+      : children;
 
   return (
     <div
@@ -95,7 +105,10 @@ export function Button({
       style={mergedStyle}
       className={mergedClassName || undefined}
       onMouseEnter={focusSelf}
-      onClick={(e) => { e.stopPropagation(); onClickRef.current?.(); }}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClickRef.current?.();
+      }}
     >
       {rendered}
     </div>

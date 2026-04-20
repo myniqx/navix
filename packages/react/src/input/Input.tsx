@@ -1,4 +1,10 @@
-import { useState, useEffect, useRef, type ReactNode, type CSSProperties } from 'react';
+import {
+  useState,
+  useEffect,
+  useRef,
+  type ReactNode,
+  type CSSProperties,
+} from 'react';
 import { InputBehavior } from '@navix/core';
 import type { FocusNode } from '@navix/core';
 import { useFocusable } from '../useFocusable';
@@ -33,6 +39,7 @@ export function Input({
   onBlurred,
   onRegister,
   onUnregister,
+  onEvent,
   value,
   onChange,
   style,
@@ -48,7 +55,7 @@ export function Input({
 
   const { focused, focusSelf, FocusProvider, node } = useFocusable(
     fKey,
-    { onFocus, onBlurred, onRegister, onUnregister },
+    { onFocus, onBlurred, onRegister, onUnregister, onEvent },
     (n: FocusNode) => new InputBehavior(n),
   );
 
@@ -77,7 +84,13 @@ export function Input({
     isEditing ? editingClassName : undefined,
   );
 
-  const renderProps: InputRenderProps = { value, focused, editing: isEditing, inputRef, stopEditing };
+  const renderProps: InputRenderProps = {
+    value,
+    focused,
+    editing: isEditing,
+    inputRef,
+    stopEditing,
+  };
 
   return (
     <FocusProvider>
@@ -85,18 +98,19 @@ export function Input({
         style={mergedStyle}
         className={mergedClassName || undefined}
         onMouseEnter={focusSelf}
-        onClick={() => { if (!isEditing) behavior.startEditing(); }}
+        onClick={() => {
+          if (!isEditing) behavior.startEditing();
+        }}
       >
-        {children
-          ? children(renderProps)
-          : (
-            <input
-              ref={inputRef}
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-            />
-          )
-        }
+        {children ? (
+          children(renderProps)
+        ) : (
+          <input
+            ref={inputRef}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+          />
+        )}
       </div>
     </FocusProvider>
   );

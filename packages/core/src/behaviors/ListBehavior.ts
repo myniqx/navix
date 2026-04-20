@@ -9,7 +9,7 @@ export class ListBehavior implements IFocusNodeBehavior {
 
   constructor(
     private node: FocusNode,
-    orientation: ListOrientation
+    orientation: ListOrientation,
   ) {
     this.prev = orientation === 'horizontal' ? 'left' : 'up';
     this.next = orientation === 'horizontal' ? 'right' : 'down';

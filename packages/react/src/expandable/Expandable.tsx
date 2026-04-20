@@ -51,14 +51,23 @@ interface ExpandableProps extends BaseComponentProps {
  *   Collapsed: enter → expands. All other events bubble to parent.
  *   Expanded:  back → collapses. All other events route to active children first.
  */
-export function Expandable({ fKey, onFocus, onBlurred, onRegister, onUnregister, children }: ExpandableProps) {
+export function Expandable({
+  fKey,
+  onFocus,
+  onBlurred,
+  onRegister,
+  onUnregister,
+  onEvent,
+  children,
+}: ExpandableProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const { focused, directlyFocused, focusSelf, FocusProvider, node } = useFocusable(
-    fKey,
-    { onFocus, onBlurred, onRegister, onUnregister },
-    (n: FocusNode) => new ExpandableBehavior(n),
-  );
+  const { focused, directlyFocused, focusSelf, FocusProvider, node } =
+    useFocusable(
+      fKey,
+      { onFocus, onBlurred, onRegister, onUnregister, onEvent },
+      (n: FocusNode) => new ExpandableBehavior(n),
+    );
 
   const behavior = node.behavior as ExpandableBehavior;
   behavior.onChange = setIsExpanded;
@@ -79,7 +88,13 @@ export function Expandable({ fKey, onFocus, onBlurred, onRegister, onUnregister,
     <ExpandableContext.Provider value={contextValue}>
       <FocusProvider>
         {/* Mouse click mirrors keyboard enter — only expands, never collapses (expanded children handle their own click area) */}
-        <div style={{ display: 'contents' }} onMouseEnter={focusSelf} onClick={() => { if (!isExpanded) expand(); }}>
+        <div
+          style={{ display: 'contents' }}
+          onMouseEnter={focusSelf}
+          onClick={() => {
+            if (!isExpanded) expand();
+          }}
+        >
           {children(renderProps)}
         </div>
       </FocusProvider>

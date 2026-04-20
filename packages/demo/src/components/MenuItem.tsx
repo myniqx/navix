@@ -26,15 +26,19 @@ export function MenuItem({ fKey, label, onClick }: MenuItemProps) {
   const onPressRef = useRef(onClick);
   onPressRef.current = onClick;
 
-  const { directlyFocused, focusSelf, FocusProvider } = useFocusable(fKey, {}, () => ({
-    onEvent: (e: NavEvent) => {
-      if (e.action === 'enter' && e.type === 'press') {
-        onPressRef.current();
-        return true;
-      }
-      return false;
-    },
-  }));
+  const { directlyFocused, focusSelf, FocusProvider } = useFocusable(
+    fKey,
+    {},
+    () => ({
+      onEvent: (e: NavEvent) => {
+        if (e.action === 'enter' && e.type === 'press') {
+          onPressRef.current();
+          return true;
+        }
+        return false;
+      },
+    }),
+  );
 
   return (
     <FocusProvider>
@@ -47,7 +51,9 @@ export function MenuItem({ fKey, label, onClick }: MenuItemProps) {
           fontWeight: 600,
           letterSpacing: '0.05em',
           color: directlyFocused ? '#fff' : '#888',
-          borderBottom: directlyFocused ? '2px solid #4fc3f7' : '2px solid transparent',
+          borderBottom: directlyFocused
+            ? '2px solid #4fc3f7'
+            : '2px solid transparent',
           transition: 'all 0.15s',
           cursor: 'pointer',
           userSelect: 'none',

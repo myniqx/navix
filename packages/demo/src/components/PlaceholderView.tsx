@@ -16,18 +16,22 @@ interface PlaceholderViewProps {
 
 export function PlaceholderView({ label }: PlaceholderViewProps) {
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flex: 1,
-      gap: 12,
-      padding: '80px 32px',
-      color: '#333',
-    }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flex: 1,
+        gap: 12,
+        padding: '80px 32px',
+        color: '#333',
+      }}
+    >
       <div style={{ fontSize: 48 }}>◻</div>
-      <div style={{ fontSize: 18, fontWeight: 700, color: '#444' }}>{label}</div>
+      <div style={{ fontSize: 18, fontWeight: 700, color: '#444' }}>
+        {label}
+      </div>
       <div style={{ fontSize: 13, color: '#333' }}>Content coming soon</div>
     </div>
   );

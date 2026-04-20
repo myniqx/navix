@@ -63,7 +63,7 @@ export class ExpandableBehavior implements IFocusNodeBehavior {
   };
 
   onUnregister(): void {
-    this.isExpanded = false
+    this.isExpanded = false;
   }
 
   expand(): void {

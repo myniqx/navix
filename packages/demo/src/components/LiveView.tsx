@@ -27,14 +27,16 @@ interface LiveViewProps {
 export function LiveView({ onPlay }: LiveViewProps) {
   return (
     <div style={{ padding: '24px 32px 0' }}>
-      <div style={{
-        fontSize: 13,
-        fontWeight: 700,
-        letterSpacing: '0.1em',
-        textTransform: 'uppercase',
-        color: '#4fc3f7',
-        marginBottom: 14,
-      }}>
+      <div
+        style={{
+          fontSize: 13,
+          fontWeight: 700,
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+          color: '#4fc3f7',
+          marginBottom: 14,
+        }}
+      >
         Live Stream
       </div>
 
@@ -44,13 +46,15 @@ export function LiveView({ onPlay }: LiveViewProps) {
         children array, left/right moves by 1.
       */}
       <Grid fKey="live-grid" columns={COLUMNS}>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: `repeat(${COLUMNS}, 1fr)`,
-          gap: '16px',
-          overflow: 'visible',
-          padding: '12px 4px',
-        }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: `repeat(${COLUMNS}, 1fr)`,
+            gap: '16px',
+            overflow: 'visible',
+            padding: '12px 4px',
+          }}
+        >
           {LIVE_GRID.map((item) => (
             <ContentCard
               key={item.id}
