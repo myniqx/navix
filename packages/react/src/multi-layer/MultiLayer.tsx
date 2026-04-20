@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { MultiLayerBehavior } from '@navix/core';
 import type { MultiLayerPanelId } from '@navix/core';
 import type { FocusNode } from '@navix/core';
-import { useFocusable } from '../useFocusable';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
+
 import type { BaseComponentProps } from '../types';
+import { useFocusable } from '../useFocusable';
 
 export type { MultiLayerPanelId };
 

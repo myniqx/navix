@@ -1,5 +1,3 @@
-import { useState } from 'react';
-import { createPortal } from 'react-dom';
 import {
   VerticalList,
   HorizontalList,
@@ -8,6 +6,9 @@ import {
   Switch,
   Input,
 } from '@navix/react';
+import { useState } from 'react';
+import { createPortal } from 'react-dom';
+
 import { OPTIONS_CONFIG } from '../data';
 import type { OptionsState, OptionKey } from '../data';
 

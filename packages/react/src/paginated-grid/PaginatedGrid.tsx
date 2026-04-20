@@ -1,3 +1,5 @@
+import { PaginatedGridBehavior } from '@navix/core';
+import type { FocusNode, PaginatedGridOrientation } from '@navix/core';
 import {
   useState,
   useRef,
@@ -7,11 +9,10 @@ import {
   type ReactNode,
   type CSSProperties,
 } from 'react';
-import { PaginatedGridBehavior } from '@navix/core';
-import type { FocusNode, PaginatedGridOrientation } from '@navix/core';
-import { useFocusable } from '../useFocusable';
+
 import { mergeClassName } from '../mergeClassName';
 import type { BaseComponentProps } from '../types';
+import { useFocusable } from '../useFocusable';
 
 interface PaginatedGridProps<T> extends BaseComponentProps {
   orientation?: PaginatedGridOrientation;

@@ -14,6 +14,7 @@
  */
 
 import { HorizontalList } from '@navix/react';
+
 import type { ContentItem } from '../data';
 import { ContentCard } from './ContentCard';
 

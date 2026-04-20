@@ -22,8 +22,9 @@
  *   onPress — called when the user confirms Play.
  */
 
-import { useState } from 'react';
 import { HorizontalList, Expandable, Button } from '@navix/react';
+import { useState } from 'react';
+
 import type { ContentItem } from '../data';
 
 // Accent colors applied to the poster when an action is triggered

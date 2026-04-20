@@ -12,9 +12,9 @@
  *   onPress — called when the user confirms with Enter.
  */
 
-import { useRef } from 'react';
-import { useFocusable } from '@navix/react';
 import type { NavEvent } from '@navix/core';
+import { useFocusable } from '@navix/react';
+import { useRef } from 'react';
 
 interface MenuItemProps {
   fKey: string;

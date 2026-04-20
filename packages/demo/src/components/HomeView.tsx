@@ -1,6 +1,7 @@
-import { useState, useRef } from 'react';
 import { PaginatedList, MultiLayer, VerticalList, Button } from '@navix/react';
 import type { MultiLayerPanelProps } from '@navix/react';
+import { useState, useRef } from 'react';
+
 import { HOME_ROWS } from '../data';
 import type { ContentItem, HomeRowCardType } from '../data';
 import { MediaCard } from './MediaCard';

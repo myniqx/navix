@@ -1,10 +1,11 @@
-import { useRef, type ReactNode } from 'react';
-import type React from 'react';
 import { ButtonBehavior } from '@navix/core';
 import type { FocusNode } from '@navix/core';
-import { useFocusable } from '../useFocusable';
+import { useRef, type ReactNode } from 'react';
+import type React from 'react';
+
 import { mergeClassName } from '../mergeClassName';
 import type { BaseComponentProps } from '../types';
+import { useFocusable } from '../useFocusable';
 
 type ButtonRenderFn = (props: { focused: boolean }) => ReactNode;
 

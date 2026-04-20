@@ -1,10 +1,11 @@
-import { useRef, type ReactNode, type CSSProperties } from 'react';
 import { ButtonBehavior } from '@navix/core';
 import type { FocusNode } from '@navix/core';
-import { useFocusable } from '../useFocusable';
+import { useRef, type ReactNode, type CSSProperties } from 'react';
+
 import { Expandable } from '../expandable/Expandable';
 import { PaginatedList } from '../paginated-list/PaginatedList';
 import type { BaseComponentProps } from '../types';
+import { useFocusable } from '../useFocusable';
 
 export interface DropdownOption {
   label: string;

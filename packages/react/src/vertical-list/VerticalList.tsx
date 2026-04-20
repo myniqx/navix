@@ -1,10 +1,11 @@
-import { type ReactNode } from 'react';
 import { ListBehavior } from '@navix/core';
 import type { FocusNode } from '@navix/core';
-import { useFocusable } from '../useFocusable';
+import { type ReactNode } from 'react';
+import type React from 'react';
+
 import { mergeClassName } from '../mergeClassName';
 import type { BaseComponentProps } from '../types';
-import type React from 'react';
+import { useFocusable } from '../useFocusable';
 
 interface VerticalListProps extends BaseComponentProps {
   children: ReactNode;

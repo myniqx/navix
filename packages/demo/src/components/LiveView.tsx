@@ -14,6 +14,7 @@
  */
 
 import { Grid } from '@navix/react';
+
 import { LIVE_GRID } from '../data';
 import type { ContentItem } from '../data';
 import { ContentCard } from './ContentCard';

@@ -1,9 +1,10 @@
-import { useState, type ReactNode } from 'react';
 import { ExpandableBehavior } from '@navix/core';
 import type { FocusNode } from '@navix/core';
+import { useState, type ReactNode } from 'react';
+
+import type { BaseComponentProps } from '../types';
 import { useFocusable } from '../useFocusable';
 import { ExpandableContext } from './ExpandableContext';
-import type { BaseComponentProps } from '../types';
 
 /**
  * Values passed to the render prop child function.

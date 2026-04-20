@@ -1,3 +1,5 @@
+import { PaginatedListBehavior } from '@navix/core';
+import type { FocusNode, PaginatedListOrientation } from '@navix/core';
 import {
   useState,
   useRef,
@@ -7,11 +9,10 @@ import {
   type ReactNode,
   type CSSProperties,
 } from 'react';
-import { PaginatedListBehavior } from '@navix/core';
-import type { FocusNode, PaginatedListOrientation } from '@navix/core';
-import { useFocusable } from '../useFocusable';
+
 import { mergeClassName } from '../mergeClassName';
 import type { BaseComponentProps } from '../types';
+import { useFocusable } from '../useFocusable';
 
 interface PaginatedListProps<T> extends BaseComponentProps {
   orientation?: PaginatedListOrientation;

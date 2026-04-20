@@ -1,6 +1,7 @@
-import { useState, useRef } from 'react';
-import { useFocusable } from '@navix/react';
 import type { NavEvent } from '@navix/core';
+import { useFocusable } from '@navix/react';
+import { useState, useRef } from 'react';
+
 import type { ContentItem } from '../data';
 
 type CardVariant = 'movie' | 'live' | 'series';

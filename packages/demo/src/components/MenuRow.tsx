@@ -11,8 +11,9 @@
  *   onSelect — called with the label string when the user presses Enter on an item.
  */
 
-import { useState } from 'react';
 import { HorizontalList, Expandable } from '@navix/react';
+import { useState } from 'react';
+
 import { MENU_ITEMS, DEFAULT_OPTIONS } from '../data';
 import type { OptionsState } from '../data';
 import { MenuItem } from './MenuItem';

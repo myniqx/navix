@@ -20,15 +20,16 @@
  * no manual focus management needed.
  */
 
-import { useState } from 'react';
 import { FocusRoot, VerticalList } from '@navix/react';
-import type { ContentItem } from './data';
-import { MenuRow } from './components/MenuRow';
+import { useState } from 'react';
+
+import { EventLog } from './components/EventLog';
 import { HomeView } from './components/HomeView';
+import { LiveView } from './components/LiveView';
+import { MenuRow } from './components/MenuRow';
 import { MovieView } from './components/MovieView';
 import { SeriesView } from './components/SeriesView';
-import { LiveView } from './components/LiveView';
-import { EventLog } from './components/EventLog';
+import type { ContentItem } from './data';
 
 // Maps each menu label to its tab key for strict typing
 type TabKey = 'Home' | 'Movie' | 'Series' | 'Live';

@@ -1,4 +1,5 @@
 import { PaginatedGrid } from '@navix/react';
+
 import { MOVIE_CHANNELS } from '../data';
 import { MediaCard } from './MediaCard';
 

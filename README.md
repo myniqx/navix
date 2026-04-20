@@ -39,39 +39,39 @@ Navix manages keyboard-driven focus across a tree of components — the same mod
 
 All navigation logic lives here.
 
-| Export | Description |
-|---|---|
-| `FocusNode` | One node in the focus tree. Every focusable element is a node. |
-| `FocusTree` | Root node + InputManager wired together. |
-| `InputManager` | Maps `KeyboardEvent.code` values to named actions. Detects longpress and doublepress via timers. |
-| `ListBehavior` | Attaches left/right (horizontal) or up/down (vertical) navigation to a node. Stops at boundaries. |
-| `GridBehavior` | Attaches 4-direction navigation with column-based row wrapping. Stops at row boundaries on left/right. |
-| `ButtonBehavior` | Handles enter/longpress/doublepress on a leaf node. |
-| `ExpandableBehavior` | Two-state container (collapsed/expanded). Traps focus when expanded. Expanding one node collapses all others, except ancestors on the active path. |
-| `InputBehavior` | Two-state leaf (idle/editing). Enter starts editing, Enter/back stops editing. Traps focus while editing. |
-| `PaginatedListBehavior` | Index-based 1D pagination. Tracks `activeIndex` and `viewOffset` independently of DOM children. Notifies React via `onChange` when either changes. |
-| `PaginatedGridBehavior` | Index-based 2D pagination. Supports horizontal (column-major) and vertical (row-major) orientation. |
-| `IFocusNodeBehavior` | Interface all behaviors implement. Lifecycle hooks: `onRegister`, `onUnregister`, `onChildRegistered`, `onChildUnregistered`, `onFocus`, `onBlurred`, `collapse`, `expand`. |
+| Export                  | Description                                                                                                                                                                 |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FocusNode`             | One node in the focus tree. Every focusable element is a node.                                                                                                              |
+| `FocusTree`             | Root node + InputManager wired together.                                                                                                                                    |
+| `InputManager`          | Maps `KeyboardEvent.code` values to named actions. Detects longpress and doublepress via timers.                                                                            |
+| `ListBehavior`          | Attaches left/right (horizontal) or up/down (vertical) navigation to a node. Stops at boundaries.                                                                           |
+| `GridBehavior`          | Attaches 4-direction navigation with column-based row wrapping. Stops at row boundaries on left/right.                                                                      |
+| `ButtonBehavior`        | Handles enter/longpress/doublepress on a leaf node.                                                                                                                         |
+| `ExpandableBehavior`    | Two-state container (collapsed/expanded). Traps focus when expanded. Expanding one node collapses all others, except ancestors on the active path.                          |
+| `InputBehavior`         | Two-state leaf (idle/editing). Enter starts editing, Enter/back stops editing. Traps focus while editing.                                                                   |
+| `PaginatedListBehavior` | Index-based 1D pagination. Tracks `activeIndex` and `viewOffset` independently of DOM children. Notifies React via `onChange` when either changes.                          |
+| `PaginatedGridBehavior` | Index-based 2D pagination. Supports horizontal (column-major) and vertical (row-major) orientation.                                                                         |
+| `IFocusNodeBehavior`    | Interface all behaviors implement. Lifecycle hooks: `onRegister`, `onUnregister`, `onChildRegistered`, `onChildUnregistered`, `onFocus`, `onBlurred`, `collapse`, `expand`. |
 
 ### `@navix/react`
 
 React 18+ adapter. Peer dependency on `react` and `react-dom`.
 
-| Export | Description |
-|---|---|
-| `FocusRoot` | Creates the `FocusTree`, attaches `keydown`/`keyup` listeners to `document`, provides root node via context. |
-| `useFocusable(key, callbacks?, createBehavior?)` | Hook. Creates a `FocusNode`, registers it with the nearest parent, returns `focused`, `directlyFocused`, `focusSelf`, `FocusProvider`. Accepts lifecycle callbacks and an optional behavior factory. |
-| `HorizontalList` | Node + `ListBehavior('horizontal')`. Accepts `className`, `focusedClassName`, `style`, `focusedStyle` — renders a wrapper div only when any of these are provided. |
-| `VerticalList` | Node + `ListBehavior('vertical')`. Accepts `className`, `focusedClassName`, `style`, `focusedStyle` — renders a wrapper div only when any of these are provided. |
-| `Grid` | Node + `GridBehavior(columns)`. Syncs `columns` prop on every render. Accepts `className`, `focusedClassName`, `style`, `focusedStyle`. |
-| `Button` | Leaf node. Handles enter events. Supports `onClick`, `onLongPress`, `onDoublePress`, `style`, `focusedStyle`, `className`, `focusedClassName`, and render prop children `({ focused }) => ReactNode`. |
-| `Switch` | Controlled boolean toggle built on `Button`. Render prop `(checked, focused) => ReactNode`. Exposes `checked` and `onChange`. No click/press callbacks. |
-| `Input` | Leaf node + `InputBehavior`. Two-state: idle (navigable) and editing (focus trapped, nav events swallowed). Enter starts editing, Enter/back stops editing. Supports `style`, `focusedStyle`, `editingStyle`, `className`, `focusedClassName`, `editingClassName`. Render prop `({ value, focused, editing, inputRef, stopEditing }) => ReactNode` — omit for a default `<input>`. |
-| `Expandable` | Node + `ExpandableBehavior`. Render prop exposes `isExpanded`, `focused`, `directlyFocused`, `expand`, `collapse`. |
-| `Dropdown` | Node + `ExpandableBehavior`. Render prop exposes `isExpanded`, `focused`, `directlyFocused`, `collapse`. Supports single/multi-select, custom trigger and option renderers, top/bottom position. |
-| `PaginatedList` | Virtualized 1D list with sliding window pagination. Items are rendered only within the visible window + buffer. Accepts `outerClassName`, `innerClassName`, `slotClassName`. |
-| `PaginatedGrid` | Virtualized 2D grid with sliding window pagination. Supports horizontal (column-major) and vertical (row-major) orientation. Accepts `outerClassName`, `innerClassName`, `slotClassName`. |
-| `BaseComponentProps` | Shared interface all components extend: `fKey`, `onFocus`, `onBlurred`, `onRegister`, `onUnregister`. |
+| Export                                           | Description                                                                                                                                                                                                                                                                                                                                                                        |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FocusRoot`                                      | Creates the `FocusTree`, attaches `keydown`/`keyup` listeners to `document`, provides root node via context.                                                                                                                                                                                                                                                                       |
+| `useFocusable(key, callbacks?, createBehavior?)` | Hook. Creates a `FocusNode`, registers it with the nearest parent, returns `focused`, `directlyFocused`, `focusSelf`, `FocusProvider`. Accepts lifecycle callbacks and an optional behavior factory.                                                                                                                                                                               |
+| `HorizontalList`                                 | Node + `ListBehavior('horizontal')`. Accepts `className`, `focusedClassName`, `style`, `focusedStyle` — renders a wrapper div only when any of these are provided.                                                                                                                                                                                                                 |
+| `VerticalList`                                   | Node + `ListBehavior('vertical')`. Accepts `className`, `focusedClassName`, `style`, `focusedStyle` — renders a wrapper div only when any of these are provided.                                                                                                                                                                                                                   |
+| `Grid`                                           | Node + `GridBehavior(columns)`. Syncs `columns` prop on every render. Accepts `className`, `focusedClassName`, `style`, `focusedStyle`.                                                                                                                                                                                                                                            |
+| `Button`                                         | Leaf node. Handles enter events. Supports `onClick`, `onLongPress`, `onDoublePress`, `style`, `focusedStyle`, `className`, `focusedClassName`, and render prop children `({ focused }) => ReactNode`.                                                                                                                                                                              |
+| `Switch`                                         | Controlled boolean toggle built on `Button`. Render prop `(checked, focused) => ReactNode`. Exposes `checked` and `onChange`. No click/press callbacks.                                                                                                                                                                                                                            |
+| `Input`                                          | Leaf node + `InputBehavior`. Two-state: idle (navigable) and editing (focus trapped, nav events swallowed). Enter starts editing, Enter/back stops editing. Supports `style`, `focusedStyle`, `editingStyle`, `className`, `focusedClassName`, `editingClassName`. Render prop `({ value, focused, editing, inputRef, stopEditing }) => ReactNode` — omit for a default `<input>`. |
+| `Expandable`                                     | Node + `ExpandableBehavior`. Render prop exposes `isExpanded`, `focused`, `directlyFocused`, `expand`, `collapse`.                                                                                                                                                                                                                                                                 |
+| `Dropdown`                                       | Node + `ExpandableBehavior`. Render prop exposes `isExpanded`, `focused`, `directlyFocused`, `collapse`. Supports single/multi-select, custom trigger and option renderers, top/bottom position.                                                                                                                                                                                   |
+| `PaginatedList`                                  | Virtualized 1D list with sliding window pagination. Items are rendered only within the visible window + buffer. Accepts `outerClassName`, `innerClassName`, `slotClassName`.                                                                                                                                                                                                       |
+| `PaginatedGrid`                                  | Virtualized 2D grid with sliding window pagination. Supports horizontal (column-major) and vertical (row-major) orientation. Accepts `outerClassName`, `innerClassName`, `slotClassName`.                                                                                                                                                                                          |
+| `BaseComponentProps`                             | Shared interface all components extend: `fKey`, `onFocus`, `onBlurred`, `onRegister`, `onUnregister`.                                                                                                                                                                                                                                                                              |
 
 ---
 
@@ -113,47 +113,60 @@ A deeply nested button consumes `enter`, while `left`/`right` fall through to th
 
 ```ts
 interface NavEvent {
-  action: string;   // 'left' | 'right' | 'up' | 'down' | 'enter' | 'back' | custom
+  action: string; // 'left' | 'right' | 'up' | 'down' | 'enter' | 'back' | custom
   type: 'press' | 'longpress' | 'doublepress';
 }
 ```
 
 Default key mappings:
 
-| Action | Keys |
-|---|---|
-| `left` | `ArrowLeft` |
-| `right` | `ArrowRight` |
-| `up` | `ArrowUp` |
-| `down` | `ArrowDown` |
+| Action  | Keys                            |
+| ------- | ------------------------------- |
+| `left`  | `ArrowLeft`                     |
+| `right` | `ArrowRight`                    |
+| `up`    | `ArrowUp`                       |
+| `down`  | `ArrowDown`                     |
 | `enter` | `Enter` (longpress after 500ms) |
-| `back` | `Backspace`, `Escape` |
+| `back`  | `Backspace`, `Escape`           |
 
 ### Behaviors
 
 Behaviors implement `IFocusNodeBehavior` and wire `node.onEvent` to handle navigation logic. They contain no DOM manipulation and no rendering.
 
 ```ts
-new ListBehavior(node, 'horizontal');   // left/right between children
-new ListBehavior(node, 'vertical');     // up/down between children
-new GridBehavior(node, columns);        // 4-direction, stops at row edges
+new ListBehavior(node, 'horizontal'); // left/right between children
+new ListBehavior(node, 'vertical'); // up/down between children
+new GridBehavior(node, columns); // 4-direction, stops at row edges
 new ButtonBehavior(node, { onPress, onLongPress, onDoublePress });
-new ExpandableBehavior(node);           // enter expands, back collapses
-new InputBehavior(node);                // enter starts editing, enter/back stops editing
-new PaginatedListBehavior(node, orientation, totalCount, visibleCount, threshold);
-new PaginatedGridBehavior(node, orientation, totalCount, rows, columns, threshold);
+new ExpandableBehavior(node); // enter expands, back collapses
+new InputBehavior(node); // enter starts editing, enter/back stops editing
+new PaginatedListBehavior(
+  node,
+  orientation,
+  totalCount,
+  visibleCount,
+  threshold,
+);
+new PaginatedGridBehavior(
+  node,
+  orientation,
+  totalCount,
+  rows,
+  columns,
+  threshold,
+);
 ```
 
 All behaviors fire lifecycle hooks when core calls them:
 
-| Hook | When |
-|---|---|
-| `onRegister` | Node registered with parent |
-| `onUnregister` | Node removed from parent |
-| `onFocus` | Node became the directly focused leaf |
-| `onBlurred` | Node lost direct focus |
-| `onChildRegistered` | A child node was registered |
-| `onChildUnregistered` | A child node was unregistered |
+| Hook                  | When                                  |
+| --------------------- | ------------------------------------- |
+| `onRegister`          | Node registered with parent           |
+| `onUnregister`        | Node removed from parent              |
+| `onFocus`             | Node became the directly focused leaf |
+| `onBlurred`           | Node lost direct focus                |
+| `onChildRegistered`   | A child node was registered           |
+| `onChildUnregistered` | A child node was unregistered         |
 
 You can skip built-in behaviors entirely and return a plain object from `createBehavior` for custom navigation logic.
 
@@ -200,8 +213,12 @@ function App() {
   return (
     <FocusRoot>
       <HorizontalList fKey="row">
-        <Button fKey="play" onClick={() => console.log('Play')}>Play</Button>
-        <Button fKey="info" onClick={() => console.log('Info')}>Info</Button>
+        <Button fKey="play" onClick={() => console.log('Play')}>
+          Play
+        </Button>
+        <Button fKey="info" onClick={() => console.log('Info')}>
+          Info
+        </Button>
       </HorizontalList>
     </FocusRoot>
   );
@@ -212,7 +229,7 @@ Pass `tailwind-merge`'s `twMerge` via `mergeClassName` for conflict-free Tailwin
 
 ```tsx
 import { twMerge } from 'tailwind-merge';
-<FocusRoot mergeClassName={twMerge}>...</FocusRoot>
+<FocusRoot mergeClassName={twMerge}>...</FocusRoot>;
 ```
 
 Custom key mappings via `inputConfig`:
@@ -299,18 +316,20 @@ const [enabled, setEnabled] = useState(false);
   {(checked, focused) => (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
       <span>Notifications</span>
-      <span style={{
-        padding: '3px 12px',
-        borderRadius: 20,
-        background: checked ? '#1e3a2e' : '#1a1a2e',
-        color: checked ? '#4caf7d' : '#555',
-        outline: focused ? '1px solid #4fc3f7' : 'none',
-      }}>
+      <span
+        style={{
+          padding: '3px 12px',
+          borderRadius: 20,
+          background: checked ? '#1e3a2e' : '#1a1a2e',
+          color: checked ? '#4caf7d' : '#555',
+          outline: focused ? '1px solid #4fc3f7' : 'none',
+        }}
+      >
         {checked ? 'On' : 'Off'}
       </span>
     </div>
   )}
-</Switch>
+</Switch>;
 ```
 
 ### 6. Input
@@ -353,13 +372,32 @@ Two-state container. Enter expands, back collapses. Only one expandable can be o
 ```tsx
 <Expandable fKey="card">
   {({ isExpanded, directlyFocused, collapse }) => (
-    <div style={{ border: directlyFocused ? '2px solid #4fc3f7' : '2px solid transparent' }}>
+    <div
+      style={{
+        border: directlyFocused ? '2px solid #4fc3f7' : '2px solid transparent',
+      }}
+    >
       <div>Title</div>
       {isExpanded && (
         <HorizontalList fKey="card-actions">
           <div style={{ display: 'flex' }}>
-            <Button fKey="card-play" focusedStyle={{ background: '#4fc3f7' }} onClick={() => { play(); collapse(); }}>▶ Play</Button>
-            <Button fKey="card-info" focusedStyle={{ background: '#4fc3f7' }} onClick={collapse}>ℹ Info</Button>
+            <Button
+              fKey="card-play"
+              focusedStyle={{ background: '#4fc3f7' }}
+              onClick={() => {
+                play();
+                collapse();
+              }}
+            >
+              ▶ Play
+            </Button>
+            <Button
+              fKey="card-info"
+              focusedStyle={{ background: '#4fc3f7' }}
+              onClick={collapse}
+            >
+              ℹ Info
+            </Button>
           </div>
         </HorizontalList>
       )}
@@ -386,7 +424,7 @@ const [resolution, setResolution] = useState(['1080p']);
   onChange={setResolution}
   maxVisible={5}
   position="bottom"
-/>
+/>;
 ```
 
 ### 9. PaginatedList
@@ -396,12 +434,12 @@ Virtualized horizontal or vertical list. Only items within the visible window + 
 ```tsx
 <PaginatedList
   fKey="row"
-  orientation="horizontal"   // 'horizontal' | 'vertical', default 'horizontal'
-  items={movies}             // T[] — full item array
-  visibleCount={6}           // how many items are visible at once
-  threshold={1}              // positions from edge before window slides
-  gap={12}                   // gap between slots in px
-  buffer={2}                 // extra items rendered outside visible window
+  orientation="horizontal" // 'horizontal' | 'vertical', default 'horizontal'
+  items={movies} // T[] — full item array
+  visibleCount={6} // how many items are visible at once
+  threshold={1} // positions from edge before window slides
+  gap={12} // gap between slots in px
+  buffer={2} // extra items rendered outside visible window
   renderItem={(item, fKey) => <MovieCard fKey={fKey} item={item} />}
   outerStyle={{ padding: '12px 4px' }}
   slotStyle={{ alignItems: 'stretch' }}
@@ -415,7 +453,7 @@ Virtualized 2D grid. Pagination moves one slice at a time along the main axis.
 ```tsx
 <PaginatedGrid
   fKey="grid"
-  orientation="horizontal"   // 'horizontal': column-major | 'vertical': row-major
+  orientation="horizontal" // 'horizontal': column-major | 'vertical': row-major
   items={channels}
   rows={4}
   columns={6}
@@ -428,6 +466,7 @@ Virtualized 2D grid. Pagination moves one slice at a time along the main axis.
 ```
 
 **Horizontal orientation layout** (column-major):
+
 ```
 col 0      col 1      col 2
 [item 0]   [item 4]   [item 8]
@@ -435,6 +474,7 @@ col 0      col 1      col 2
 [item 2]   [item 6]   [item 10]
 [item 3]   [item 7]   [item 11]
 ```
+
 Left/right moves between columns (pagination axis). Up/down moves within a column (stops at edges).
 
 ### 11. Focus lifecycle callbacks
@@ -471,7 +511,10 @@ function MenuItem({ fKey, label, onPress, onFocus }) {
   );
 
   return (
-    <div onMouseEnter={focusSelf} style={{ color: directlyFocused ? '#fff' : '#888' }}>
+    <div
+      onMouseEnter={focusSelf}
+      style={{ color: directlyFocused ? '#fff' : '#888' }}
+    >
       {label}
     </div>
   );
@@ -483,7 +526,10 @@ You can also return a plain object instead of a class instance:
 ```tsx
 const { directlyFocused, focusSelf } = useFocusable(fKey, {}, () => ({
   onEvent: (e) => {
-    if (e.action === 'enter' && e.type === 'press') { onPress(); return true; }
+    if (e.action === 'enter' && e.type === 'press') {
+      onPress();
+      return true;
+    }
     return false;
   },
 }));
@@ -504,12 +550,12 @@ Opens a TV-style streaming UI at `http://localhost:5173`.
 
 Navigate with arrow keys. `Enter` to select. `Backspace` or `Escape` to go back.
 
-| Tab | Component | Description |
-|---|---|---|
-| Home | `PaginatedList` | Three paginated rows — movies, series, live channels. Each card caches a trailer on mount and plays on focus. |
-| Movie | `PaginatedGrid` | Movies in a paginated 4×6 grid with trailer preview simulation. |
-| Series | `HorizontalList` | Classic horizontal shelves. |
-| Live | `Grid` | Fixed grid of live channels. |
+| Tab     | Component                                      | Description                                                                                                            |
+| ------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Home    | `PaginatedList`                                | Three paginated rows — movies, series, live channels. Each card caches a trailer on mount and plays on focus.          |
+| Movie   | `PaginatedGrid`                                | Movies in a paginated 4×6 grid with trailer preview simulation.                                                        |
+| Series  | `HorizontalList`                               | Classic horizontal shelves.                                                                                            |
+| Live    | `Grid`                                         | Fixed grid of live channels.                                                                                           |
 | Options | `Expandable` + `Dropdown` + `Switch` + `Input` | Settings modal with persistent state. Contains dropdowns, a boolean toggle, and a text input — all keyboard navigable. |
 
 ---

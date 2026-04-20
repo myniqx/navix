@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { FocusTree } from '@navix/core';
 import type { InputConfig } from '@navix/core';
 import type { FocusNode } from '@navix/core';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+
 import { FocusContext } from './FocusContext';
 import { setMergeClassName } from './mergeClassName';
 
