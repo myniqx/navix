@@ -26,6 +26,7 @@ Navix manages keyboard-driven focus across a tree of components — the same mod
 │  HorizontalList  VerticalList       │
 │  Grid  Button  Expandable  Switch   │
 │  Input  PaginatedList  PaginatedGrid│
+│  MultiLayer                         │
 └─────────────────────────────────────┘
 ```
 
@@ -51,6 +52,7 @@ All navigation logic lives here.
 | `InputBehavior`         | Two-state leaf (idle/editing). Enter starts editing, Enter/back stops editing. Traps focus while editing.                                                                   |
 | `PaginatedListBehavior` | Index-based 1D pagination. Tracks `activeIndex` and `viewOffset` independently of DOM children. Notifies React via `onChange` when either changes.                          |
 | `PaginatedGridBehavior` | Index-based 2D pagination. Supports horizontal (column-major) and vertical (row-major) orientation.                                                                         |
+| `MultiLayerBehavior`    | Panel routing and channel navigation for video player nodes. Manages which panel is open (left/right/up/down), traps focus while a panel is active, and exposes callbacks for channel prev/next, play/pause toggle, and exit request. |
 | `IFocusNodeBehavior`    | Interface all behaviors implement. Lifecycle hooks: `onRegister`, `onUnregister`, `onChildRegistered`, `onChildUnregistered`, `onFocus`, `onBlurred`, `collapse`, `expand`. |
 
 ### `@navix/react`
@@ -71,6 +73,8 @@ React 18+ adapter. Peer dependency on `react` and `react-dom`.
 | `Dropdown`                                       | Node + `ExpandableBehavior`. Render prop exposes `isExpanded`, `focused`, `directlyFocused`, `collapse`. Supports single/multi-select, custom trigger and option renderers, top/bottom position.                                                                                                                                                                                   |
 | `PaginatedList`                                  | Virtualized 1D list with sliding window pagination. Items are rendered only within the visible window + buffer. Accepts `outerClassName`, `innerClassName`, `slotClassName`.                                                                                                                                                                                                       |
 | `PaginatedGrid`                                  | Virtualized 2D grid with sliding window pagination. Supports horizontal (column-major) and vertical (row-major) orientation. Accepts `outerClassName`, `innerClassName`, `slotClassName`.                                                                                                                                                                                          |
+| `MultiLayer`                                     | Full-screen video player shell. Renders a `baseLayer` beneath up to four directional panels (`left`, `right`, `up`, `down`). Only one panel is active at a time. Accepts `onPrev`/`onNext` for channel switching, `zapBanner` shown for 2s after channel change, `notification` for persistent or transient overlays, and `panelTimeout` to auto-close inactive panels. |
+| `MultiLayerPanelProps`                           | Props passed to each panel render function: `fKey`, `close`, `onEvent`, and all `BaseComponentProps`. |
 | `BaseComponentProps`                             | Shared interface all components extend: `fKey`, `onFocus`, `onBlurred`, `onRegister`, `onUnregister`.                                                                                                                                                                                                                                                                              |
 
 ---
@@ -494,7 +498,59 @@ Every component accepts `onFocus`, `onBlurred`, `onRegister`, `onUnregister`. Al
 </Button>
 ```
 
-### 12. Custom focusable with useFocusable
+### 13. MultiLayer
+
+Full-screen video player shell with directional panels. Each direction (`left`, `right`, `up`, `down`) optionally renders a panel — only one is open at a time. Focus is trapped inside the active panel; `back` closes it and returns focus to the base layer.
+
+Channel switching (`programup` / `programdown` keys) calls `onNext` / `onPrev`. If the callback returns `true` (meaning the channel actually changed), the `zapBanner` is shown for 2 seconds. State like the current channel and paused/playing mode lives outside `MultiLayer` — use `onEvent` or your own callbacks to manage it.
+
+```tsx
+const [player, setPlayer] = useState({ channels, current, paused: false });
+
+<MultiLayer
+  fKey="player"
+  onExitRequest={() => setPlayer(null)}
+  onNext={() => {
+    // advance channel, return true if changed
+    const next = getNextChannel();
+    if (!next) return false;
+    setPlayer((p) => ({ ...p, current: next }));
+    return true;
+  }}
+  onPrev={() => {
+    const prev = getPrevChannel();
+    if (!prev) return false;
+    setPlayer((p) => ({ ...p, current: prev }));
+    return true;
+  }}
+  onEvent={(e) => {
+    if (e.type === 'press' && (e.action === 'playpause' || e.action === 'enter')) {
+      setPlayer((p) => ({ ...p, paused: !p.paused }));
+    }
+    return false;
+  }}
+  baseLayer={() => <VideoElement src={player.current.url} paused={player.paused} />}
+  zapBanner={() => <ZapBanner channel={player.current} />}
+  notification={() => player.paused ? <PauseOverlay /> : null}
+  left={(props) => <AudioSubtitlesPanel {...props} />}
+  right={(props) => <ChannelListPanel {...props} channels={player.channels} current={player.current} />}
+  up={(props) => <NotificationsPanel {...props} />}
+  down={(props) => <ControlsPanel {...props} paused={player.paused} onToggle={() => setPlayer((p) => ({ ...p, paused: !p.paused }))} />}
+  panelTimeout={4000}
+/>
+```
+
+`panelTimeout` (default `4000` ms) auto-closes the active panel after inactivity. Any event from within a panel resets the timer. Set to a large value to disable auto-close.
+
+Panel render functions receive `MultiLayerPanelProps`:
+
+```ts
+interface MultiLayerPanelProps extends BaseComponentProps {
+  close: () => void; // close the panel programmatically
+}
+```
+
+### 14. Custom focusable with useFocusable
 
 For components that need direct access to focus state without using a built-in component.
 
@@ -552,7 +608,7 @@ Navigate with arrow keys. `Enter` to select. `Backspace` or `Escape` to go back.
 
 | Tab     | Component                                      | Description                                                                                                            |
 | ------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| Home    | `PaginatedList`                                | Three paginated rows — movies, series, live channels. Each card caches a trailer on mount and plays on focus.          |
+| Home    | `PaginatedList` + `MultiLayer`                 | Three paginated rows — movies, series, live channels. Selecting an item opens a `MultiLayer` player with left (audio/subtitles), right (channel list), up (notifications), and down (controls) panels. |
 | Movie   | `PaginatedGrid`                                | Movies in a paginated 4×6 grid with trailer preview simulation.                                                        |
 | Series  | `HorizontalList`                               | Classic horizontal shelves.                                                                                            |
 | Live    | `Grid`                                         | Fixed grid of live channels.                                                                                           |
@@ -589,6 +645,7 @@ Navigate with arrow keys. `Enter` to select. `Backspace` or `Escape` to go back.
 - [x] `onRegister` / `onUnregister` lifecycle callbacks on all components
 - [x] `Switch` — controlled boolean toggle
 - [x] `Input` — two-state text input with idle/editing modes
+- [x] `MultiLayer` — full-screen video player shell with directional panels, zap banner, and notification overlay
 - [ ] Vue 3 adapter (`@navix/vue`)
 - [ ] Solid adapter (`@navix/solid`)
 - [ ] Vanilla JS adapter (`@navix/vanilla`)
