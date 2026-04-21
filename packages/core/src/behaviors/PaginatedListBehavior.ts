@@ -25,14 +25,17 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
     this._threshold = Math.max(1, Math.min(value, this._visibleCount - 2));
   }
 
-  // Called with (newIndex, newOffset) after every navigation step.
-  // React adapter uses this to sync viewOffset state and resolve focusChild.
-  onChange: ((newIndex: number, newOffset: number) => void) | null = null;
-
   private _node: FocusNode;
   private _pendingFocusKey: string | null = null;
   private _prev: string;
   private _next: string;
+  private _onChange: (newIndex: number, newOffset: number) => void;
+
+  // Called with (newIndex, newOffset) after every navigation step.
+  // React adapter uses this to sync viewOffset state and resolve focusChild.
+  set onChange(fn: (newIndex: number, newOffset: number) => void) {
+    this._onChange = fn;
+  }
 
   constructor(
     node: FocusNode,
@@ -40,6 +43,7 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
     totalCount: number,
     visibleCount: number,
     threshold: number,
+    onChange: (newIndex: number, newOffset: number) => void,
   ) {
     this._node = node;
     this.totalCount = totalCount;
@@ -47,6 +51,7 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
     this.threshold = threshold; // setter clamps the value
     this._prev = orientation === 'horizontal' ? 'left' : 'up';
     this._next = orientation === 'horizontal' ? 'right' : 'down';
+    this._onChange = onChange;
   }
 
   onEvent = (event: NavEvent): boolean => {
@@ -74,12 +79,17 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
     }
   };
 
+  onActiveChildChanged = (child: FocusNode): void => {
+    const idx = this._node.children.findIndex((c) => c.id === child.id);
+    if (idx !== -1) this.activeIndex = idx;
+  };
+
   private _moveTo(newIndex: number): boolean {
     if (newIndex < 0 || newIndex >= this.totalCount) return false;
 
     this.activeIndex = newIndex;
     this._updateOffset();
-    this.onChange?.(this.activeIndex, this.viewOffset);
+    this._onChange(this.activeIndex, this.viewOffset);
     return true;
   }
 

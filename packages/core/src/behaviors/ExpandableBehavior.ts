@@ -30,8 +30,6 @@ export class ExpandableBehavior implements IFocusNodeBehavior {
     return this.isExpanded;
   }
 
-  // Called whenever expanded state changes. Assign from the adapter layer.
-  onChange: ((expanded: boolean) => void) | null = null;
   onChildRegistered?: ((child: FocusNode) => void) | undefined;
   onChildUnregistered?: ((child: FocusNode) => void) | undefined;
   onBlurred?: ((child: FocusNode) => void) | undefined;
@@ -39,9 +37,11 @@ export class ExpandableBehavior implements IFocusNodeBehavior {
 
   // Stored node reference so public expand() can trigger the tree walk
   private _node: FocusNode;
+  private _onChange: (expanded: boolean) => void;
 
-  constructor(node: FocusNode) {
+  constructor(node: FocusNode, onChange: (expanded: boolean) => void) {
     this._node = node;
+    this._onChange = onChange;
   }
 
   onEvent = (e: NavEvent): boolean => {
@@ -75,13 +75,13 @@ export class ExpandableBehavior implements IFocusNodeBehavior {
     // _findTrap won't block this node's own requestFocus call
     this._node.requestFocus();
     this.isExpanded = true;
-    this.onChange?.(true);
+    this._onChange(true);
   }
 
   collapse(): void {
     if (!this.isExpanded) return;
     this.isExpanded = false;
-    this.onChange?.(false);
+    this._onChange(false);
   }
 
   private _getAncestors(): Set<FocusNode> {

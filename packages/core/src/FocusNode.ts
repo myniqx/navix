@@ -124,7 +124,9 @@ export class FocusNode {
     const child = this.children.find((c) => c.id === childId);
     if (!child) return false;
 
+    const changed = this.activeChildId !== childId;
     this.activeChildId = childId;
+    if (changed) this.behavior?.onActiveChildChanged?.(child);
     this._propagateFocus();
     this.notify();
     return true;

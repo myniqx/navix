@@ -72,6 +72,7 @@ export function PaginatedGrid<T>({
         rows,
         columns,
         threshold,
+        () => {},
       ),
   );
 
@@ -80,17 +81,21 @@ export function PaginatedGrid<T>({
   const itemKeys = useMemo(() => {
     const prefix = Math.random().toString(36).slice(2);
     return items.map((_, i) => `${fKey}-${prefix}-${i}`);
-  }, [items]);
+  }, [fKey, items]);
 
-  behavior.totalCount = items.length;
-  behavior.rows = rows;
-  behavior.columns = columns;
-  behavior.threshold = threshold;
+  useEffect(() => {
+    behavior.totalCount = items.length;
+    behavior.rows = rows;
+    behavior.columns = columns;
+    behavior.threshold = threshold;
+  }, [behavior, items.length, rows, columns, threshold]);
 
-  behavior.onChange = (newIndex: number, newOffset: number) => {
-    setViewOffset(newOffset);
-    behavior.focusByKey(itemKeys[newIndex]!);
-  };
+  useEffect(() => {
+    behavior.onChange = (newIndex: number, newOffset: number) => {
+      setViewOffset(newOffset);
+      behavior.focusByKey(itemKeys[newIndex]!);
+    };
+  }, [behavior, itemKeys]);
 
   const measureRef = useCallback(
     (el: HTMLDivElement | null) => {
@@ -155,43 +160,55 @@ export function PaginatedGrid<T>({
     slices.push({ items: sliceItems });
   }
 
-  const outerStyle: CSSProperties = {
-    ...outerStyleProp,
-    overflow: 'hidden',
-    width: '100%',
-  };
+  const outerStyle = useMemo<CSSProperties>(
+    () => ({ ...outerStyleProp, overflow: 'hidden', width: '100%' }),
+    [outerStyleProp],
+  );
 
-  const mainContainerStyle: CSSProperties = {
-    ...innerStyleProp,
-    display: 'flex',
-    flexDirection: isHorizontal ? 'row' : 'column',
-    gap,
-    transform: isHorizontal
-      ? `translateX(${translate}px)`
-      : `translateY(${translate}px)`,
-    transition: 'transform 0.25s ease',
-  };
+  const mainContainerStyle = useMemo<CSSProperties>(
+    () => ({
+      ...innerStyleProp,
+      display: 'flex',
+      flexDirection: isHorizontal ? 'row' : 'column',
+      gap,
+      transform: isHorizontal
+        ? `translateX(${translate}px)`
+        : `translateY(${translate}px)`,
+      transition: 'transform 0.25s ease',
+    }),
+    [innerStyleProp, isHorizontal, gap, translate],
+  );
 
-  const spacerStyle: CSSProperties = isHorizontal
-    ? { minWidth: paddingBefore, flexShrink: 0 }
-    : { minHeight: paddingBefore, flexShrink: 0 };
+  const spacerStyle = useMemo<CSSProperties>(
+    () =>
+      isHorizontal
+        ? { minWidth: paddingBefore, flexShrink: 0 }
+        : { minHeight: paddingBefore, flexShrink: 0 },
+    [isHorizontal, paddingBefore],
+  );
 
-  const sliceStyle: CSSProperties = {
-    display: 'flex',
-    flexDirection: isHorizontal ? 'column' : 'row',
-    gap,
-    flexShrink: 0,
-    ...(isHorizontal ? { width: sliceMainSize } : { height: sliceMainSize }),
-  };
+  const sliceStyle = useMemo<CSSProperties>(
+    () => ({
+      display: 'flex',
+      flexDirection: isHorizontal ? 'column' : 'row',
+      gap,
+      flexShrink: 0,
+      ...(isHorizontal ? { width: sliceMainSize } : { height: sliceMainSize }),
+    }),
+    [isHorizontal, gap, sliceMainSize],
+  );
 
-  const slotStyle: CSSProperties = {
-    ...slotStyleProp,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-    ...(isHorizontal ? { height: slotCrossSize } : { width: slotCrossSize }),
-  };
+  const slotStyle = useMemo<CSSProperties>(
+    () => ({
+      ...slotStyleProp,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+      ...(isHorizontal ? { height: slotCrossSize } : { width: slotCrossSize }),
+    }),
+    [slotStyleProp, isHorizontal, slotCrossSize],
+  );
 
   return (
     <FocusProvider>

@@ -18,6 +18,7 @@ export interface IFocusNodeBehavior {
   readonly isTrapped?: boolean;
   onChildRegistered?: (child: FocusNode) => void;
   onChildUnregistered?: (child: FocusNode) => void;
+  onActiveChildChanged?: (child: FocusNode) => void;
   onFocus?: (child: FocusNode) => void;
   onBlurred?: (child: FocusNode) => void;
   onEvent: (event: NavEvent) => boolean;

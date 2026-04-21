@@ -4,6 +4,8 @@ import {
   useState,
   useEffect,
   useRef,
+  useMemo,
+  useCallback,
   type ReactNode,
   type CSSProperties,
 } from 'react';
@@ -57,11 +59,10 @@ export function Input({
   const { focused, focusSelf, FocusProvider, node } = useFocusable(
     fKey,
     { onFocus, onBlurred, onRegister, onUnregister, onEvent },
-    (n: FocusNode) => new InputBehavior(n),
+    (n: FocusNode) => new InputBehavior(n, setIsEditing),
   );
 
   const behavior = node.behavior as InputBehavior;
-  behavior.onChange = setIsEditing;
 
   useEffect(() => {
     if (isEditing) {
@@ -71,27 +72,34 @@ export function Input({
     }
   }, [isEditing]);
 
-  const stopEditing = () => behavior.stopEditing();
+  const stopEditing = useCallback(() => behavior.stopEditing(), [behavior]);
 
-  const mergedStyle: CSSProperties = {
-    ...style,
-    ...(focused ? focusedStyle : undefined),
-    ...(isEditing ? editingStyle : undefined),
-  };
-
-  const mergedClassName = mergeClassName(
-    className,
-    focused ? focusedClassName : undefined,
-    isEditing ? editingClassName : undefined,
+  const mergedStyle = useMemo<CSSProperties>(
+    () => ({
+      ...style,
+      ...(focused ? focusedStyle : undefined),
+      ...(isEditing ? editingStyle : undefined),
+    }),
+    [style, focusedStyle, editingStyle, focused, isEditing],
   );
 
-  const renderProps: InputRenderProps = {
-    value,
-    focused,
-    editing: isEditing,
-    inputRef,
-    stopEditing,
-  };
+  const mergedClassName = useMemo(
+    () => mergeClassName(
+      className,
+      focused ? focusedClassName : undefined,
+      isEditing ? editingClassName : undefined,
+    ),
+    [className, focusedClassName, editingClassName, focused, isEditing],
+  );
+
+  const renderProps = useMemo<InputRenderProps>(
+    () => ({ value, focused, editing: isEditing, inputRef, stopEditing }),
+    [value, focused, isEditing, stopEditing],
+  );
+
+  const handleClick = useCallback(() => {
+    if (!isEditing) behavior.startEditing();
+  }, [isEditing, behavior]);
 
   return (
     <FocusProvider>
@@ -99,9 +107,7 @@ export function Input({
         style={mergedStyle}
         className={mergedClassName || undefined}
         onMouseEnter={focusSelf}
-        onClick={() => {
-          if (!isEditing) behavior.startEditing();
-        }}
+        onClick={handleClick}
       >
         {children ? (
           children(renderProps)

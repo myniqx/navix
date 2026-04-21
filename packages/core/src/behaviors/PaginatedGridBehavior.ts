@@ -36,12 +36,15 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
     this._threshold = Math.max(1, Math.min(value, visibleSlices - 2));
   }
 
-  // Called with (newIndex, newOffset) after every navigation step.
-  // React adapter uses this to sync viewOffset state and resolve focusChild.
-  onChange: ((newIndex: number, newOffset: number) => void) | null = null;
-
   private _node: FocusNode;
   private _pendingFocusKey: string | null = null;
+  private _onChange: (newIndex: number, newOffset: number) => void;
+
+  // Called with (newIndex, newOffset) after every navigation step.
+  // React adapter uses this to sync viewOffset state and resolve focusChild.
+  set onChange(fn: (newIndex: number, newOffset: number) => void) {
+    this._onChange = fn;
+  }
 
   constructor(
     node: FocusNode,
@@ -50,6 +53,7 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
     rows: number,
     columns: number,
     threshold: number,
+    onChange: (newIndex: number, newOffset: number) => void,
   ) {
     this._node = node;
     this.orientation = orientation;
@@ -57,6 +61,7 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
     this.rows = rows;
     this.columns = columns;
     this.threshold = threshold; // setter clamps the value
+    this._onChange = onChange;
   }
 
   onEvent = (event: NavEvent): boolean => {
@@ -103,6 +108,11 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
     }
   };
 
+  onActiveChildChanged = (child: FocusNode): void => {
+    const idx = this._node.children.findIndex((c) => c.id === child.id);
+    if (idx !== -1) this.activeIndex = idx;
+  };
+
   private _moveTo(newIndex: number, axis: 'main' | 'cross'): boolean {
     if (newIndex < 0 || newIndex >= this.totalCount) return false;
 
@@ -117,7 +127,7 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
 
     this.activeIndex = newIndex;
     this._updateOffset();
-    this.onChange?.(this.activeIndex, this.viewOffset);
+    this._onChange(this.activeIndex, this.viewOffset);
     return true;
   }
 

@@ -1,6 +1,6 @@
 import { GridBehavior } from '@navix/core';
 import type { FocusNode } from '@navix/core';
-import { useRef, type ReactNode } from 'react';
+import { useEffect, useMemo, type ReactNode } from 'react';
 import type React from 'react';
 
 import { mergeClassName } from '../mergeClassName';
@@ -30,38 +30,36 @@ export function Grid({
   style,
   focusedStyle,
 }: GridProps) {
-  const behaviorRef = useRef<GridBehavior | null>(null);
-
-  const { focused, FocusProvider } = useFocusable(
+  const { focused, FocusProvider, node } = useFocusable(
     fKey,
     { onFocus, onBlurred, onRegister, onUnregister, onEvent },
-    (node: FocusNode) => {
-      behaviorRef.current = new GridBehavior(node, columns);
-      return behaviorRef.current;
-    },
+    (n: FocusNode) => new GridBehavior(n, columns),
   );
 
-  if (behaviorRef.current) {
-    behaviorRef.current.columns = columns;
-  }
+  useEffect(() => {
+    (node.behavior as GridBehavior).columns = columns;
+  }, [columns, node]);
 
   const hasWrapper = className || focusedClassName || style || focusedStyle;
 
-  if (!hasWrapper) {
-    return <FocusProvider>{children}</FocusProvider>;
-  }
-
-  const mergedClassName = mergeClassName(
-    className,
-    focused ? focusedClassName : undefined,
+  const mergedClassName = useMemo(
+    () => mergeClassName(className, focused ? focusedClassName : undefined),
+    [className, focusedClassName, focused],
   );
-  const mergedStyle = { ...style, ...(focused ? focusedStyle : undefined) };
+  const mergedStyle = useMemo(
+    () => ({ ...style, ...(focused ? focusedStyle : undefined) }),
+    [style, focusedStyle, focused],
+  );
 
   return (
     <FocusProvider>
-      <div className={mergedClassName || undefined} style={mergedStyle}>
-        {children}
-      </div>
+      {hasWrapper ? (
+        <div className={mergedClassName || undefined} style={mergedStyle}>
+          {children}
+        </div>
+      ) : (
+        children
+      )}
     </FocusProvider>
   );
 }

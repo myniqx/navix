@@ -1,6 +1,6 @@
 import { ListBehavior } from '@navix/core';
 import type { FocusNode } from '@navix/core';
-import { type ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import type React from 'react';
 
 import { mergeClassName } from '../mergeClassName';
@@ -40,11 +40,14 @@ export function VerticalList({
     return <FocusProvider>{children}</FocusProvider>;
   }
 
-  const mergedClassName = mergeClassName(
-    className,
-    focused ? focusedClassName : undefined,
+  const mergedClassName = useMemo(
+    () => mergeClassName(className, focused ? focusedClassName : undefined),
+    [className, focusedClassName, focused],
   );
-  const mergedStyle = { ...style, ...(focused ? focusedStyle : undefined) };
+  const mergedStyle = useMemo(
+    () => ({ ...style, ...(focused ? focusedStyle : undefined) }),
+    [style, focusedStyle, focused],
+  );
 
   return (
     <FocusProvider>

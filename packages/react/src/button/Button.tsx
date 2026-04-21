@@ -1,6 +1,6 @@
 import { ButtonBehavior } from '@navix/core';
 import type { FocusNode } from '@navix/core';
-import { useRef, type ReactNode } from 'react';
+import { useRef, useMemo, useCallback, type ReactNode } from 'react';
 import type React from 'react';
 
 import { mergeClassName } from '../mergeClassName';
@@ -82,17 +82,25 @@ export function Button({
       }),
   );
 
-  const mergedStyle: React.CSSProperties = {
-    display: 'inline-block',
-    cursor: 'pointer',
-    ...style,
-    ...(directlyFocused ? focusedStyle : undefined),
-  };
-
-  const mergedClassName = mergeClassName(
-    className,
-    directlyFocused ? focusedClassName : undefined,
+  const mergedStyle = useMemo<React.CSSProperties>(
+    () => ({
+      display: 'inline-block',
+      cursor: 'pointer',
+      ...style,
+      ...(directlyFocused ? focusedStyle : undefined),
+    }),
+    [style, focusedStyle, directlyFocused],
   );
+
+  const mergedClassName = useMemo(
+    () => mergeClassName(className, directlyFocused ? focusedClassName : undefined),
+    [className, focusedClassName, directlyFocused],
+  );
+
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onClickRef.current?.();
+  }, []);
 
   const rendered =
     typeof children === 'function'
@@ -106,10 +114,7 @@ export function Button({
       style={mergedStyle}
       className={mergedClassName || undefined}
       onMouseEnter={focusSelf}
-      onClick={(e) => {
-        e.stopPropagation();
-        onClickRef.current?.();
-      }}
+      onClick={handleClick}
     >
       {rendered}
     </div>

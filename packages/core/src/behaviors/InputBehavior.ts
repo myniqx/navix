@@ -8,13 +8,12 @@ export class InputBehavior implements IFocusNodeBehavior {
     return this.isEditing;
   }
 
-  // Called whenever editing state changes. Assign from the adapter layer.
-  onChange: ((editing: boolean) => void) | null = null;
-
   private _node: FocusNode;
+  private _onChange: (editing: boolean) => void;
 
-  constructor(node: FocusNode) {
+  constructor(node: FocusNode, onChange: (editing: boolean) => void) {
     this._node = node;
+    this._onChange = onChange;
   }
 
   onEvent = (e: NavEvent): boolean => {
@@ -43,12 +42,12 @@ export class InputBehavior implements IFocusNodeBehavior {
     if (this.isEditing) return;
     this._node.requestFocus();
     this.isEditing = true;
-    this.onChange?.(true);
+    this._onChange(true);
   }
 
   stopEditing(): void {
     if (!this.isEditing) return;
     this.isEditing = false;
-    this.onChange?.(false);
+    this._onChange(false);
   }
 }

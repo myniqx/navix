@@ -1,6 +1,6 @@
 import { ExpandableBehavior } from '@navix/core';
 import type { FocusNode } from '@navix/core';
-import { useState, type ReactNode } from 'react';
+import { useState, useCallback, useMemo, type ReactNode } from 'react';
 
 import type { BaseComponentProps } from '../types';
 import { useFocusable } from '../useFocusable';
@@ -67,23 +67,27 @@ export function Expandable({
     useFocusable(
       fKey,
       { onFocus, onBlurred, onRegister, onUnregister, onEvent },
-      (n: FocusNode) => new ExpandableBehavior(n),
+      (n: FocusNode) => new ExpandableBehavior(n, setIsExpanded),
     );
 
   const behavior = node.behavior as ExpandableBehavior;
-  behavior.onChange = setIsExpanded;
 
-  const expand = () => behavior.expand();
-  const collapse = () => behavior.collapse();
+  const expand = useCallback(() => behavior.expand(), [behavior]);
+  const collapse = useCallback(() => behavior.collapse(), [behavior]);
 
-  const contextValue = { isExpanded, expand, collapse };
-  const renderProps: ExpandableRenderProps = {
-    isExpanded,
-    focused,
-    directlyFocused,
-    expand,
-    collapse,
-  };
+  const contextValue = useMemo(
+    () => ({ isExpanded, expand, collapse }),
+    [isExpanded, expand, collapse],
+  );
+
+  const renderProps = useMemo<ExpandableRenderProps>(
+    () => ({ isExpanded, focused, directlyFocused, expand, collapse }),
+    [isExpanded, focused, directlyFocused, expand, collapse],
+  );
+
+  const handleClick = useCallback(() => {
+    if (!isExpanded) expand();
+  }, [isExpanded, expand]);
 
   return (
     <ExpandableContext.Provider value={contextValue}>
@@ -92,9 +96,7 @@ export function Expandable({
         <div
           style={{ display: 'contents' }}
           onMouseEnter={focusSelf}
-          onClick={() => {
-            if (!isExpanded) expand();
-          }}
+          onClick={handleClick}
         >
           {children(renderProps)}
         </div>

@@ -65,6 +65,7 @@ export function PaginatedList<T>({
         items.length,
         visibleCount,
         threshold,
+        () => {},
       ),
   );
 
@@ -75,16 +76,20 @@ export function PaginatedList<T>({
   const itemKeys = useMemo(() => {
     const prefix = Math.random().toString(36).slice(2);
     return items.map((_, i) => `${fKey}-${prefix}-${i}`);
-  }, [items]);
+  }, [fKey, items]);
 
-  behavior.totalCount = items.length;
-  behavior.visibleCount = visibleCount;
-  behavior.threshold = threshold;
+  useEffect(() => {
+    behavior.totalCount = items.length;
+    behavior.visibleCount = visibleCount;
+    behavior.threshold = threshold;
+  }, [behavior, items.length, visibleCount, threshold]);
 
-  behavior.onChange = (newIndex: number, newOffset: number) => {
-    setViewOffset(newOffset);
-    behavior.focusByKey(itemKeys[newIndex]!);
-  };
+  useEffect(() => {
+    behavior.onChange = (newIndex: number, newOffset: number) => {
+      setViewOffset(newOffset);
+      behavior.focusByKey(itemKeys[newIndex]!);
+    };
+  }, [behavior, itemKeys]);
 
   const isHorizontal = orientation === 'horizontal';
 
@@ -124,35 +129,44 @@ export function PaginatedList<T>({
   const paddingBefore = renderStart * step;
 
   // Internal styles — user props merged first, functional overrides applied on top
-  const outerStyle: CSSProperties = {
-    ...outerStyleProp,
-    overflow: 'hidden',
-    width: '100%',
-  };
+  const outerStyle = useMemo<CSSProperties>(
+    () => ({ ...outerStyleProp, overflow: 'hidden', width: '100%' }),
+    [outerStyleProp],
+  );
 
-  const innerStyle: CSSProperties = {
-    ...innerStyleProp,
-    display: 'flex',
-    flexDirection: isHorizontal ? 'row' : 'column',
-    gap,
-    transform: isHorizontal
-      ? `translateX(${translate}px)`
-      : `translateY(${translate}px)`,
-    transition: 'transform 0.25s ease',
-  };
+  const innerStyle = useMemo<CSSProperties>(
+    () => ({
+      ...innerStyleProp,
+      display: 'flex',
+      flexDirection: isHorizontal ? 'row' : 'column',
+      gap,
+      transform: isHorizontal
+        ? `translateX(${translate}px)`
+        : `translateY(${translate}px)`,
+      transition: 'transform 0.25s ease',
+    }),
+    [innerStyleProp, isHorizontal, gap, translate],
+  );
 
-  const spacerStyle: CSSProperties = isHorizontal
-    ? { minWidth: paddingBefore, flexShrink: 0 }
-    : { minHeight: paddingBefore, flexShrink: 0 };
+  const spacerStyle = useMemo<CSSProperties>(
+    () =>
+      isHorizontal
+        ? { minWidth: paddingBefore, flexShrink: 0 }
+        : { minHeight: paddingBefore, flexShrink: 0 },
+    [isHorizontal, paddingBefore],
+  );
 
-  const slotStyle: CSSProperties = {
-    ...slotStyleProp,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-    ...(isHorizontal ? { width: slotWidth } : { height: slotWidth }),
-  };
+  const slotStyle = useMemo<CSSProperties>(
+    () => ({
+      ...slotStyleProp,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+      ...(isHorizontal ? { width: slotWidth } : { height: slotWidth }),
+    }),
+    [slotStyleProp, isHorizontal, slotWidth],
+  );
 
   return (
     <FocusProvider>
