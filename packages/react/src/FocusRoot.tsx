@@ -17,12 +17,15 @@ export function FocusRoot({
   inputConfig,
   mergeClassName,
 }: FocusRootProps) {
-  setMergeClassName(mergeClassName);
   const treeRef = useRef<FocusTree | null>(null);
   const [root, setRoot] = useState<FocusNode>(() => {
     treeRef.current = new FocusTree(inputConfig);
     return treeRef.current.root;
   });
+
+  useEffect(() => {
+    setMergeClassName(mergeClassName);
+  }, [mergeClassName]);
 
   useEffect(() => {
     // StrictMode: first run destroys the tree, second run recreates it

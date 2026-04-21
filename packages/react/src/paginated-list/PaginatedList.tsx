@@ -6,20 +6,38 @@ import {
   useEffect,
   useCallback,
   useMemo,
+  memo,
   type ReactNode,
   type CSSProperties,
 } from 'react';
 
-import { mergeClassName } from '../mergeClassName';
 import type { BaseComponentProps } from '../types';
 import { useFocusable } from '../useFocusable';
+
+interface SlotProps {
+  item: any;
+  itemKey: string;
+  index: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  renderItemRef: React.RefObject<(item: any, fKey: string, index: number) => ReactNode>;
+  slotStyle: CSSProperties;
+  slotClassName?: string;
+}
+
+const Slot = memo(function Slot({ item, itemKey, index, renderItemRef, slotStyle, slotClassName }: SlotProps) {
+  return (
+    <div style={slotStyle} className={slotClassName}>
+      {renderItemRef.current(item, itemKey, index)}
+    </div>
+  );
+});
 
 interface PaginatedListProps<T> extends BaseComponentProps {
   orientation?: PaginatedListOrientation;
   visibleCount: number;
   threshold: number;
   items: T[];
-  renderItem: (item: T, fKey: string) => ReactNode;
+  renderItem: (item: T, fKey: string, index: number) => ReactNode;
   gap?: number;
   buffer?: number;
   outerStyle?: CSSProperties;
@@ -55,6 +73,19 @@ export function PaginatedList<T>({
   const [containerSize, setContainerSize] = useState(0);
   const outerRef = useRef<HTMLDivElement | null>(null);
 
+  // Stable keys tied to this items array reference.
+  // When items changes (new array), prefix regenerates — all children remount.
+  const itemKeys = useMemo(() => {
+    const prefix = Math.random().toString(36).slice(2);
+    return items.map((_, i) => `${fKey}-${prefix}-${i}`);
+  }, [fKey, items]);
+
+  const itemKeysRef = useRef(itemKeys);
+  itemKeysRef.current = itemKeys;
+
+  const renderItemRef = useRef(renderItem) as React.RefObject<(item: any, fKey: string, index: number) => ReactNode>;
+  renderItemRef.current = renderItem;
+
   const { node, FocusProvider } = useFocusable(
     fKey,
     { onFocus, onBlurred, onRegister, onUnregister, onEvent },
@@ -66,17 +97,11 @@ export function PaginatedList<T>({
         visibleCount,
         threshold,
         () => {},
+        (key) => itemKeysRef.current.indexOf(key),
       ),
   );
 
   const behavior = node.behavior as PaginatedListBehavior;
-
-  // Stable keys tied to this items array reference.
-  // When items changes (new array), prefix regenerates — all children remount.
-  const itemKeys = useMemo(() => {
-    const prefix = Math.random().toString(36).slice(2);
-    return items.map((_, i) => `${fKey}-${prefix}-${i}`);
-  }, [fKey, items]);
 
   useEffect(() => {
     behavior.totalCount = items.length;
@@ -177,9 +202,15 @@ export function PaginatedList<T>({
             const globalIdx = renderStart + localIdx;
             const itemKey = itemKeys[globalIdx]!;
             return (
-              <div key={itemKey} style={slotStyle} className={slotClassName}>
-                {renderItem(item, itemKey)}
-              </div>
+              <Slot
+                key={itemKey}
+                item={item}
+                itemKey={itemKey}
+                index={globalIdx}
+                renderItemRef={renderItemRef}
+                slotStyle={slotStyle}
+                slotClassName={slotClassName}
+              />
             );
           })}
         </div>

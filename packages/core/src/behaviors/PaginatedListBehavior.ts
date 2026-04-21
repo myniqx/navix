@@ -30,6 +30,7 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
   private _prev: string;
   private _next: string;
   private _onChange: (newIndex: number, newOffset: number) => void;
+  private _keyToIndex: (key: string) => number;
 
   // Called with (newIndex, newOffset) after every navigation step.
   // React adapter uses this to sync viewOffset state and resolve focusChild.
@@ -44,6 +45,7 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
     visibleCount: number,
     threshold: number,
     onChange: (newIndex: number, newOffset: number) => void,
+    keyToIndex: (key: string) => number,
   ) {
     this._node = node;
     this.totalCount = totalCount;
@@ -52,6 +54,7 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
     this._prev = orientation === 'horizontal' ? 'left' : 'up';
     this._next = orientation === 'horizontal' ? 'right' : 'down';
     this._onChange = onChange;
+    this._keyToIndex = keyToIndex;
   }
 
   onEvent = (event: NavEvent): boolean => {
@@ -80,7 +83,7 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
   };
 
   onActiveChildChanged = (child: FocusNode): void => {
-    const idx = this._node.children.findIndex((c) => c.id === child.id);
+    const idx = this._keyToIndex(child.key);
     if (idx !== -1) this.activeIndex = idx;
   };
 

@@ -6,13 +6,31 @@ import {
   useEffect,
   useCallback,
   useMemo,
+  memo,
   type ReactNode,
   type CSSProperties,
 } from 'react';
 
-import { mergeClassName } from '../mergeClassName';
 import type { BaseComponentProps } from '../types';
 import { useFocusable } from '../useFocusable';
+
+interface SlotProps {
+  item: any;
+  itemKey: string;
+  index: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  renderItemRef: React.RefObject<(item: any, fKey: string, index: number) => ReactNode>;
+  slotStyle: CSSProperties;
+  slotClassName?: string;
+}
+
+const Slot = memo(function Slot({ item, itemKey, index, renderItemRef, slotStyle, slotClassName }: SlotProps) {
+  return (
+    <div style={slotStyle} className={slotClassName}>
+      {renderItemRef.current(item, itemKey, index)}
+    </div>
+  );
+});
 
 interface PaginatedGridProps<T> extends BaseComponentProps {
   orientation?: PaginatedGridOrientation;
@@ -20,7 +38,7 @@ interface PaginatedGridProps<T> extends BaseComponentProps {
   columns: number;
   threshold: number;
   items: T[];
-  renderItem: (item: T, fKey: string) => ReactNode;
+  renderItem: (item: T, fKey: string, index: number) => ReactNode;
   gap?: number;
   buffer?: number;
   outerStyle?: CSSProperties;
@@ -61,6 +79,14 @@ export function PaginatedGrid<T>({
   const sliceSize = isHorizontal ? rows : columns;
   const visibleSlices = isHorizontal ? columns : rows;
 
+  const itemKeys = useMemo(() => {
+    const prefix = Math.random().toString(36).slice(2);
+    return items.map((_, i) => `${fKey}-${prefix}-${i}`);
+  }, [fKey, items]);
+
+  const itemKeysRef = useRef(itemKeys);
+  itemKeysRef.current = itemKeys;
+
   const { node, FocusProvider } = useFocusable(
     fKey,
     { onFocus, onBlurred, onRegister, onUnregister, onEvent },
@@ -73,15 +99,14 @@ export function PaginatedGrid<T>({
         columns,
         threshold,
         () => {},
+        (key) => itemKeysRef.current.indexOf(key),
       ),
   );
 
   const behavior = node.behavior as PaginatedGridBehavior;
 
-  const itemKeys = useMemo(() => {
-    const prefix = Math.random().toString(36).slice(2);
-    return items.map((_, i) => `${fKey}-${prefix}-${i}`);
-  }, [fKey, items]);
+  const renderItemRef = useRef(renderItem) as React.RefObject<(item: any, fKey: string, index: number) => ReactNode>;
+  renderItemRef.current = renderItem;
 
   useEffect(() => {
     behavior.totalCount = items.length;
@@ -220,13 +245,15 @@ export function PaginatedGrid<T>({
               {slice.items.map(({ item, globalIndex }) => {
                 const itemKey = itemKeys[globalIndex]!;
                 return (
-                  <div
+                  <Slot
                     key={itemKey}
-                    style={slotStyle}
-                    className={slotClassName}
-                  >
-                    {renderItem(item, itemKey)}
-                  </div>
+                    item={item}
+                    itemKey={itemKey}
+                    index={globalIndex}
+                    renderItemRef={renderItemRef}
+                    slotStyle={slotStyle}
+                    slotClassName={slotClassName}
+                  />
                 );
               })}
             </div>

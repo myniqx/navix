@@ -1,7 +1,10 @@
 import { MultiLayerBehavior } from '@navix/core';
 import type { MultiLayerPanelId } from '@navix/core';
 import type { FocusNode } from '@navix/core';
-import { useState, useEffect, useRef, type ReactNode } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, type ReactNode } from 'react';
+import type { CSSProperties } from 'react';
+
+const overlayStyle: CSSProperties = { position: 'absolute', inset: 0 };
 
 import type { BaseComponentProps } from '../types';
 import { useFocusable } from '../useFocusable';
@@ -54,20 +57,31 @@ export function MultiLayer({
   const panelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const zapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const setPanel = (panel: MultiLayerPanelId | null) => {
+  const onNextRef = useRef(onNext);
+  const onPrevRef = useRef(onPrev);
+  const onExitRequestRef = useRef(onExitRequest);
+  onNextRef.current = onNext;
+  onPrevRef.current = onPrev;
+  onExitRequestRef.current = onExitRequest;
+
+  const setPanel = useCallback((panel: MultiLayerPanelId | null) => {
     activePanelRef.current = panel;
     setActivePanel(panel);
-  };
+  }, []);
 
-  const closePanel = () => setPanel(null);
+  const closePanel = useCallback(() => setPanel(null), [setPanel]);
 
-  const resetPanelTimeout = () => {
+  const resetPanelTimeout = useCallback(() => {
     if (panelTimeoutRef.current !== null) clearTimeout(panelTimeoutRef.current);
     if (activePanelRef.current === null) return;
-    panelTimeoutRef.current = setTimeout(() => {
-      setPanel(null);
-    }, panelTimeout);
-  };
+    panelTimeoutRef.current = setTimeout(() => setPanel(null), panelTimeout);
+  }, [setPanel, panelTimeout]);
+
+  const showZap = useCallback(() => {
+    setZapChannel(true);
+    if (zapTimeoutRef.current !== null) clearTimeout(zapTimeoutRef.current);
+    zapTimeoutRef.current = setTimeout(() => setZapChannel(false), 2000);
+  }, []);
 
   // Reset timeout on any event while panel is open
   useEffect(() => {
@@ -83,13 +97,7 @@ export function MultiLayer({
       if (panelTimeoutRef.current !== null)
         clearTimeout(panelTimeoutRef.current);
     };
-  }, [activePanel, panelTimeout]);
-
-  const showZap = () => {
-    setZapChannel(true);
-    if (zapTimeoutRef.current !== null) clearTimeout(zapTimeoutRef.current);
-    zapTimeoutRef.current = setTimeout(() => setZapChannel(false), 2000);
-  };
+  }, [activePanel, panelTimeout, setPanel]);
 
   const { FocusProvider, node } = useFocusable(
     fKey,
@@ -97,28 +105,27 @@ export function MultiLayer({
     (n: FocusNode) =>
       new MultiLayerBehavior(n, {
         onChannelNext: () => {
-          if (onNext?.()) showZap(); // if onNext return true that means entry changed, setting zap is not this components responsibility
+          if (onNextRef.current?.()) showZap();
         },
         onChannelPrev: () => {
-          if (onPrev?.()) showZap(); // same here
+          if (onPrevRef.current?.()) showZap();
         },
         onTogglePlay: () => setPaused((p) => !p),
         onPanelOpen: (panel: MultiLayerPanelId) => setPanel(panel),
         onPanelClose: () => setPanel(null),
-        onExitRequest: () => onExitRequest?.(),
+        onExitRequest: () => onExitRequestRef.current?.(),
       }),
   );
 
   const behavior = node.behavior as MultiLayerBehavior;
 
-  // Keep behavior in sync with React state
-  behavior.activePanel = activePanel;
-  behavior.panels = {
-    left: !!left,
-    right: !!right,
-    up: !!up,
-    down: !!down,
-  };
+  useEffect(() => {
+    behavior.activePanel = activePanel;
+  }, [behavior, activePanel]);
+
+  useEffect(() => {
+    behavior.panels = { left: !!left, right: !!right, up: !!up, down: !!down };
+  }, [behavior, left, right, up, down]);
 
   // Focus the active panel's node when it opens
   useEffect(() => {
@@ -129,76 +136,52 @@ export function MultiLayer({
     const panelKey = `${fKey}-panel-${activePanel}`;
     const child = node.children.find((c) => c.key === panelKey);
     child?.requestFocus();
-  }, [activePanel]);
+  }, [activePanel, node, fKey]);
 
-  const makePanelProps = (side: MultiLayerPanelId): MultiLayerPanelProps => ({
-    fKey: `${fKey}-panel-${side}`,
-    close: closePanel,
-    onEvent: () => {
-      // Any event from panel resets the timeout
-      resetPanelTimeout();
-      return false;
-    },
-  });
+  const makePanelProps = useCallback(
+    (side: MultiLayerPanelId): MultiLayerPanelProps => ({
+      fKey: `${fKey}-panel-${side}`,
+      close: closePanel,
+      onEvent: () => {
+        resetPanelTimeout();
+        return false;
+      },
+    }),
+    [fKey, closePanel, resetPanelTimeout],
+  );
+
+  const wrapperStyle = useMemo<CSSProperties>(
+    () => ({ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }),
+    [],
+  );
 
   return (
     <FocusProvider>
-      <div
-        style={{
-          position: 'relative',
-          width: '100%',
-          height: '100%',
-          overflow: 'hidden',
-        }}
-      >
+      <div style={wrapperStyle}>
         {baseLayer()}
 
         {notification && (
-          <div
-            style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
-          >
-            {notification()}
-          </div>
+          <div style={overlayStyle}>{notification()}</div>
         )}
 
         {zapChannel && zapBanner && (
-          <div
-            style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
-          >
-            {zapBanner()}
-          </div>
+          <div style={overlayStyle}>{zapBanner()}</div>
         )}
 
         {left && activePanel === 'left' && (
-          <div
-            style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
-          >
-            {left(makePanelProps('left'))}
-          </div>
+          <div style={overlayStyle}>{left(makePanelProps('left'))}</div>
         )}
 
         {right && activePanel === 'right' && (
-          <div
-            style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
-          >
-            {right(makePanelProps('right'))}
-          </div>
+          <div style={overlayStyle}>{right(makePanelProps('right'))}</div>
         )}
 
         {up && activePanel === 'up' && (
-          <div
-            style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
-          >
-            {up(makePanelProps('up'))}
-          </div>
+          <div style={overlayStyle}>{up(makePanelProps('up'))}</div>
         )}
 
         {down && activePanel === 'down' && (
-          <div
-            style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
-          >
-            {down(makePanelProps('down'))}
-          </div>
+          <div style={overlayStyle}>{down(makePanelProps('down'))}</div>
         )}
       </div>
     </FocusProvider>

@@ -1,6 +1,6 @@
 import { ButtonBehavior } from '@navix/core';
 import type { FocusNode } from '@navix/core';
-import { useRef, type ReactNode, type CSSProperties } from 'react';
+import { useRef, useMemo, useCallback, type ReactNode, type CSSProperties } from 'react';
 
 import { Expandable } from '../expandable/Expandable';
 import { PaginatedList } from '../paginated-list/PaginatedList';
@@ -152,14 +152,61 @@ export function Dropdown({
 }: DropdownProps) {
   const listFKey = `${fKey}-list`;
 
-  const triggerLabel =
-    value.length === 0
-      ? placeholder
-      : value.length === 1
-        ? (options.find((o) => o.value === value[0])?.label ?? placeholder)
-        : `${value.length} selected`;
+  const triggerLabel = useMemo(() => {
+    if (value.length === 0) return placeholder;
+    if (value.length === 1) return options.find((o) => o.value === value[0])?.label ?? placeholder;
+    return `${value.length} selected`;
+  }, [value, options, placeholder]);
 
-  const listHeight = Math.min(options.length, maxVisible) * SLOT_HEIGHT;
+  const listHeight = useMemo(
+    () => Math.min(options.length, maxVisible) * SLOT_HEIGHT,
+    [options.length, maxVisible],
+  );
+
+  const panelStyle = useMemo<CSSProperties>(
+    () => ({
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      ...(position === 'bottom' ? { top: '100%' } : { bottom: '100%' }),
+      height: listHeight,
+      background: '#0d0d1a',
+      border: '1px solid #4fc3f7',
+      ...(position === 'bottom'
+        ? { borderTop: 'none', borderRadius: '0 0 4px 4px' }
+        : { borderBottom: 'none', borderRadius: '4px 4px 0 0' }),
+      overflow: 'hidden',
+      zIndex: 100,
+    }),
+    [position, listHeight],
+  );
+
+  const outerStyle = useMemo<CSSProperties>(
+    () => ({ position: 'relative', display: 'inline-block', ...style }),
+    [style],
+  );
+
+  const outerListStyle = useMemo<CSSProperties>(
+    () => ({ height: listHeight }),
+    [listHeight],
+  );
+
+  const handleSelect = useCallback(
+    (index: number, collapse: () => void) => {
+      const selected = options[index]!.value;
+      let next: string[];
+      if (multiple) {
+        next = value.includes(selected)
+          ? value.filter((v) => v !== selected)
+          : [...value, selected];
+      } else {
+        next = [selected];
+        collapse();
+      }
+      onChange?.(next);
+    },
+    [options, value, multiple, onChange],
+  );
 
   return (
     <Expandable
@@ -169,102 +216,65 @@ export function Dropdown({
       onRegister={onRegister}
       onUnregister={onUnregister}
     >
-      {({ isExpanded, focused, directlyFocused, collapse }) => {
-        const handleSelect = (index: number) => {
-          const selected = options[index]!.value;
-          let next: string[];
-          if (multiple) {
-            next = value.includes(selected)
-              ? value.filter((v) => v !== selected)
-              : [...value, selected];
-          } else {
-            next = [selected];
-            collapse();
-          }
-          onChange?.(next);
-        };
+      {({ isExpanded, focused, directlyFocused, collapse }) => (
+        <div className={className} style={outerStyle}>
+          {/* Trigger */}
+          {renderTrigger ? (
+            renderTrigger({
+              label: triggerLabel,
+              isExpanded,
+              focused: focused || directlyFocused,
+            })
+          ) : (
+            <DefaultTrigger
+              label={triggerLabel}
+              isExpanded={isExpanded}
+              focused={focused || directlyFocused}
+            />
+          )}
 
-        return (
-          <div
-            className={className}
-            style={{ position: 'relative', display: 'inline-block', ...style }}
-          >
-            {/* Trigger */}
-            {renderTrigger ? (
-              renderTrigger({
-                label: triggerLabel,
-                isExpanded,
-                focused: focused || directlyFocused,
-              })
-            ) : (
-              <DefaultTrigger
-                label={triggerLabel}
-                isExpanded={isExpanded}
-                focused={focused || directlyFocused}
-              />
-            )}
-
-            {/* Options panel */}
-            {isExpanded && (
-              <div
-                style={{
-                  position: 'absolute',
-                  left: 0,
-                  right: 0,
-                  ...(position === 'bottom'
-                    ? { top: '100%' }
-                    : { bottom: '100%' }),
-                  height: listHeight,
-                  background: '#0d0d1a',
-                  border: '1px solid #4fc3f7',
-                  ...(position === 'bottom'
-                    ? { borderTop: 'none', borderRadius: '0 0 4px 4px' }
-                    : { borderBottom: 'none', borderRadius: '4px 4px 0 0' }),
-                  overflow: 'hidden',
-                  zIndex: 100,
+          {/* Options panel */}
+          {isExpanded && (
+            <div style={panelStyle}>
+              <PaginatedList
+                fKey={listFKey}
+                orientation="vertical"
+                visibleCount={maxVisible}
+                threshold={1}
+                items={options}
+                outerStyle={outerListStyle}
+                renderItem={(option, itemFKey, index) => {
+                  const isSelected = value.includes(option.value);
+                  return (
+                    <OptionButton
+                      fKey={itemFKey}
+                      height={SLOT_HEIGHT}
+                      onSelect={() => handleSelect(index, collapse)}
+                    >
+                      {(isFocused) =>
+                        renderOption ? (
+                          renderOption({
+                            option,
+                            selected: isSelected,
+                            focused: isFocused,
+                            index,
+                          })
+                        ) : (
+                          <DefaultOption
+                            option={option}
+                            selected={isSelected}
+                            focused={isFocused}
+                          />
+                        )
+                      }
+                    </OptionButton>
+                  );
                 }}
-              >
-                <PaginatedList
-                  fKey={listFKey}
-                  orientation="vertical"
-                  visibleCount={maxVisible}
-                  threshold={1}
-                  items={options}
-                  outerStyle={{ height: listHeight }}
-                  renderItem={(option, itemFKey) => {
-                    const index = options.indexOf(option);
-                    const isSelected = value.includes(option.value);
-                    return (
-                      <OptionButton
-                        fKey={itemFKey}
-                        height={SLOT_HEIGHT}
-                        onSelect={() => handleSelect(index)}
-                      >
-                        {(isFocused) =>
-                          renderOption ? (
-                            renderOption({
-                              option,
-                              selected: isSelected,
-                              focused: isFocused,
-                              index,
-                            })
-                          ) : (
-                            <DefaultOption
-                              option={option}
-                              selected={isSelected}
-                              focused={isFocused}
-                            />
-                          )
-                        }
-                      </OptionButton>
-                    );
-                  }}
-                />
-              </div>
-            )}
-          </div>
-        );
-      }}
+              />
+            </div>
+          )}
+        </div>
+      )}
     </Expandable>
   );
 }
@@ -283,6 +293,8 @@ function OptionButton({
   const onSelectRef = useRef(onSelect);
   onSelectRef.current = onSelect;
 
+  const handleClick = useCallback(() => onSelectRef.current(), []);
+
   const { directlyFocused, focusSelf } = useFocusable(
     fKey,
     undefined,
@@ -294,7 +306,7 @@ function OptionButton({
     <div
       style={{ height, flexShrink: 0, width: '100%' }}
       onMouseEnter={focusSelf}
-      onClick={() => onSelect()}
+      onClick={handleClick}
     >
       {children(directlyFocused)}
     </div>
