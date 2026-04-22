@@ -40,20 +40,20 @@ Navix manages keyboard-driven focus across a tree of components — the same mod
 
 All navigation logic lives here.
 
-| Export                  | Description                                                                                                                                                                 |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `FocusNode`             | One node in the focus tree. Every focusable element is a node.                                                                                                              |
-| `FocusTree`             | Root node + InputManager wired together.                                                                                                                                    |
-| `InputManager`          | Maps `KeyboardEvent.code` values to named actions. Detects longpress and doublepress via timers.                                                                            |
-| `ListBehavior`          | Attaches left/right (horizontal) or up/down (vertical) navigation to a node. Stops at boundaries.                                                                           |
-| `GridBehavior`          | Attaches 4-direction navigation with column-based row wrapping. Stops at row boundaries on left/right.                                                                      |
-| `ButtonBehavior`        | Handles enter/longpress/doublepress on a leaf node.                                                                                                                         |
-| `ExpandableBehavior`    | Two-state container (collapsed/expanded). Traps focus when expanded. Expanding one node collapses all others, except ancestors on the active path.                          |
-| `InputBehavior`         | Two-state leaf (idle/editing). Enter starts editing, Enter/back stops editing. Traps focus while editing.                                                                   |
-| `PaginatedListBehavior` | Index-based 1D pagination. Tracks `activeIndex` and `viewOffset` independently of DOM children. Notifies React via `onChange` when either changes.                          |
-| `PaginatedGridBehavior` | Index-based 2D pagination. Supports horizontal (column-major) and vertical (row-major) orientation.                                                                         |
+| Export                  | Description                                                                                                                                                                                                                           |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FocusNode`             | One node in the focus tree. Every focusable element is a node.                                                                                                                                                                        |
+| `FocusTree`             | Root node + InputManager wired together.                                                                                                                                                                                              |
+| `InputManager`          | Maps `KeyboardEvent.code` values to named actions. Detects longpress and doublepress via timers.                                                                                                                                      |
+| `ListBehavior`          | Attaches left/right (horizontal) or up/down (vertical) navigation to a node. Stops at boundaries.                                                                                                                                     |
+| `GridBehavior`          | Attaches 4-direction navigation with column-based row wrapping. Stops at row boundaries on left/right.                                                                                                                                |
+| `ButtonBehavior`        | Handles enter/longpress/doublepress on a leaf node.                                                                                                                                                                                   |
+| `ExpandableBehavior`    | Two-state container (collapsed/expanded). Traps focus when expanded. Expanding one node collapses all others, except ancestors on the active path.                                                                                    |
+| `InputBehavior`         | Two-state leaf (idle/editing). Enter starts editing, Enter/back stops editing. Traps focus while editing.                                                                                                                             |
+| `PaginatedListBehavior` | Index-based 1D pagination. Tracks `activeIndex` and `viewOffset` independently of DOM children. Notifies React via `onChange` when either changes.                                                                                    |
+| `PaginatedGridBehavior` | Index-based 2D pagination. Supports horizontal (column-major) and vertical (row-major) orientation.                                                                                                                                   |
 | `MultiLayerBehavior`    | Panel routing and channel navigation for video player nodes. Manages which panel is open (left/right/up/down), traps focus while a panel is active, and exposes callbacks for channel prev/next, play/pause toggle, and exit request. |
-| `IFocusNodeBehavior`    | Interface all behaviors implement. Lifecycle hooks: `onRegister`, `onUnregister`, `onChildRegistered`, `onChildUnregistered`, `onFocus`, `onBlurred`, `collapse`, `expand`. |
+| `IFocusNodeBehavior`    | Interface all behaviors implement. Lifecycle hooks: `onRegister`, `onUnregister`, `onChildRegistered`, `onChildUnregistered`, `onFocus`, `onBlurred`, `collapse`, `expand`.                                                           |
 
 ### `@navix/react`
 
@@ -73,8 +73,8 @@ React 18+ adapter. Peer dependency on `react` and `react-dom`.
 | `Dropdown`                                       | Node + `ExpandableBehavior`. Render prop exposes `isExpanded`, `focused`, `directlyFocused`, `collapse`. Supports single/multi-select, custom trigger and option renderers, top/bottom position.                                                                                                                                                                                   |
 | `PaginatedList`                                  | Virtualized 1D list with sliding window pagination. Items are rendered only within the visible window + buffer. Accepts `outerClassName`, `innerClassName`, `slotClassName`.                                                                                                                                                                                                       |
 | `PaginatedGrid`                                  | Virtualized 2D grid with sliding window pagination. Supports horizontal (column-major) and vertical (row-major) orientation. Accepts `outerClassName`, `innerClassName`, `slotClassName`.                                                                                                                                                                                          |
-| `MultiLayer`                                     | Full-screen video player shell. Renders a `baseLayer` beneath up to four directional panels (`left`, `right`, `up`, `down`). Only one panel is active at a time. Accepts `onPrev`/`onNext` for channel switching, `zapBanner` shown for 2s after channel change, `notification` for persistent or transient overlays, and `panelTimeout` to auto-close inactive panels. |
-| `MultiLayerPanelProps`                           | Props passed to each panel render function: `fKey`, `close`, `onEvent`, and all `BaseComponentProps`. |
+| `MultiLayer`                                     | Full-screen video player shell. Renders a `baseLayer` beneath up to four directional panels (`left`, `right`, `up`, `down`). Only one panel is active at a time. Accepts `onPrev`/`onNext` for channel switching, `zapBanner` shown for 2s after channel change, `notification` for persistent or transient overlays, and `panelTimeout` to auto-close inactive panels.            |
+| `MultiLayerPanelProps`                           | Props passed to each panel render function: `fKey`, `close`, `onEvent`, and all `BaseComponentProps`.                                                                                                                                                                                                                                                                              |
 | `BaseComponentProps`                             | Shared interface all components extend: `fKey`, `onFocus`, `onBlurred`, `onRegister`, `onUnregister`.                                                                                                                                                                                                                                                                              |
 
 ---
@@ -524,20 +524,37 @@ const [player, setPlayer] = useState({ channels, current, paused: false });
     return true;
   }}
   onEvent={(e) => {
-    if (e.type === 'press' && (e.action === 'playpause' || e.action === 'enter')) {
+    if (
+      e.type === 'press' &&
+      (e.action === 'playpause' || e.action === 'enter')
+    ) {
       setPlayer((p) => ({ ...p, paused: !p.paused }));
     }
     return false;
   }}
-  baseLayer={() => <VideoElement src={player.current.url} paused={player.paused} />}
+  baseLayer={() => (
+    <VideoElement src={player.current.url} paused={player.paused} />
+  )}
   zapBanner={() => <ZapBanner channel={player.current} />}
-  notification={() => player.paused ? <PauseOverlay /> : null}
+  notification={() => (player.paused ? <PauseOverlay /> : null)}
   left={(props) => <AudioSubtitlesPanel {...props} />}
-  right={(props) => <ChannelListPanel {...props} channels={player.channels} current={player.current} />}
+  right={(props) => (
+    <ChannelListPanel
+      {...props}
+      channels={player.channels}
+      current={player.current}
+    />
+  )}
   up={(props) => <NotificationsPanel {...props} />}
-  down={(props) => <ControlsPanel {...props} paused={player.paused} onToggle={() => setPlayer((p) => ({ ...p, paused: !p.paused }))} />}
+  down={(props) => (
+    <ControlsPanel
+      {...props}
+      paused={player.paused}
+      onToggle={() => setPlayer((p) => ({ ...p, paused: !p.paused }))}
+    />
+  )}
   panelTimeout={4000}
-/>
+/>;
 ```
 
 `panelTimeout` (default `4000` ms) auto-closes the active panel after inactivity. Any event from within a panel resets the timer. Set to a large value to disable auto-close.
@@ -545,10 +562,35 @@ const [player, setPlayer] = useState({ channels, current, paused: false });
 Panel render functions receive `MultiLayerPanelProps`:
 
 ```ts
+type MultiLayerPanelState = 'opening' | 'open' | 'closing';
+
 interface MultiLayerPanelProps extends BaseComponentProps {
-  close: () => void; // close the panel programmatically
+  close: () => void;       // close the panel programmatically
+  panelState: MultiLayerPanelState; // use for CSS entry/exit transitions
 }
 ```
+
+`panelState` cycles `'opening' → 'open' → 'closing'` as the panel mounts and unmounts. Use it to drive CSS transitions:
+
+```tsx
+left={(props) => (
+  <div
+    style={{
+      transform:
+        props.panelState === 'open'
+          ? 'translateX(0)'
+          : 'translateX(-100%)',
+      transition: 'transform 250ms ease',
+    }}
+  >
+    <AudioSubtitlesPanel {...props} />
+  </div>
+)}
+```
+
+`transitionDuration` (default `250` ms) controls how long `MultiLayer` waits before unmounting the closing panel. Set it to match your CSS transition duration.
+
+Mouse users can also open panels by hovering near the edge of the base layer. `triggerSize` (default `200` px) sets the width/height of the invisible hover zone on each edge. `hoverDelay` (default `300` ms) sets how long the pointer must dwell in the zone before the panel opens.
 
 ### 14. Custom focusable with useFocusable
 
@@ -606,13 +648,13 @@ Opens a TV-style streaming UI at `http://localhost:5173`.
 
 Navigate with arrow keys. `Enter` to select. `Backspace` or `Escape` to go back.
 
-| Tab     | Component                                      | Description                                                                                                            |
-| ------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Tab     | Component                                      | Description                                                                                                                                                                                            |
+| ------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Home    | `PaginatedList` + `MultiLayer`                 | Three paginated rows — movies, series, live channels. Selecting an item opens a `MultiLayer` player with left (audio/subtitles), right (channel list), up (notifications), and down (controls) panels. |
-| Movie   | `PaginatedGrid`                                | Movies in a paginated 4×6 grid with trailer preview simulation.                                                        |
-| Series  | `HorizontalList`                               | Classic horizontal shelves.                                                                                            |
-| Live    | `Grid`                                         | Fixed grid of live channels.                                                                                           |
-| Options | `Expandable` + `Dropdown` + `Switch` + `Input` | Settings modal with persistent state. Contains dropdowns, a boolean toggle, and a text input — all keyboard navigable. |
+| Movie   | `PaginatedGrid`                                | Movies in a paginated 4×6 grid with trailer preview simulation.                                                                                                                                        |
+| Series  | `HorizontalList`                               | Classic horizontal shelves.                                                                                                                                                                            |
+| Live    | `Grid`                                         | Fixed grid of live channels.                                                                                                                                                                           |
+| Options | `Expandable` + `Dropdown` + `Switch` + `Input` | Settings modal with persistent state. Contains dropdowns, a boolean toggle, and a text input — all keyboard navigable.                                                                                 |
 
 ---
 
