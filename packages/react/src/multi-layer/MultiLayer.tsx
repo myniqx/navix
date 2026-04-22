@@ -212,7 +212,6 @@ export function MultiLayer({
         top: 0,
         width: triggerSize,
         bottom: triggerSize,
-        zIndex: 10,
       },
       right: {
         position: 'absolute' as const,
@@ -220,7 +219,6 @@ export function MultiLayer({
         top: 0,
         width: triggerSize,
         bottom: triggerSize,
-        zIndex: 10,
       },
       up: {
         position: 'absolute' as const,
@@ -228,7 +226,6 @@ export function MultiLayer({
         left: triggerSize,
         right: triggerSize,
         height: triggerSize,
-        zIndex: 10,
       },
       down: {
         position: 'absolute' as const,
@@ -236,7 +233,6 @@ export function MultiLayer({
         left: 0,
         right: 0,
         height: triggerSize,
-        zIndex: 10,
       },
     }),
     [triggerSize],
@@ -288,54 +284,58 @@ export function MultiLayer({
           />
         )}
 
-        {left &&
-          (activePanel === 'left' || closingPanel === 'left') &&
-          left(
-            makePanelProps(
-              'left',
-              closingPanel === 'left'
-                ? 'closing'
-                : openingPanel === 'left'
-                  ? 'opening'
-                  : 'open',
-            ),
-          )}
-        {right &&
-          (activePanel === 'right' || closingPanel === 'right') &&
-          right(
-            makePanelProps(
-              'right',
-              closingPanel === 'right'
-                ? 'closing'
-                : openingPanel === 'right'
-                  ? 'opening'
-                  : 'open',
-            ),
-          )}
-        {up &&
-          (activePanel === 'up' || closingPanel === 'up') &&
-          up(
-            makePanelProps(
-              'up',
-              closingPanel === 'up'
-                ? 'closing'
-                : openingPanel === 'up'
-                  ? 'opening'
-                  : 'open',
-            ),
-          )}
-        {down &&
-          (activePanel === 'down' || closingPanel === 'down') &&
-          down(
-            makePanelProps(
-              'down',
-              closingPanel === 'down'
-                ? 'closing'
-                : openingPanel === 'down'
-                  ? 'opening'
-                  : 'open',
-            ),
-          )}
+        {(activePanel !== null || closingPanel !== null) && (
+          <div style={{ position: 'absolute', inset: 0, zIndex: 10 }}>
+            {left &&
+              (activePanel === 'left' || closingPanel === 'left') &&
+              left(
+                makePanelProps(
+                  'left',
+                  closingPanel === 'left'
+                    ? 'closing'
+                    : openingPanel === 'left'
+                      ? 'opening'
+                      : 'open',
+                ),
+              )}
+            {right &&
+              (activePanel === 'right' || closingPanel === 'right') &&
+              right(
+                makePanelProps(
+                  'right',
+                  closingPanel === 'right'
+                    ? 'closing'
+                    : openingPanel === 'right'
+                      ? 'opening'
+                      : 'open',
+                ),
+              )}
+            {up &&
+              (activePanel === 'up' || closingPanel === 'up') &&
+              up(
+                makePanelProps(
+                  'up',
+                  closingPanel === 'up'
+                    ? 'closing'
+                    : openingPanel === 'up'
+                      ? 'opening'
+                      : 'open',
+                ),
+              )}
+            {down &&
+              (activePanel === 'down' || closingPanel === 'down') &&
+              down(
+                makePanelProps(
+                  'down',
+                  closingPanel === 'down'
+                    ? 'closing'
+                    : openingPanel === 'down'
+                      ? 'opening'
+                      : 'open',
+                ),
+              )}
+          </div>
+        )}
 
         {activePanel === null && closingPanel === null && (
           <>
