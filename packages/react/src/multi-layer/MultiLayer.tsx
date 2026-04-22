@@ -1,18 +1,32 @@
 import { MultiLayerBehavior } from '@navix/core';
 import type { MultiLayerPanelId } from '@navix/core';
 import type { FocusNode } from '@navix/core';
-import { useState, useEffect, useRef, useCallback, useMemo, type ReactNode } from 'react';
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+  type ReactNode,
+} from 'react';
 import type { CSSProperties } from 'react';
 
-const overlayStyle: CSSProperties = { position: 'absolute', inset: 0 };
-
 import type { BaseComponentProps } from '../types';
+
+const notificationOverlayStyle: CSSProperties = {
+  position: 'absolute',
+  inset: 0,
+  pointerEvents: 'none',
+};
 import { useFocusable } from '../useFocusable';
 
 export type { MultiLayerPanelId };
 
+export type MultiLayerPanelState = 'opening' | 'open' | 'closing';
+
 export interface MultiLayerPanelProps extends BaseComponentProps {
   close: () => void;
+  panelState: MultiLayerPanelState;
 }
 
 interface MultiLayerProps extends BaseComponentProps {
@@ -27,6 +41,9 @@ interface MultiLayerProps extends BaseComponentProps {
   zapBanner?: () => ReactNode;
   notification?: () => ReactNode;
   panelTimeout?: number;
+  triggerSize?: number;
+  hoverDelay?: number;
+  transitionDuration?: number;
 }
 
 export function MultiLayer({
@@ -47,8 +64,17 @@ export function MultiLayer({
   onNext,
   onPrev,
   panelTimeout = 4000,
+  triggerSize = 200,
+  hoverDelay = 300,
+  transitionDuration = 250,
 }: MultiLayerProps) {
   const [activePanel, setActivePanel] = useState<MultiLayerPanelId | null>(
+    null,
+  );
+  const [openingPanel, setOpeningPanel] = useState<MultiLayerPanelId | null>(
+    null,
+  );
+  const [closingPanel, setClosingPanel] = useState<MultiLayerPanelId | null>(
     null,
   );
   const activePanelRef = useRef<MultiLayerPanelId | null>(null);
@@ -56,6 +82,8 @@ export function MultiLayer({
   const [zapChannel, setZapChannel] = useState<boolean>(false);
   const panelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const zapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const closingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const onNextRef = useRef(onNext);
   const onPrevRef = useRef(onPrev);
@@ -64,10 +92,33 @@ export function MultiLayer({
   onPrevRef.current = onPrev;
   onExitRequestRef.current = onExitRequest;
 
-  const setPanel = useCallback((panel: MultiLayerPanelId | null) => {
-    activePanelRef.current = panel;
-    setActivePanel(panel);
-  }, []);
+  const setPanel = useCallback(
+    (panel: MultiLayerPanelId | null) => {
+      if (panel === null) {
+        // Start closing animation then unmount
+        const current = activePanelRef.current;
+        if (current === null) return;
+        activePanelRef.current = null;
+        setActivePanel(null);
+        setClosingPanel(current);
+        setOpeningPanel(null);
+        if (closingTimerRef.current !== null)
+          clearTimeout(closingTimerRef.current);
+        closingTimerRef.current = setTimeout(
+          () => setClosingPanel(null),
+          transitionDuration,
+        );
+      } else {
+        activePanelRef.current = panel;
+        setActivePanel(panel);
+        setClosingPanel(null);
+        setOpeningPanel(panel);
+        // Next frame: switch to open so CSS transition triggers
+        requestAnimationFrame(() => setOpeningPanel(null));
+      }
+    },
+    [transitionDuration],
+  );
 
   const closePanel = useCallback(() => setPanel(null), [setPanel]);
 
@@ -138,10 +189,67 @@ export function MultiLayer({
     child?.requestFocus();
   }, [activePanel, node, fKey]);
 
+  const handleTriggerEnter = useCallback(
+    (panel: MultiLayerPanelId) => {
+      if (hoverTimerRef.current !== null) clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = setTimeout(() => setPanel(panel), hoverDelay);
+    },
+    [setPanel, hoverDelay],
+  );
+
+  const handleTriggerLeave = useCallback(() => {
+    if (hoverTimerRef.current !== null) {
+      clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+  }, []);
+
+  const triggerStyles = useMemo(
+    () => ({
+      left: {
+        position: 'absolute' as const,
+        left: 0,
+        top: 0,
+        width: triggerSize,
+        bottom: triggerSize,
+        zIndex: 10,
+      },
+      right: {
+        position: 'absolute' as const,
+        right: 0,
+        top: 0,
+        width: triggerSize,
+        bottom: triggerSize,
+        zIndex: 10,
+      },
+      up: {
+        position: 'absolute' as const,
+        top: 0,
+        left: triggerSize,
+        right: triggerSize,
+        height: triggerSize,
+        zIndex: 10,
+      },
+      down: {
+        position: 'absolute' as const,
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: triggerSize,
+        zIndex: 10,
+      },
+    }),
+    [triggerSize],
+  );
+
   const makePanelProps = useCallback(
-    (side: MultiLayerPanelId): MultiLayerPanelProps => ({
+    (
+      side: MultiLayerPanelId,
+      panelState: MultiLayerPanelState,
+    ): MultiLayerPanelProps => ({
       fKey: `${fKey}-panel-${side}`,
       close: closePanel,
+      panelState,
       onEvent: () => {
         resetPanelTimeout();
         return false;
@@ -151,7 +259,12 @@ export function MultiLayer({
   );
 
   const wrapperStyle = useMemo<CSSProperties>(
-    () => ({ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }),
+    () => ({
+      position: 'relative',
+      width: '100%',
+      height: '100%',
+      overflow: 'hidden',
+    }),
     [],
   );
 
@@ -161,27 +274,100 @@ export function MultiLayer({
         {baseLayer()}
 
         {notification && (
-          <div style={overlayStyle}>{notification()}</div>
+          <div style={notificationOverlayStyle}>{notification()}</div>
         )}
 
         {zapChannel && zapBanner && (
-          <div style={overlayStyle}>{zapBanner()}</div>
+          <div style={notificationOverlayStyle}>{zapBanner()}</div>
         )}
 
-        {left && activePanel === 'left' && (
-          <div style={overlayStyle}>{left(makePanelProps('left'))}</div>
+        {(activePanel !== null || closingPanel !== null) && (
+          <div
+            style={{ position: 'absolute', inset: 0, zIndex: 9 }}
+            onClick={closePanel}
+          />
         )}
 
-        {right && activePanel === 'right' && (
-          <div style={overlayStyle}>{right(makePanelProps('right'))}</div>
-        )}
+        {left &&
+          (activePanel === 'left' || closingPanel === 'left') &&
+          left(
+            makePanelProps(
+              'left',
+              closingPanel === 'left'
+                ? 'closing'
+                : openingPanel === 'left'
+                  ? 'opening'
+                  : 'open',
+            ),
+          )}
+        {right &&
+          (activePanel === 'right' || closingPanel === 'right') &&
+          right(
+            makePanelProps(
+              'right',
+              closingPanel === 'right'
+                ? 'closing'
+                : openingPanel === 'right'
+                  ? 'opening'
+                  : 'open',
+            ),
+          )}
+        {up &&
+          (activePanel === 'up' || closingPanel === 'up') &&
+          up(
+            makePanelProps(
+              'up',
+              closingPanel === 'up'
+                ? 'closing'
+                : openingPanel === 'up'
+                  ? 'opening'
+                  : 'open',
+            ),
+          )}
+        {down &&
+          (activePanel === 'down' || closingPanel === 'down') &&
+          down(
+            makePanelProps(
+              'down',
+              closingPanel === 'down'
+                ? 'closing'
+                : openingPanel === 'down'
+                  ? 'opening'
+                  : 'open',
+            ),
+          )}
 
-        {up && activePanel === 'up' && (
-          <div style={overlayStyle}>{up(makePanelProps('up'))}</div>
-        )}
-
-        {down && activePanel === 'down' && (
-          <div style={overlayStyle}>{down(makePanelProps('down'))}</div>
+        {activePanel === null && closingPanel === null && (
+          <>
+            {left && (
+              <div
+                style={triggerStyles.left}
+                onMouseEnter={() => handleTriggerEnter('left')}
+                onMouseLeave={handleTriggerLeave}
+              />
+            )}
+            {right && (
+              <div
+                style={triggerStyles.right}
+                onMouseEnter={() => handleTriggerEnter('right')}
+                onMouseLeave={handleTriggerLeave}
+              />
+            )}
+            {up && (
+              <div
+                style={triggerStyles.up}
+                onMouseEnter={() => handleTriggerEnter('up')}
+                onMouseLeave={handleTriggerLeave}
+              />
+            )}
+            {down && (
+              <div
+                style={triggerStyles.down}
+                onMouseEnter={() => handleTriggerEnter('down')}
+                onMouseLeave={handleTriggerLeave}
+              />
+            )}
+          </>
         )}
       </div>
     </FocusProvider>
