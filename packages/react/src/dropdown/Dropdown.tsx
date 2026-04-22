@@ -1,6 +1,12 @@
 import { ButtonBehavior } from '@navix/core';
 import type { FocusNode } from '@navix/core';
-import { useRef, useMemo, useCallback, type ReactNode, type CSSProperties } from 'react';
+import {
+  useRef,
+  useMemo,
+  useCallback,
+  type ReactNode,
+  type CSSProperties,
+} from 'react';
 
 import { Expandable } from '../expandable/Expandable';
 import { PaginatedList } from '../paginated-list/PaginatedList';
@@ -154,7 +160,8 @@ export function Dropdown({
 
   const triggerLabel = useMemo(() => {
     if (value.length === 0) return placeholder;
-    if (value.length === 1) return options.find((o) => o.value === value[0])?.label ?? placeholder;
+    if (value.length === 1)
+      return options.find((o) => o.value === value[0])?.label ?? placeholder;
     return `${value.length} selected`;
   }, [value, options, placeholder]);
 

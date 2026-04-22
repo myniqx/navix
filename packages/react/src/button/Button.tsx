@@ -93,7 +93,8 @@ export function Button({
   );
 
   const mergedClassName = useMemo(
-    () => mergeClassName(className, directlyFocused ? focusedClassName : undefined),
+    () =>
+      mergeClassName(className, directlyFocused ? focusedClassName : undefined),
     [className, focusedClassName, directlyFocused],
   );
 

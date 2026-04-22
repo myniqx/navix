@@ -84,11 +84,12 @@ export function Input({
   );
 
   const mergedClassName = useMemo(
-    () => mergeClassName(
-      className,
-      focused ? focusedClassName : undefined,
-      isEditing ? editingClassName : undefined,
-    ),
+    () =>
+      mergeClassName(
+        className,
+        focused ? focusedClassName : undefined,
+        isEditing ? editingClassName : undefined,
+      ),
     [className, focusedClassName, editingClassName, focused, isEditing],
   );
 

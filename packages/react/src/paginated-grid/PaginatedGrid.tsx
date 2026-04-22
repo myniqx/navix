@@ -19,12 +19,21 @@ interface SlotProps {
   itemKey: string;
   index: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  renderItemRef: React.RefObject<(item: any, fKey: string, index: number) => ReactNode>;
+  renderItemRef: React.RefObject<
+    (item: any, fKey: string, index: number) => ReactNode
+  >;
   slotStyle: CSSProperties;
   slotClassName?: string;
 }
 
-const Slot = memo(function Slot({ item, itemKey, index, renderItemRef, slotStyle, slotClassName }: SlotProps) {
+const Slot = memo(function Slot({
+  item,
+  itemKey,
+  index,
+  renderItemRef,
+  slotStyle,
+  slotClassName,
+}: SlotProps) {
   return (
     <div style={slotStyle} className={slotClassName}>
       {renderItemRef.current(item, itemKey, index)}
@@ -105,7 +114,9 @@ export function PaginatedGrid<T>({
 
   const behavior = node.behavior as PaginatedGridBehavior;
 
-  const renderItemRef = useRef(renderItem) as React.RefObject<(item: any, fKey: string, index: number) => ReactNode>;
+  const renderItemRef = useRef(renderItem) as React.RefObject<
+    (item: any, fKey: string, index: number) => ReactNode
+  >;
   renderItemRef.current = renderItem;
 
   useEffect(() => {
