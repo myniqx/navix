@@ -8,6 +8,7 @@ import {
   useCallback,
   type ReactNode,
   type CSSProperties,
+  type HTMLAttributes,
 } from 'react';
 
 import { mergeClassName } from '../mergeClassName';
@@ -33,8 +34,17 @@ interface InputProps extends BaseComponentProps {
   className?: string;
   focusedClassName?: string;
   editingClassName?: string;
+  placeholder?: string;
+  type?: string;
+  maxLength?: number;
+  autoComplete?: string;
+  inputMode?: HTMLAttributes<HTMLInputElement>['inputMode'];
   children?: InputRenderFn;
 }
+
+const DEFAULT_FOCUSED_STYLE: CSSProperties = {
+  outline: '2px solid rgba(255,255,255,0.25)',
+};
 
 export function Input({
   fKey,
@@ -51,6 +61,11 @@ export function Input({
   className,
   focusedClassName,
   editingClassName,
+  placeholder,
+  type,
+  maxLength,
+  autoComplete,
+  inputMode,
   children,
 }: InputProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -77,10 +92,12 @@ export function Input({
   const mergedStyle = useMemo<CSSProperties>(
     () => ({
       ...style,
-      ...(focused ? focusedStyle : undefined),
+      ...(focused
+        ? (focusedStyle ?? (!focusedClassName ? DEFAULT_FOCUSED_STYLE : undefined))
+        : undefined),
       ...(isEditing ? editingStyle : undefined),
     }),
-    [style, focusedStyle, editingStyle, focused, isEditing],
+    [style, focusedStyle, focusedClassName, editingStyle, focused, isEditing],
   );
 
   const mergedClassName = useMemo(
@@ -117,6 +134,11 @@ export function Input({
             ref={inputRef}
             value={value}
             onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            type={type}
+            maxLength={maxLength}
+            autoComplete={autoComplete}
+            inputMode={inputMode}
           />
         )}
       </div>
