@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import '../core/nav_event.dart';
@@ -63,6 +64,20 @@ class NavixPaginatedListBehavior extends IFocusNodeBehavior {
   }
 
   void _onChildRegistered(NavixFocusNode child) {
+    bool keyMatchesAnyItem = false;
+    for (int i = 0; i < totalCount; i++) {
+      if (_keyForIndex(i) == child.key) {
+        keyMatchesAnyItem = true;
+        break;
+      }
+    }
+    if (!keyMatchesAnyItem) {
+      debugPrint(
+          '[NavixPaginatedList:${_node.key}] Registered child key "${child.key}" does not match any key produced by keyForItem. '
+          'Pass the fKey argument from renderItem to your child widget instead of assigning a custom fKey, '
+          'or supply a keyForItem that returns the same key your child uses.');
+    }
+
     if (_pendingFocusKey != null && child.key == _pendingFocusKey) {
       _pendingFocusKey = null;
       _node.focusChild(child.id);
@@ -123,6 +138,8 @@ typedef NavixPaginatedListItemBuilder<T> = Widget Function(
   int index,
 );
 
+typedef NavixPaginatedListKeyForItem<T> = String Function(T item, int index);
+
 class NavixPaginatedList<T> extends StatefulWidget {
   final String fKey;
   final NavixListOrientation orientation;
@@ -130,6 +147,8 @@ class NavixPaginatedList<T> extends StatefulWidget {
   final int visibleCount;
   final int threshold;
   final NavixPaginatedListItemBuilder<T> renderItem;
+  final NavixPaginatedListKeyForItem<T>? keyForItem;
+  final String? groupKey;
   final double gap;
   final int buffer;
   final void Function(String key)? onFocus;
@@ -145,6 +164,8 @@ class NavixPaginatedList<T> extends StatefulWidget {
     required this.visibleCount,
     required this.threshold,
     required this.renderItem,
+    this.keyForItem,
+    this.groupKey,
     this.orientation = NavixListOrientation.horizontal,
     this.gap = 0,
     this.buffer = 2,
@@ -163,40 +184,83 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
   int _viewOffset = 0;
   NavixPaginatedListBehavior? _behavior;
 
-  // Stable keys tied to items list reference — regenerate when items changes.
-  late String _keyPrefix;
   late List<String> _itemKeys;
+
+  final Map<String, _GroupSelection> _selectionByGroup = {};
+  String? _currentGroupKey;
+
+  String _defaultKeyForItem(T item, int index) => '${widget.fKey}-$index';
+
+  String _keyForItem(T item, int index) =>
+      (widget.keyForItem ?? _defaultKeyForItem)(item, index);
 
   @override
   void initState() {
     super.initState();
-    _regenerateKeys();
+    _rebuildKeys();
+    _currentGroupKey = widget.groupKey;
   }
 
   @override
   void didUpdateWidget(NavixPaginatedList<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.items, widget.items)) {
-      _regenerateKeys();
+    final itemsChanged = !identical(oldWidget.items, widget.items);
+    final keyFnChanged = oldWidget.keyForItem != widget.keyForItem;
+    if (itemsChanged || keyFnChanged) {
+      _rebuildKeys();
     }
+
+    final groupChanged = widget.groupKey != _currentGroupKey;
+
     if (_behavior != null) {
+      if (groupChanged) {
+        final prevGroup = _currentGroupKey;
+        if (prevGroup != null && oldWidget.items.isNotEmpty) {
+          _selectionByGroup[prevGroup] = _GroupSelection(
+            activeIndex: _behavior!.activeIndex,
+            viewOffset: _behavior!.viewOffset,
+          );
+        }
+
+        final newGroup = widget.groupKey;
+        final restored = newGroup != null ? _selectionByGroup[newGroup] : null;
+        _behavior!.activeIndex = restored?.activeIndex ?? 0;
+        _behavior!.viewOffset = restored?.viewOffset ?? 0;
+        _currentGroupKey = newGroup;
+      }
+
       _behavior!.totalCount = widget.items.length;
       _behavior!.visibleCount = widget.visibleCount;
       _behavior!.threshold = widget.threshold;
       _clampBehaviorState();
       _behavior!.onChange = _onBehaviorChange;
+
+      if (groupChanged && widget.items.isNotEmpty) {
+        final idx = _behavior!.activeIndex;
+        if (idx >= 0 && idx < _itemKeys.length) {
+          _behavior!.focusByKey(_itemKeys[idx]);
+        }
+      }
     }
   }
 
-  void _regenerateKeys() {
-    _keyPrefix =
-        '${widget.fKey}-${Object.hash(widget.items, DateTime.now().microsecondsSinceEpoch)}';
-    _itemKeys = List.generate(widget.items.length, (i) => '$_keyPrefix-$i');
+  void _rebuildKeys() {
+    _itemKeys = List.generate(
+      widget.items.length,
+      (i) => _keyForItem(widget.items[i], i),
+    );
   }
 
   void _onBehaviorChange(int newIndex, int newOffset) {
     if (newIndex < 0 || newIndex >= _itemKeys.length) return;
     setState(() => _viewOffset = newOffset);
+    final group = _currentGroupKey;
+    if (group != null) {
+      _selectionByGroup[group] = _GroupSelection(
+        activeIndex: newIndex,
+        viewOffset: newOffset,
+      );
+    }
     _behavior?.focusByKey(_itemKeys[newIndex]);
   }
 
@@ -241,6 +305,14 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
           threshold: widget.threshold,
           keyForIndex: (i) => _itemKeys[i],
         );
+        final initialGroup = widget.groupKey;
+        final restored =
+            initialGroup != null ? _selectionByGroup[initialGroup] : null;
+        if (restored != null) {
+          _behavior!.activeIndex = restored.activeIndex;
+          _behavior!.viewOffset = restored.viewOffset;
+          _viewOffset = restored.viewOffset;
+        }
         _behavior!.onChange = _onBehaviorChange;
         return _behavior!;
       },
@@ -255,7 +327,8 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
 
               final totalGap = (widget.visibleCount - 1) * widget.gap;
               final slotSize =
-                  (containerWidth - totalGap) / widget.visibleCount;
+                  ((containerWidth - totalGap) / widget.visibleCount)
+                      .floorToDouble();
               final step = slotSize + widget.gap;
               final translate = -_viewOffset * step;
 
@@ -267,7 +340,6 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
               final paddingBefore = renderStart * step;
 
               final slots = <Widget>[
-                if (paddingBefore > 0) SizedBox(width: paddingBefore),
                 for (int i = renderStart; i < renderEnd; i++)
                   SizedBox(
                     key: ValueKey(_itemKeys[i]),
@@ -288,7 +360,10 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: _intersperse(slots, widget.gap, true),
+                        children: [
+                          if (paddingBefore > 0) SizedBox(width: paddingBefore),
+                          ..._intersperse(slots, widget.gap, true),
+                        ],
                       ),
                     ),
                   ),
@@ -306,7 +381,8 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
 
               final totalGap = (widget.visibleCount - 1) * widget.gap;
               final slotSize =
-                  (containerHeight - totalGap) / widget.visibleCount;
+                  ((containerHeight - totalGap) / widget.visibleCount)
+                      .floorToDouble();
               final step = slotSize + widget.gap;
               final translate = -_viewOffset * step;
 
@@ -318,7 +394,6 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
               final paddingBefore = renderStart * step;
 
               final slots = <Widget>[
-                if (paddingBefore > 0) SizedBox(height: paddingBefore),
                 for (int i = renderStart; i < renderEnd; i++)
                   SizedBox(
                     key: ValueKey(_itemKeys[i]),
@@ -339,7 +414,10 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: _intersperse(slots, widget.gap, false),
+                        children: [
+                          if (paddingBefore > 0) SizedBox(height: paddingBefore),
+                          ..._intersperse(slots, widget.gap, false),
+                        ],
                       ),
                     ),
                   ),
@@ -367,4 +445,10 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
     }
     return result;
   }
+}
+
+class _GroupSelection {
+  final int activeIndex;
+  final int viewOffset;
+  const _GroupSelection({required this.activeIndex, required this.viewOffset});
 }

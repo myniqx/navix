@@ -1,15 +1,17 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import '../core/nav_event.dart';
 import '../core/focus_node.dart';
 import 'navix_focusable.dart';
-import 'navix_paginated_list.dart' show NavixListOrientation;
+
+enum NavixGridOrientation { horizontal, vertical, autoHorizontal }
 
 class NavixPaginatedGridBehavior extends IFocusNodeBehavior {
   final NavixFocusNode _node;
-  final NavixListOrientation orientation;
   final String Function(int index) _keyForIndex;
 
+  NavixGridOrientation orientation;
   int totalCount;
   int activeIndex = 0;
   int viewOffset = 0;
@@ -22,6 +24,18 @@ class NavixPaginatedGridBehavior extends IFocusNodeBehavior {
 
   void Function(int newIndex, int newOffset)? onChange;
 
+  // Resolves 'autoHorizontal' to 'horizontal' or 'vertical' based on whether
+  // all items fit into a single page. When items don't fill the grid,
+  // vertical (row-major) layout looks better.
+  NavixGridOrientation get effectiveOrientation {
+    if (orientation == NavixGridOrientation.autoHorizontal) {
+      return totalCount < _rows * _columns
+          ? NavixGridOrientation.vertical
+          : NavixGridOrientation.horizontal;
+    }
+    return orientation;
+  }
+
   int get rows => _rows;
   set rows(int value) => _rows = value < 3 ? 3 : value;
 
@@ -31,7 +45,9 @@ class NavixPaginatedGridBehavior extends IFocusNodeBehavior {
   int get threshold => _threshold;
   set threshold(int value) {
     final visibleSlices =
-        orientation == NavixListOrientation.horizontal ? _columns : _rows;
+        effectiveOrientation == NavixGridOrientation.horizontal
+            ? _columns
+            : _rows;
     _threshold = value < 1
         ? 1
         : value > visibleSlices - 2
@@ -61,7 +77,7 @@ class NavixPaginatedGridBehavior extends IFocusNodeBehavior {
   bool _handleEvent(NavEvent event) {
     if (event.type != NavEventType.press) return false;
 
-    if (orientation == NavixListOrientation.horizontal) {
+    if (effectiveOrientation == NavixGridOrientation.horizontal) {
       if (event.action == 'up') return _moveTo(activeIndex - 1, 'cross');
       if (event.action == 'down') return _moveTo(activeIndex + 1, 'cross');
       if (event.action == 'left') return _moveTo(activeIndex - _rows, 'main');
@@ -78,6 +94,20 @@ class NavixPaginatedGridBehavior extends IFocusNodeBehavior {
   }
 
   void _onChildRegistered(NavixFocusNode child) {
+    bool keyMatchesAnyItem = false;
+    for (int i = 0; i < totalCount; i++) {
+      if (_keyForIndex(i) == child.key) {
+        keyMatchesAnyItem = true;
+        break;
+      }
+    }
+    if (!keyMatchesAnyItem) {
+      debugPrint(
+          '[NavixPaginatedGrid:${_node.key}] Registered child key "${child.key}" does not match any key produced by keyForItem. '
+          'Pass the fKey argument from renderItem to your child widget instead of assigning a custom fKey, '
+          'or supply a keyForItem that returns the same key your child uses.');
+    }
+
     if (_pendingFocusKey != null && child.key == _pendingFocusKey) {
       _pendingFocusKey = null;
       _node.focusChild(child.id);
@@ -110,7 +140,9 @@ class NavixPaginatedGridBehavior extends IFocusNodeBehavior {
 
     if (axis == 'cross') {
       final sliceSize =
-          orientation == NavixListOrientation.horizontal ? _rows : _columns;
+          effectiveOrientation == NavixGridOrientation.horizontal
+              ? _rows
+              : _columns;
       final oldSlice = activeIndex ~/ sliceSize;
       final newSlice = newIndex ~/ sliceSize;
       if (oldSlice != newSlice) return false;
@@ -124,9 +156,13 @@ class NavixPaginatedGridBehavior extends IFocusNodeBehavior {
 
   void _updateOffset() {
     final sliceSize =
-        orientation == NavixListOrientation.horizontal ? _rows : _columns;
+        effectiveOrientation == NavixGridOrientation.horizontal
+            ? _rows
+            : _columns;
     final visibleSlices =
-        orientation == NavixListOrientation.horizontal ? _columns : _rows;
+        effectiveOrientation == NavixGridOrientation.horizontal
+            ? _columns
+            : _rows;
     final totalSlices = (totalCount / sliceSize).ceil();
     final maxOffset =
         totalSlices - visibleSlices > 0 ? totalSlices - visibleSlices : 0;
@@ -153,14 +189,18 @@ typedef NavixPaginatedGridItemBuilder<T> = Widget Function(
   int index,
 );
 
+typedef NavixPaginatedGridKeyForItem<T> = String Function(T item, int index);
+
 class NavixPaginatedGrid<T> extends StatefulWidget {
   final String fKey;
-  final NavixListOrientation orientation;
+  final NavixGridOrientation orientation;
   final List<T> items;
   final int rows;
   final int columns;
   final int threshold;
   final NavixPaginatedGridItemBuilder<T> renderItem;
+  final NavixPaginatedGridKeyForItem<T>? keyForItem;
+  final String? groupKey;
   final double gap;
   final int buffer;
   final void Function(String key)? onFocus;
@@ -177,7 +217,9 @@ class NavixPaginatedGrid<T> extends StatefulWidget {
     required this.columns,
     required this.threshold,
     required this.renderItem,
-    this.orientation = NavixListOrientation.horizontal,
+    this.keyForItem,
+    this.groupKey,
+    this.orientation = NavixGridOrientation.horizontal,
     this.gap = 0,
     this.buffer = 1,
     this.onFocus,
@@ -195,40 +237,96 @@ class _NavixPaginatedGridState<T> extends State<NavixPaginatedGrid<T>> {
   int _viewOffset = 0;
   NavixPaginatedGridBehavior? _behavior;
 
-  late String _keyPrefix;
   late List<String> _itemKeys;
+
+  final Map<String, _GroupSelection> _selectionByGroup = {};
+  String? _currentGroupKey;
+
+  String _defaultKeyForItem(T item, int index) => '${widget.fKey}-$index';
+
+  String _keyForItem(T item, int index) =>
+      (widget.keyForItem ?? _defaultKeyForItem)(item, index);
+
+  NavixGridOrientation get _effectiveOrientation {
+    if (widget.orientation == NavixGridOrientation.autoHorizontal) {
+      return widget.items.length < widget.rows * widget.columns
+          ? NavixGridOrientation.vertical
+          : NavixGridOrientation.horizontal;
+    }
+    return widget.orientation;
+  }
 
   @override
   void initState() {
     super.initState();
-    _regenerateKeys();
+    _rebuildKeys();
+    _currentGroupKey = widget.groupKey;
   }
 
   @override
   void didUpdateWidget(NavixPaginatedGrid<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.items, widget.items)) {
-      _regenerateKeys();
+    final itemsChanged = !identical(oldWidget.items, widget.items);
+    final keyFnChanged = oldWidget.keyForItem != widget.keyForItem;
+    if (itemsChanged || keyFnChanged) {
+      _rebuildKeys();
     }
+
+    final groupChanged = widget.groupKey != _currentGroupKey;
+
     if (_behavior != null) {
+      // On group switch, commit current selection under the previous groupKey
+      // (if any) and restore the new group's saved selection or 0,0.
+      if (groupChanged) {
+        final prevGroup = _currentGroupKey;
+        if (prevGroup != null && oldWidget.items.isNotEmpty) {
+          _selectionByGroup[prevGroup] = _GroupSelection(
+            activeIndex: _behavior!.activeIndex,
+            viewOffset: _behavior!.viewOffset,
+          );
+        }
+
+        final newGroup = widget.groupKey;
+        final restored = newGroup != null ? _selectionByGroup[newGroup] : null;
+        _behavior!.activeIndex = restored?.activeIndex ?? 0;
+        _behavior!.viewOffset = restored?.viewOffset ?? 0;
+        _currentGroupKey = newGroup;
+      }
+
       _behavior!.totalCount = widget.items.length;
       _behavior!.rows = widget.rows;
       _behavior!.columns = widget.columns;
+      _behavior!.orientation = widget.orientation;
       _behavior!.threshold = widget.threshold;
       _clampBehaviorState();
       _behavior!.onChange = _onBehaviorChange;
+
+      if (groupChanged && widget.items.isNotEmpty) {
+        final idx = _behavior!.activeIndex;
+        if (idx >= 0 && idx < _itemKeys.length) {
+          _behavior!.focusByKey(_itemKeys[idx]);
+        }
+      }
     }
   }
 
-  void _regenerateKeys() {
-    _keyPrefix =
-        '${widget.fKey}-${Object.hash(widget.items, DateTime.now().microsecondsSinceEpoch)}';
-    _itemKeys = List.generate(widget.items.length, (i) => '$_keyPrefix-$i');
+  void _rebuildKeys() {
+    _itemKeys = List.generate(
+      widget.items.length,
+      (i) => _keyForItem(widget.items[i], i),
+    );
   }
 
   void _onBehaviorChange(int newIndex, int newOffset) {
     if (newIndex < 0 || newIndex >= _itemKeys.length) return;
     setState(() => _viewOffset = newOffset);
+    final group = _currentGroupKey;
+    if (group != null) {
+      _selectionByGroup[group] = _GroupSelection(
+        activeIndex: newIndex,
+        viewOffset: newOffset,
+      );
+    }
     _behavior?.focusByKey(_itemKeys[newIndex]);
   }
 
@@ -236,12 +334,13 @@ class _NavixPaginatedGridState<T> extends State<NavixPaginatedGrid<T>> {
     final behavior = _behavior;
     if (behavior == null) return;
 
-    final sliceSize = widget.orientation == NavixListOrientation.horizontal
+    final sliceSize = _effectiveOrientation == NavixGridOrientation.horizontal
         ? behavior.rows
         : behavior.columns;
-    final visibleSlices = widget.orientation == NavixListOrientation.horizontal
-        ? behavior.columns
-        : behavior.rows;
+    final visibleSlices =
+        _effectiveOrientation == NavixGridOrientation.horizontal
+            ? behavior.columns
+            : behavior.rows;
     final totalSlices = (widget.items.length / sliceSize).ceil();
     final maxOffset = totalSlices - visibleSlices > 0
         ? totalSlices - visibleSlices
@@ -260,7 +359,8 @@ class _NavixPaginatedGridState<T> extends State<NavixPaginatedGrid<T>> {
 
   @override
   Widget build(BuildContext context) {
-    final isHorizontal = widget.orientation == NavixListOrientation.horizontal;
+    final isHorizontal =
+        _effectiveOrientation == NavixGridOrientation.horizontal;
     final sliceSize = isHorizontal ? widget.rows : widget.columns;
     final visibleSlices = isHorizontal ? widget.columns : widget.rows;
 
@@ -283,6 +383,14 @@ class _NavixPaginatedGridState<T> extends State<NavixPaginatedGrid<T>> {
           threshold: widget.threshold,
           keyForIndex: (i) => _itemKeys[i],
         );
+        final initialGroup = widget.groupKey;
+        final restored =
+            initialGroup != null ? _selectionByGroup[initialGroup] : null;
+        if (restored != null) {
+          _behavior!.activeIndex = restored.activeIndex;
+          _behavior!.viewOffset = restored.viewOffset;
+          _viewOffset = restored.viewOffset;
+        }
         _behavior!.onChange = _onBehaviorChange;
         return _behavior!;
       },
@@ -294,16 +402,24 @@ class _NavixPaginatedGridState<T> extends State<NavixPaginatedGrid<T>> {
             final crossSize =
                 isHorizontal ? constraints.maxHeight : constraints.maxWidth;
 
+            if (mainSize == 0 ||
+                mainSize.isInfinite ||
+                crossSize == 0 ||
+                crossSize.isInfinite) {
+              return const SizedBox.shrink();
+            }
+
             final mainGaps = (visibleSlices - 1) * widget.gap;
             final sliceMainSize = mainSize > 0
-                ? (mainSize - mainGaps) / visibleSlices
+                ? ((mainSize - mainGaps) / visibleSlices).floorToDouble()
                 : 0.0;
             final mainStep = sliceMainSize + widget.gap;
             final translate = -_viewOffset * mainStep;
 
             final crossGaps = (sliceSize - 1) * widget.gap;
-            final slotCrossSize =
-                crossSize > 0 ? (crossSize - crossGaps) / sliceSize : 0.0;
+            final slotCrossSize = crossSize > 0
+                ? ((crossSize - crossGaps) / sliceSize).floorToDouble()
+                : 0.0;
 
             final totalSlices = (widget.items.length / sliceSize).ceil();
             final renderStartSlice =
@@ -315,13 +431,6 @@ class _NavixPaginatedGridState<T> extends State<NavixPaginatedGrid<T>> {
 
             // Build slices
             final sliceWidgets = <Widget>[];
-
-            if (paddingBefore > 0) {
-              sliceWidgets.add(SizedBox(
-                width: isHorizontal ? paddingBefore : null,
-                height: isHorizontal ? null : paddingBefore,
-              ));
-            }
 
             for (int s = renderStartSlice; s < renderEndSlice; s++) {
               final startIdx = s * sliceSize;
@@ -338,7 +447,7 @@ class _NavixPaginatedGridState<T> extends State<NavixPaginatedGrid<T>> {
               }
 
               final sliceWidget = SizedBox(
-                key: ValueKey('$_keyPrefix-slice-$s'),
+                key: ValueKey('${widget.fKey}-slice-$s'),
                 width: isHorizontal ? sliceMainSize : null,
                 height: isHorizontal ? null : sliceMainSize,
                 child: isHorizontal
@@ -354,25 +463,41 @@ class _NavixPaginatedGridState<T> extends State<NavixPaginatedGrid<T>> {
               sliceWidgets.add(sliceWidget);
             }
 
+            final spacedSlices = _intersperse(sliceWidgets, widget.gap, isHorizontal);
+            final children = <Widget>[
+              if (paddingBefore > 0)
+                SizedBox(
+                  width: isHorizontal ? paddingBefore : null,
+                  height: isHorizontal ? null : paddingBefore,
+                ),
+              ...spacedSlices,
+            ];
+
             final inner = isHorizontal
                 ? Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: _intersperse(sliceWidgets, widget.gap, true),
+                    children: children,
                   )
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: _intersperse(sliceWidgets, widget.gap, false),
+                    children: children,
                   );
 
-            return ClipRect(
-              child: UnconstrainedBox(
-                alignment: Alignment.topLeft,
-                constrainedAxis: isHorizontal ? Axis.vertical : Axis.horizontal,
-                child: Transform.translate(
-                  offset: isHorizontal
-                      ? Offset(translate, 0)
-                      : Offset(0, translate),
-                  child: inner,
+            return SizedBox(
+              width: isHorizontal ? mainSize : crossSize,
+              height: isHorizontal ? crossSize : mainSize,
+              child: ClipRect(
+                child: UnconstrainedBox(
+                  alignment: Alignment.topLeft,
+                  constrainedAxis:
+                      isHorizontal ? Axis.vertical : Axis.horizontal,
+                  clipBehavior: Clip.hardEdge,
+                  child: Transform.translate(
+                    offset: isHorizontal
+                        ? Offset(translate, 0)
+                        : Offset(0, translate),
+                    child: inner,
+                  ),
                 ),
               ),
             );
@@ -397,4 +522,10 @@ class _NavixPaginatedGridState<T> extends State<NavixPaginatedGrid<T>> {
     }
     return result;
   }
+}
+
+class _GroupSelection {
+  final int activeIndex;
+  final int viewOffset;
+  const _GroupSelection({required this.activeIndex, required this.viewOffset});
 }

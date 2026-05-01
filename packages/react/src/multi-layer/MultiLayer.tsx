@@ -266,7 +266,7 @@ export function MultiLayer({
 
   return (
     <FocusProvider>
-      <div style={wrapperStyle}>
+      <div data-navix-node-id={node.id} style={wrapperStyle}>
         {baseLayer()}
 
         {notification && (

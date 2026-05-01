@@ -50,6 +50,7 @@ class NavixGrid extends StatefulWidget {
   final void Function(String key)? onBlurred;
   final void Function(String key)? onRegister;
   final void Function(String key)? onUnregister;
+  final bool Function(NavEvent event)? onEvent;
 
   const NavixGrid({
     super.key,
@@ -60,6 +61,7 @@ class NavixGrid extends StatefulWidget {
     this.onBlurred,
     this.onRegister,
     this.onUnregister,
+    this.onEvent,
   });
 
   @override
@@ -86,6 +88,7 @@ class _NavixGridState extends State<NavixGrid> {
         onBlurred: widget.onBlurred,
         onRegister: widget.onRegister,
         onUnregister: widget.onUnregister,
+        onEvent: widget.onEvent,
       ),
       createBehavior: (node) {
         _behavior = _GridBehavior(node, widget.columns);

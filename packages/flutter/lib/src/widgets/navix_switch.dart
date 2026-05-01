@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import '../core/nav_event.dart';
 import 'navix_button.dart';
 
 typedef NavixSwitchBuilder = Widget Function(
@@ -17,6 +18,7 @@ class NavixSwitch extends StatelessWidget {
   final void Function(String key)? onBlurred;
   final void Function(String key)? onRegister;
   final void Function(String key)? onUnregister;
+  final bool Function(NavEvent event)? onEvent;
 
   const NavixSwitch({
     super.key,
@@ -28,6 +30,7 @@ class NavixSwitch extends StatelessWidget {
     this.onBlurred,
     this.onRegister,
     this.onUnregister,
+    this.onEvent,
   });
 
   @override
@@ -39,6 +42,7 @@ class NavixSwitch extends StatelessWidget {
       onBlurred: onBlurred,
       onRegister: onRegister,
       onUnregister: onUnregister,
+      onEvent: onEvent,
       builder: (context, focused) => builder(context, checked, focused),
     );
   }

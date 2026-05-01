@@ -122,6 +122,7 @@ export function Input({
   return (
     <FocusProvider>
       <div
+        data-navix-node-id={node.id}
         style={mergedStyle}
         className={mergedClassName || undefined}
         onMouseEnter={focusSelf}

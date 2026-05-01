@@ -155,6 +155,43 @@ export function OptionsModal({
             )}
           </Switch>
 
+          {notifications && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                marginBottom: 16,
+              }}
+            >
+              <div
+                style={{
+                  width: 100,
+                  fontSize: 13,
+                  color: '#666',
+                  flexShrink: 0,
+                }}
+              >
+                Email
+              </div>
+              <Input
+                fKey="options-email"
+                value=""
+                onChange={() => {}}
+                style={{
+                  flex: 1,
+                  border: '1px solid #2a2a4a',
+                  borderRadius: 4,
+                  background: '#0e0e1a',
+                  padding: '5px 10px',
+                  fontSize: 13,
+                  color: '#ccc',
+                  outline: 'none',
+                }}
+                focusedStyle={{ borderColor: '#4fc3f7' }}
+              />
+            </div>
+          )}
+
           <div
             style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}
           >

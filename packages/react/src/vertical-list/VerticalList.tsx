@@ -1,10 +1,11 @@
 import { ListBehavior } from '@navix/core';
 import type { FocusNode } from '@navix/core';
-import { useMemo, type ReactNode } from 'react';
+import { useMemo, useRef, type ReactNode } from 'react';
 import type React from 'react';
 
 import { mergeClassName } from '../mergeClassName';
 import type { BaseComponentProps } from '../types';
+import { useChildReorder } from '../useChildReorder';
 import { useFocusable } from '../useFocusable';
 
 interface VerticalListProps extends BaseComponentProps {
@@ -28,30 +29,37 @@ export function VerticalList({
   style,
   focusedStyle,
 }: VerticalListProps) {
-  const { focused, FocusProvider } = useFocusable(
+  const { node, focused, FocusProvider } = useFocusable(
     fKey,
     { onFocus, onBlurred, onRegister, onUnregister, onEvent },
-    (node: FocusNode) => new ListBehavior(node, 'vertical'),
+    (n: FocusNode) => new ListBehavior(n, 'vertical'),
   );
 
-  const hasWrapper = className || focusedClassName || style || focusedStyle;
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  useChildReorder(node, containerRef);
 
-  if (!hasWrapper) {
-    return <FocusProvider>{children}</FocusProvider>;
-  }
+  const hasWrapper = !!(className || focusedClassName || style || focusedStyle);
 
   const mergedClassName = useMemo(
     () => mergeClassName(className, focused ? focusedClassName : undefined),
     [className, focusedClassName, focused],
   );
-  const mergedStyle = useMemo(
-    () => ({ ...style, ...(focused ? focusedStyle : undefined) }),
-    [style, focusedStyle, focused],
+  const mergedStyle = useMemo<React.CSSProperties>(
+    () =>
+      hasWrapper
+        ? { ...style, ...(focused ? focusedStyle : undefined) }
+        : { display: 'contents' },
+    [hasWrapper, style, focusedStyle, focused],
   );
 
   return (
     <FocusProvider>
-      <div className={mergedClassName || undefined} style={mergedStyle}>
+      <div
+        ref={containerRef}
+        data-navix-node-id={node.id}
+        className={hasWrapper ? mergedClassName || undefined : undefined}
+        style={mergedStyle}
+      >
         {children}
       </div>
     </FocusProvider>

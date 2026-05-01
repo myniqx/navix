@@ -18,6 +18,7 @@ class NavixButton extends StatelessWidget {
   final void Function(String key)? onBlurred;
   final void Function(String key)? onRegister;
   final void Function(String key)? onUnregister;
+  final bool Function(NavEvent event)? onEvent;
   final NavixButtonBuilder? builder;
   final Widget? child;
 
@@ -31,6 +32,7 @@ class NavixButton extends StatelessWidget {
     this.onBlurred,
     this.onRegister,
     this.onUnregister,
+    this.onEvent,
     this.builder,
     this.child,
   }) : assert(
@@ -47,6 +49,7 @@ class NavixButton extends StatelessWidget {
         onBlurred: onBlurred,
         onRegister: onRegister,
         onUnregister: onUnregister,
+        onEvent: onEvent,
       ),
       createBehavior: (node) => _ButtonBehavior(
         onPress: onClick,

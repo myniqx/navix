@@ -120,6 +120,28 @@ export class FocusNode {
     return true;
   }
 
+  // Reorders existing children without firing register/unregister callbacks.
+  // The new list must contain exactly the same nodes as `children` (no
+  // additions, no removals); otherwise the call is a no-op. `activeChildId`
+  // is preserved.
+  reorderChildren(ordered: FocusNode[]): void {
+    if (ordered.length !== this.children.length) return;
+    const currentSet = new Set(this.children);
+    for (const n of ordered) {
+      if (!currentSet.has(n)) return;
+    }
+    let changed = false;
+    for (let i = 0; i < ordered.length; i++) {
+      if (this.children[i] !== ordered[i]) {
+        changed = true;
+        break;
+      }
+    }
+    if (!changed) return;
+    this.children = [...ordered];
+    this.notify();
+  }
+
   focusChild(childId: string): boolean {
     const child = this.children.find((c) => c.id === childId);
     if (!child) return false;

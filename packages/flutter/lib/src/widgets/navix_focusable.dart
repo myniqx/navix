@@ -172,6 +172,25 @@ class _NavixFocusInherited extends InheritedWidget {
   bool updateShouldNotify(_NavixFocusInherited old) => old.node != node;
 }
 
+// Walks the element tree below [root] in render order and collects the
+// nearest `NavixFocusNode` at each branch — descent stops as soon as a
+// focusable is found, so nested NavixHorizontalList/Grid instances are not
+// flattened into the outer parent.
+List<NavixFocusNode> collectImmediateFocusNodes(Element root) {
+  final result = <NavixFocusNode>[];
+  void visit(Element element) {
+    final widget = element.widget;
+    if (widget is _NavixFocusInherited) {
+      result.add(widget.node);
+      return; // do not descend into this focusable's subtree
+    }
+    element.visitChildren(visit);
+  }
+
+  root.visitChildren(visit);
+  return result;
+}
+
 class DefaultNavixBehavior extends IFocusNodeBehavior {}
 
 class _DefaultBehavior extends DefaultNavixBehavior {}

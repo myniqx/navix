@@ -302,7 +302,7 @@ function OptionButton({
 
   const handleClick = useCallback(() => onSelectRef.current(), []);
 
-  const { directlyFocused, focusSelf } = useFocusable(
+  const { node, directlyFocused, focusSelf } = useFocusable(
     fKey,
     undefined,
     (n: FocusNode) =>
@@ -311,6 +311,7 @@ function OptionButton({
 
   return (
     <div
+      data-navix-node-id={node.id}
       style={{ height, flexShrink: 0, width: '100%' }}
       onMouseEnter={focusSelf}
       onClick={handleClick}

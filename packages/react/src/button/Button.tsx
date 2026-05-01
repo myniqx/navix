@@ -71,7 +71,7 @@ export function Button({
   onLongPressRef.current = onLongPress;
   onDoublePressRef.current = onDoublePress;
 
-  const { directlyFocused, focusSelf } = useFocusable(
+  const { node, directlyFocused, focusSelf } = useFocusable(
     fKey,
     { onFocus, onBlurred, onRegister, onUnregister, onEvent },
     (node: FocusNode) =>
@@ -111,6 +111,7 @@ export function Button({
   return (
     <div
       {...rest}
+      data-navix-node-id={node.id}
       data-focused={directlyFocused}
       style={mergedStyle}
       className={mergedClassName || undefined}

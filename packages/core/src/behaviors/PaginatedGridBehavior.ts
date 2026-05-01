@@ -1,7 +1,24 @@
 import type { FocusNode } from '../FocusNode';
 import type { NavEvent, IFocusNodeBehavior } from '../types';
 
-export type PaginatedGridOrientation = 'horizontal' | 'vertical';
+/**
+ * Orientation of a `PaginatedGrid`.
+ *
+ * - `horizontal` — column-major layout, paginates left/right.
+ * - `vertical` — row-major layout, paginates up/down.
+ * - `auto-horizontal` — behaves like `horizontal` when there are enough items
+ *   to fill the grid (`items.length >= rows * columns`); otherwise falls back
+ *   to `vertical` so a partially filled grid lays out as a single row instead
+ *   of a single column. Useful when item count is unknown at design time but
+ *   you want the "full grid" case to look like a horizontal pager. Note: if
+ *   items can grow past the threshold dynamically, the layout will flip and
+ *   existing items will reflow — prefer plain `horizontal` for lazy-loaded
+ *   lists.
+ */
+export type PaginatedGridOrientation =
+  | 'horizontal'
+  | 'vertical'
+  | 'auto-horizontal';
 
 export class PaginatedGridBehavior implements IFocusNodeBehavior {
   totalCount: number;
@@ -12,6 +29,18 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
   private _rows: number = 3;
   private _columns: number = 3;
   private _threshold: number = 1;
+
+  // Resolves 'auto-horizontal' to 'horizontal' or 'vertical' based on
+  // whether all items fit into a single page. When items don't fill the
+  // grid, vertical (row-major) layout looks better.
+  get effectiveOrientation(): 'horizontal' | 'vertical' {
+    if (this.orientation === 'auto-horizontal') {
+      return this.totalCount < this._rows * this._columns
+          ? 'vertical'
+          : 'horizontal';
+    }
+    return this.orientation;
+  }
 
   get rows(): number {
     return this._rows;
@@ -32,7 +61,7 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
   }
   set threshold(value: number) {
     const visibleSlices =
-      this.orientation === 'horizontal' ? this._columns : this._rows;
+      this.effectiveOrientation === 'horizontal' ? this._columns : this._rows;
     this._threshold = Math.max(1, Math.min(value, visibleSlices - 2));
   }
 
@@ -70,7 +99,7 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
   onEvent = (event: NavEvent): boolean => {
     if (event.type !== 'press') return false;
 
-    if (this.orientation === 'horizontal') {
+    if (this.effectiveOrientation === 'horizontal') {
       if (event.action === 'up')
         return this._moveTo(this.activeIndex - 1, 'cross');
       if (event.action === 'down')
@@ -105,6 +134,14 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
   }
 
   onChildRegistered = (child: FocusNode): void => {
+    if (this._keyToIndex(child.key) === -1) {
+      console.warn(
+        `[PaginatedGrid:${this._node.key}] Registered child key "${child.key}" does not match any key produced by keyForItem. ` +
+          `Pass the fKey argument from renderItem to your child component instead of assigning a custom fKey, ` +
+          `or supply a keyForItem that returns the same key your child uses.`,
+      );
+    }
+
     if (this._pendingFocusKey !== null && child.key === this._pendingFocusKey) {
       this._pendingFocusKey = null;
       this._node.focusChild(child.id);
@@ -122,7 +159,7 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
     // Cross axis boundary check — don't wrap across slices
     if (axis === 'cross') {
       const sliceSize =
-        this.orientation === 'horizontal' ? this.rows : this.columns;
+        this.effectiveOrientation === 'horizontal' ? this.rows : this.columns;
       const oldSlice = Math.floor(this.activeIndex / sliceSize);
       const newSlice = Math.floor(newIndex / sliceSize);
       if (oldSlice !== newSlice) return false;
@@ -136,9 +173,9 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
 
   private _updateOffset(): void {
     const sliceSize =
-      this.orientation === 'horizontal' ? this.rows : this.columns;
+      this.effectiveOrientation === 'horizontal' ? this.rows : this.columns;
     const visibleSlices =
-      this.orientation === 'horizontal' ? this.columns : this.rows;
+      this.effectiveOrientation === 'horizontal' ? this.columns : this.rows;
     const totalSlices = Math.ceil(this.totalCount / sliceSize);
     const maxOffset = Math.max(0, totalSlices - visibleSlices);
 

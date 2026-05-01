@@ -48,6 +48,8 @@ interface PaginatedGridProps<T> extends BaseComponentProps {
   threshold: number;
   items: T[];
   renderItem: (item: T, fKey: string, index: number) => ReactNode;
+  keyForItem?: (item: T, index: number) => string;
+  groupKey?: string;
   gap?: number;
   buffer?: number;
   outerStyle?: CSSProperties;
@@ -58,6 +60,11 @@ interface PaginatedGridProps<T> extends BaseComponentProps {
   slotClassName?: string;
 }
 
+interface GroupSelection {
+  activeIndex: number;
+  viewOffset: number;
+}
+
 export function PaginatedGrid<T>({
   fKey,
   orientation = 'horizontal',
@@ -66,6 +73,8 @@ export function PaginatedGrid<T>({
   threshold,
   items,
   renderItem,
+  keyForItem,
+  groupKey,
   gap = 0,
   buffer = 1,
   onFocus,
@@ -84,23 +93,37 @@ export function PaginatedGrid<T>({
   const [containerMainSize, setContainerMainSize] = useState(0);
   const [containerCrossSize, setContainerCrossSize] = useState(0);
   const outerRef = useRef<HTMLDivElement | null>(null);
-  const isHorizontal = orientation === 'horizontal';
+  const effectiveOrientation =
+    orientation === 'auto-horizontal'
+      ? items.length < rows * columns
+        ? 'vertical'
+        : 'horizontal'
+      : orientation;
+  const isHorizontal = effectiveOrientation === 'horizontal';
   const sliceSize = isHorizontal ? rows : columns;
   const visibleSlices = isHorizontal ? columns : rows;
 
+  const keyForItemRef = useRef(keyForItem);
+  keyForItemRef.current = keyForItem;
+
   const itemKeys = useMemo(() => {
-    const prefix = Math.random().toString(36).slice(2);
-    return items.map((_, i) => `${fKey}-${prefix}-${i}`);
-  }, [fKey, items]);
+    const fn = keyForItemRef.current;
+    return items.map((item, i) =>
+      fn ? fn(item, i) : `${fKey}-${i}`,
+    );
+  }, [fKey, items, keyForItem]);
 
   const itemKeysRef = useRef(itemKeys);
   itemKeysRef.current = itemKeys;
 
+  const selectionByGroupRef = useRef<Map<string, GroupSelection>>(new Map());
+  const currentGroupKeyRef = useRef<string | undefined>(groupKey);
+
   const { node, FocusProvider } = useFocusable(
     fKey,
     { onFocus, onBlurred, onRegister, onUnregister, onEvent },
-    (n: FocusNode) =>
-      new PaginatedGridBehavior(
+    (n: FocusNode) => {
+      const b = new PaginatedGridBehavior(
         n,
         orientation,
         items.length,
@@ -109,10 +132,61 @@ export function PaginatedGrid<T>({
         threshold,
         () => {},
         (key) => itemKeysRef.current.indexOf(key),
-      ),
+      );
+      const initialGroup = currentGroupKeyRef.current;
+      const restored =
+        initialGroup !== undefined
+          ? selectionByGroupRef.current.get(initialGroup)
+          : undefined;
+      if (restored) {
+        b.activeIndex = restored.activeIndex;
+        b.viewOffset = restored.viewOffset;
+      }
+      return b;
+    },
   );
 
   const behavior = node.behavior as PaginatedGridBehavior;
+
+  // Sync initial viewOffset state from restored behavior on first mount.
+  const didInitRef = useRef(false);
+  if (!didInitRef.current) {
+    didInitRef.current = true;
+    if (behavior.viewOffset !== 0) {
+      // Defer to avoid setState during render.
+      queueMicrotask(() => setViewOffset(behavior.viewOffset));
+    }
+  }
+
+  // Handle groupKey switch: commit previous, restore new, focus.
+  useEffect(() => {
+    const prevGroup = currentGroupKeyRef.current;
+    if (prevGroup === groupKey) return;
+
+    if (prevGroup !== undefined && items.length > 0) {
+      selectionByGroupRef.current.set(prevGroup, {
+        activeIndex: behavior.activeIndex,
+        viewOffset: behavior.viewOffset,
+      });
+    }
+
+    const restored =
+      groupKey !== undefined
+        ? selectionByGroupRef.current.get(groupKey)
+        : undefined;
+    behavior.activeIndex = restored?.activeIndex ?? 0;
+    behavior.viewOffset = restored?.viewOffset ?? 0;
+    setViewOffset(behavior.viewOffset);
+    currentGroupKeyRef.current = groupKey;
+
+    if (items.length > 0) {
+      const idx = behavior.activeIndex;
+      const keys = itemKeysRef.current;
+      if (idx >= 0 && idx < keys.length) {
+        behavior.focusByKey(keys[idx]!);
+      }
+    }
+  }, [behavior, groupKey, items]);
 
   const renderItemRef = useRef(renderItem) as React.RefObject<
     (item: any, fKey: string, index: number) => ReactNode
@@ -123,12 +197,20 @@ export function PaginatedGrid<T>({
     behavior.totalCount = items.length;
     behavior.rows = rows;
     behavior.columns = columns;
+    behavior.orientation = orientation;
     behavior.threshold = threshold;
-  }, [behavior, items.length, rows, columns, threshold]);
+  }, [behavior, items.length, rows, columns, orientation, threshold]);
 
   useEffect(() => {
     behavior.onChange = (newIndex: number, newOffset: number) => {
       setViewOffset(newOffset);
+      const group = currentGroupKeyRef.current;
+      if (group !== undefined) {
+        selectionByGroupRef.current.set(group, {
+          activeIndex: newIndex,
+          viewOffset: newOffset,
+        });
+      }
       behavior.focusByKey(itemKeys[newIndex]!);
     };
   }, [behavior, itemKeys]);
@@ -248,7 +330,12 @@ export function PaginatedGrid<T>({
 
   return (
     <FocusProvider>
-      <div ref={measureRef} style={outerStyle} className={outerClassName}>
+      <div
+        ref={measureRef}
+        data-navix-node-id={node.id}
+        style={outerStyle}
+        className={outerClassName}
+      >
         <div style={mainContainerStyle} className={innerClassName}>
           {paddingBefore > 0 && <div style={spacerStyle} />}
           {slices.map((slice, sliceIdx) => (

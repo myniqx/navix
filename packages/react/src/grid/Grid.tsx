@@ -54,7 +54,11 @@ export function Grid({
   return (
     <FocusProvider>
       {hasWrapper ? (
-        <div className={mergedClassName || undefined} style={mergedStyle}>
+        <div
+          data-navix-node-id={node.id}
+          className={mergedClassName || undefined}
+          style={mergedStyle}
+        >
           {children}
         </div>
       ) : (

@@ -16,7 +16,8 @@ class MovieView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final viewportHeight = MediaQuery.sizeOf(context).height;
-    final minGridHeight = _rows * _cardMinHeight + (_rows - 1) * _gap + _gridPaddingY;
+    final minGridHeight =
+        _rows * _cardMinHeight + (_rows - 1) * _gap + _gridPaddingY;
     final gridHeight = (viewportHeight * 0.9 - 120) > minGridHeight
         ? (viewportHeight * 0.9 - 120)
         : minGridHeight;
@@ -56,6 +57,7 @@ class MovieView extends StatelessWidget {
               child: NavixPaginatedGrid<ContentItem>(
                 fKey: 'movie-grid',
                 items: movieChannels,
+                orientation: NavixGridOrientation.autoHorizontal,
                 rows: _rows,
                 columns: _columns,
                 threshold: 1,

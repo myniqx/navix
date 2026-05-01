@@ -42,18 +42,20 @@ class NavixFocusNode {
   }
 
   void _notify() {
-    final phase = SchedulerBinding.instance.schedulerPhase;
-    if (phase == SchedulerPhase.persistentCallbacks ||
-        phase == SchedulerPhase.transientCallbacks) {
-      SchedulerBinding.instance.addPostFrameCallback((_) {
-        for (final fn in List.of(_subscribers)) {
-          fn();
-        }
-      });
-    } else {
+    _runOrDefer(() {
       for (final fn in List.of(_subscribers)) {
         fn();
       }
+    });
+  }
+
+  static void _runOrDefer(VoidCallback fn) {
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    if (phase == SchedulerPhase.persistentCallbacks ||
+        phase == SchedulerPhase.transientCallbacks) {
+      SchedulerBinding.instance.addPostFrameCallback((_) => fn());
+    } else {
+      fn();
     }
   }
 
@@ -65,8 +67,10 @@ class NavixFocusNode {
     final becameFirstChild = activeChildId == null;
     if (becameFirstChild) activeChildId = child.id;
 
-    behavior.onRegister?.call();
-    behavior.onChildRegistered?.call(child);
+    _runOrDefer(() {
+      child.behavior.onRegister?.call();
+      behavior.onChildRegistered?.call(child);
+    });
 
     if (becameFirstChild && isDirectlyFocused) {
       _propagateFocus();
@@ -79,8 +83,10 @@ class NavixFocusNode {
     final idx = children.indexOf(child);
     if (idx == -1) return;
 
-    child.behavior.onUnregister?.call();
-    behavior.onChildUnregistered?.call(child);
+    _runOrDefer(() {
+      child.behavior.onUnregister?.call();
+      behavior.onChildUnregistered?.call(child);
+    });
 
     final wasOnActivePath = child.isFocused;
 
@@ -128,6 +134,30 @@ class NavixFocusNode {
     return true;
   }
 
+  // Reorders existing children without firing register/unregister callbacks.
+  // The new list must contain exactly the same nodes as `children` (no
+  // additions, no removals); otherwise the call is a no-op. `activeChildId`
+  // is preserved.
+  void reorderChildren(List<NavixFocusNode> ordered) {
+    if (ordered.length != children.length) return;
+    final currentSet = Set<NavixFocusNode>.identity()..addAll(children);
+    for (final n in ordered) {
+      if (!currentSet.contains(n)) return;
+    }
+    bool changed = false;
+    for (int i = 0; i < ordered.length; i++) {
+      if (!identical(children[i], ordered[i])) {
+        changed = true;
+        break;
+      }
+    }
+    if (!changed) return;
+    children
+      ..clear()
+      ..addAll(ordered);
+    _notify();
+  }
+
   bool focusChild(String childId) {
     final child = children.cast<NavixFocusNode?>().firstWhere(
           (c) => c!.id == childId,
@@ -163,7 +193,7 @@ class NavixFocusNode {
   }
 
   void _propagateFocus() {
-    void apply() {
+    _runOrDefer(() {
       final root = getRoot();
       final path = root.getActivePath();
       final pathSet = Set<NavixFocusNode>.identity()..addAll(path);
@@ -172,15 +202,7 @@ class NavixFocusNode {
       for (final node in toNotify) {
         node._notify();
       }
-    }
-
-    final phase = SchedulerBinding.instance.schedulerPhase;
-    if (phase == SchedulerPhase.persistentCallbacks ||
-        phase == SchedulerPhase.transientCallbacks) {
-      SchedulerBinding.instance.addPostFrameCallback((_) => apply());
-    } else {
-      apply();
-    }
+    });
   }
 
   void _applyFocusFlags(
@@ -214,7 +236,7 @@ class NavixFocusNode {
       isFocused = false;
       if (isDirectlyFocused) {
         isDirectlyFocused = false;
-        behavior.onBlurred?.call(this);
+        _runOrDefer(() => behavior.onBlurred?.call(this));
       }
       _notify();
     }

@@ -94,6 +94,7 @@ export function Expandable({
       <FocusProvider>
         {/* Mouse click mirrors keyboard enter — only expands, never collapses (expanded children handle their own click area) */}
         <div
+          data-navix-node-id={node.id}
           style={{ display: 'contents' }}
           onMouseEnter={focusSelf}
           onClick={handleClick}
