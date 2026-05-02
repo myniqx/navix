@@ -20,12 +20,11 @@ class PlayerState {
     List<ContentItem>? channels,
     ContentItem? current,
     bool? paused,
-  }) =>
-      PlayerState(
-        channels: channels ?? this.channels,
-        current: current ?? this.current,
-        paused: paused ?? this.paused,
-      );
+  }) => PlayerState(
+    channels: channels ?? this.channels,
+    current: current ?? this.current,
+    paused: paused ?? this.paused,
+  );
 }
 
 class PlayerView extends StatelessWidget {
@@ -55,8 +54,10 @@ class PlayerView extends StatelessWidget {
       onExitRequest: onClose,
       onNext: onNext,
       onPrev: onPrev,
+      onTogglePlay: onTogglePause,
       panelTimeout: 4000,
-      baseLayer: () => _GradientVideo(item: player.current, paused: player.paused),
+      baseLayer: () =>
+          _GradientVideo(item: player.current, paused: player.paused),
       zapBanner: () => _ZapBanner(item: player.current),
       notification: () {
         if (player.paused) return const _PlayPauseNotification(paused: true);
@@ -116,9 +117,7 @@ class _GradientVideoState extends State<_GradientVideo>
     if (widget.paused) {
       return Container(
         color: widget.item.color,
-        child: Center(
-          child: _VideoCenter(item: widget.item),
-        ),
+        child: Center(child: _VideoCenter(item: widget.item)),
       );
     }
     return AnimatedBuilder(
@@ -128,7 +127,9 @@ class _GradientVideoState extends State<_GradientVideo>
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment(
-                  -1.0 + 2.0 * _anim.value, -1.0 + 2.0 * _anim.value),
+                -1.0 + 2.0 * _anim.value,
+                -1.0 + 2.0 * _anim.value,
+              ),
               end: Alignment(1.0 - 2.0 * _anim.value, 1.0 - 2.0 * _anim.value),
               colors: [
                 widget.item.color,
@@ -155,21 +156,30 @@ class _VideoCenter extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('▶',
-            style: TextStyle(
-                fontSize: 64,
-                color: Colors.white.withValues(alpha: 0.15))),
+        Text(
+          '▶',
+          style: TextStyle(
+            fontSize: 64,
+            color: Colors.white.withValues(alpha: 0.15),
+          ),
+        ),
         const SizedBox(height: 12),
-        Text(item.title,
-            style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: Colors.white.withValues(alpha: 0.15))),
+        Text(
+          item.title,
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: Colors.white.withValues(alpha: 0.15),
+          ),
+        ),
         const SizedBox(height: 6),
-        Text('${item.year}',
-            style: TextStyle(
-                fontSize: 13,
-                color: Colors.white.withValues(alpha: 0.09))),
+        Text(
+          '${item.year}',
+          style: TextStyle(
+            fontSize: 13,
+            color: Colors.white.withValues(alpha: 0.09),
+          ),
+        ),
       ],
     );
   }
@@ -208,15 +218,22 @@ class _ZapBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(item.title,
-                    style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white)),
+                Text(
+                  item.title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text('${item.year}',
-                    style: const TextStyle(
-                        fontSize: 12, color: Color(0xFFaaaaaa))),
+                Text(
+                  '${item.year}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFFaaaaaa),
+                  ),
+                ),
               ],
             ),
           ],
@@ -243,7 +260,9 @@ class _PlayPauseNotification extends StatelessWidget {
             shape: BoxShape.circle,
             color: Colors.black.withValues(alpha: 0.55),
             border: Border.all(
-                color: Colors.white.withValues(alpha: 0.25), width: 3),
+              color: Colors.white.withValues(alpha: 0.25),
+              width: 3,
+            ),
           ),
           child: Center(
             child: Text(
@@ -298,12 +317,15 @@ class _SidePanelState extends State<_SidePanel> {
             children: [
               const Padding(
                 padding: EdgeInsets.only(left: 24, bottom: 16),
-                child: Text('AUDIO & SUBTITLES',
-                    style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: _blue,
-                        letterSpacing: 1.0)),
+                child: Text(
+                  'AUDIO & SUBTITLES',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: _blue,
+                    letterSpacing: 1.0,
+                  ),
+                ),
               ),
               Expanded(
                 child: NavixVerticalList(
@@ -318,25 +340,30 @@ class _SidePanelState extends State<_SidePanel> {
                                   _trackOptions[i].group)
                             Padding(
                               padding: const EdgeInsets.only(
-                                  left: 24, top: 8, bottom: 4),
+                                left: 24,
+                                top: 8,
+                                bottom: 4,
+                              ),
                               child: Text(
                                 _trackOptions[i].group.toUpperCase(),
                                 style: const TextStyle(
-                                    fontSize: 9,
-                                    color: Color(0xFF444444),
-                                    letterSpacing: 1.0),
+                                  fontSize: 9,
+                                  color: Color(0xFF444444),
+                                  letterSpacing: 1.0,
+                                ),
                               ),
                             ),
                           NavixButton(
-                            fKey:
-                                '${widget.props.fKey}-${_trackOptions[i].id}',
-                            onClick: () => setState(
-                                () => _selected = _trackOptions[i].id),
+                            fKey: '${widget.props.fKey}-${_trackOptions[i].id}',
+                            onClick: () =>
+                                setState(() => _selected = _trackOptions[i].id),
                             builder: (context, focused) {
                               return AnimatedContainer(
                                 duration: const Duration(milliseconds: 150),
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 24, vertical: 10),
+                                  horizontal: 24,
+                                  vertical: 10,
+                                ),
                                 color: focused
                                     ? _blue.withValues(alpha: 0.1)
                                     : Colors.transparent,
@@ -360,8 +387,8 @@ class _SidePanelState extends State<_SidePanel> {
                                         color: focused
                                             ? Colors.white
                                             : _selected == _trackOptions[i].id
-                                                ? _green
-                                                : const Color(0xFF888888),
+                                            ? _green
+                                            : const Color(0xFF888888),
                                       ),
                                     ),
                                   ],
@@ -377,23 +404,27 @@ class _SidePanelState extends State<_SidePanel> {
                             return AnimatedContainer(
                               duration: const Duration(milliseconds: 150),
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 24, vertical: 10),
+                                horizontal: 24,
+                                vertical: 10,
+                              ),
                               margin: const EdgeInsets.only(top: 8),
                               decoration: BoxDecoration(
                                 border: Border(
                                   left: BorderSide(
-                                      color: focused
-                                          ? _blue
-                                          : Colors.transparent,
-                                      width: 2),
+                                    color: focused ? _blue : Colors.transparent,
+                                    width: 2,
+                                  ),
                                 ),
                               ),
-                              child: Text('← Back',
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      color: focused
-                                          ? Colors.white
-                                          : const Color(0xFF444444))),
+                              child: Text(
+                                '← Back',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: focused
+                                      ? Colors.white
+                                      : const Color(0xFF444444),
+                                ),
+                              ),
                             );
                           },
                         ),
@@ -443,12 +474,15 @@ class _ChannelListPanel extends StatelessWidget {
             children: [
               const Padding(
                 padding: EdgeInsets.only(left: 16, bottom: 16),
-                child: Text('CHANNELS',
-                    style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: _blue,
-                        letterSpacing: 1.0)),
+                child: Text(
+                  'CHANNELS',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: _blue,
+                    letterSpacing: 1.0,
+                  ),
+                ),
               ),
               Expanded(
                 child: NavixVerticalList(
@@ -469,12 +503,14 @@ class _ChannelListPanel extends StatelessWidget {
                               return AnimatedContainer(
                                 duration: const Duration(milliseconds: 150),
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 8),
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
                                 color: focused
                                     ? _blue.withValues(alpha: 0.1)
                                     : isActive
-                                        ? _blue.withValues(alpha: 0.06)
-                                        : Colors.transparent,
+                                    ? _blue.withValues(alpha: 0.06)
+                                    : Colors.transparent,
                                 child: Row(
                                   children: [
                                     Container(
@@ -496,8 +532,8 @@ class _ChannelListPanel extends StatelessWidget {
                                         color: focused
                                             ? Colors.white
                                             : isActive
-                                                ? _blue
-                                                : const Color(0xFF888888),
+                                            ? _blue
+                                            : const Color(0xFF888888),
                                       ),
                                     ),
                                   ],
@@ -512,14 +548,19 @@ class _ChannelListPanel extends StatelessWidget {
                             return AnimatedContainer(
                               duration: const Duration(milliseconds: 150),
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 10),
+                                horizontal: 16,
+                                vertical: 10,
+                              ),
                               margin: const EdgeInsets.only(top: 8),
-                              child: Text('← Back',
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      color: focused
-                                          ? Colors.white
-                                          : const Color(0xFF444444))),
+                              child: Text(
+                                '← Back',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: focused
+                                      ? Colors.white
+                                      : const Color(0xFF444444),
+                                ),
+                              ),
                             );
                           },
                         ),
@@ -541,12 +582,12 @@ const _notifications = [
   (
     id: 'n2',
     title: 'New Episode Available',
-    body: 'A new episode of your favourite series has been added.'
+    body: 'A new episode of your favourite series has been added.',
   ),
   (
     id: 'n3',
     title: 'Recommendation',
-    body: 'Based on your watch history, you might enjoy similar titles.'
+    body: 'Based on your watch history, you might enjoy similar titles.',
   ),
   (id: 'n4', title: 'Reminder', body: 'Your watchlist has 3 unwatched items.'),
 ];
@@ -578,12 +619,15 @@ class _NotificationsPanel extends StatelessWidget {
             children: [
               const Padding(
                 padding: EdgeInsets.only(left: 24, bottom: 12),
-                child: Text('NOTIFICATIONS',
-                    style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: _blue,
-                        letterSpacing: 1.0)),
+                child: Text(
+                  'NOTIFICATIONS',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: _blue,
+                    letterSpacing: 1.0,
+                  ),
+                ),
               ),
               Expanded(
                 child: NavixVerticalList(
@@ -598,30 +642,41 @@ class _NotificationsPanel extends StatelessWidget {
                             duration: const Duration(milliseconds: 150),
                             margin: const EdgeInsets.only(bottom: 4),
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 24, vertical: 10),
+                              horizontal: 24,
+                              vertical: 10,
+                            ),
                             color: focused
                                 ? _blue.withValues(alpha: 0.1)
                                 : _blue.withValues(alpha: 0.04),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('NOW PLAYING',
-                                    style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w700,
-                                        color: _blue,
-                                        letterSpacing: 0.8)),
+                                const Text(
+                                  'NOW PLAYING',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: _blue,
+                                    letterSpacing: 0.8,
+                                  ),
+                                ),
                                 const SizedBox(height: 3),
-                                Text(current.title,
-                                    style: const TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white)),
+                                Text(
+                                  current.title,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
                                 const SizedBox(height: 2),
-                                Text('${current.year}',
-                                    style: const TextStyle(
-                                        fontSize: 12,
-                                        color: Color(0xFF888888))),
+                                Text(
+                                  '${current.year}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF888888),
+                                  ),
+                                ),
                               ],
                             ),
                           );
@@ -635,26 +690,34 @@ class _NotificationsPanel extends StatelessWidget {
                             return AnimatedContainer(
                               duration: const Duration(milliseconds: 150),
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 24, vertical: 10),
+                                horizontal: 24,
+                                vertical: 10,
+                              ),
                               color: focused
                                   ? _blue.withValues(alpha: 0.1)
                                   : Colors.transparent,
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(n.title,
-                                      style: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
-                                          color: focused
-                                              ? Colors.white
-                                              : const Color(0xFFcccccc))),
+                                  Text(
+                                    n.title,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: focused
+                                          ? Colors.white
+                                          : const Color(0xFFcccccc),
+                                    ),
+                                  ),
                                   if (n.body.isNotEmpty) ...[
                                     const SizedBox(height: 2),
-                                    Text(n.body,
-                                        style: const TextStyle(
-                                            fontSize: 12,
-                                            color: Color(0xFF666666))),
+                                    Text(
+                                      n.body,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Color(0xFF666666),
+                                      ),
+                                    ),
                                   ],
                                 ],
                               ),
@@ -668,14 +731,19 @@ class _NotificationsPanel extends StatelessWidget {
                           return AnimatedContainer(
                             duration: const Duration(milliseconds: 150),
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 24, vertical: 10),
+                              horizontal: 24,
+                              vertical: 10,
+                            ),
                             margin: const EdgeInsets.only(top: 4),
-                            child: Text('← Back',
-                                style: TextStyle(
-                                    fontSize: 12,
-                                    color: focused
-                                        ? Colors.white
-                                        : const Color(0xFF444444))),
+                            child: Text(
+                              '← Back',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: focused
+                                    ? Colors.white
+                                    : const Color(0xFF444444),
+                              ),
+                            ),
                           );
                         },
                       ),
@@ -693,7 +761,7 @@ class _NotificationsPanel extends StatelessWidget {
 
 const _controlButtons = [
   (id: 'prev', label: '⏮', title: 'Previous'),
-  (id: 'playpause', label: '', title: 'Play/Pause'),
+  (id: 'play_pause', label: '', title: 'Play/Pause'),
   (id: 'next', label: '⏭', title: 'Next'),
   (id: 'stop', label: '⏹', title: 'Stop'),
 ];
@@ -722,7 +790,7 @@ class _ControlsPanelState extends State<_ControlsPanel> {
   double _volume = 80;
 
   void _handleControl(String id) {
-    if (id == 'playpause') {
+    if (id == 'play_pause') {
       widget.onTogglePause();
     } else if (id == 'next') {
       widget.onNext();
@@ -783,15 +851,17 @@ class _ControlsPanelState extends State<_ControlsPanel> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Text(
-                                    btn.id == 'playpause'
+                                    btn.id == 'play_pause'
                                         ? (widget.paused ? '▶' : '⏸')
                                         : btn.label,
                                     style: const TextStyle(
-                                        fontSize: 24, color: Colors.white),
+                                      fontSize: 24,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    btn.id == 'playpause'
+                                    btn.id == 'play_pause'
                                         ? (widget.paused ? 'PLAY' : 'PAUSE')
                                         : btn.title.toUpperCase(),
                                     style: TextStyle(
@@ -826,25 +896,33 @@ class _ControlsPanelState extends State<_ControlsPanel> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('Progress',
-                                  style: TextStyle(
-                                      fontSize: 11, color: Color(0xFF666666))),
-                              Text('${_progress.round()}%',
-                                  style: TextStyle(
-                                      fontSize: 11,
-                                      color: focused
-                                          ? _blue
-                                          : const Color(0xFF666666))),
+                              const Text(
+                                'Progress',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Color(0xFF666666),
+                                ),
+                              ),
+                              Text(
+                                '${_progress.round()}%',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: focused
+                                      ? _blue
+                                      : const Color(0xFF666666),
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 6),
                           GestureDetector(
                             onTapDown: (details) {
-                              final box = context.findRenderObject()
-                                  as RenderBox?;
+                              final box =
+                                  context.findRenderObject() as RenderBox?;
                               if (box == null) return;
                               setState(() {
-                                _progress = (details.localPosition.dx /
+                                _progress =
+                                    (details.localPosition.dx /
                                             box.size.width *
                                             100)
                                         .clamp(0, 100);
@@ -893,25 +971,33 @@ class _ControlsPanelState extends State<_ControlsPanel> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('🔊 Volume',
-                                  style: TextStyle(
-                                      fontSize: 11, color: Color(0xFF666666))),
-                              Text('${_volume.round()}%',
-                                  style: TextStyle(
-                                      fontSize: 11,
-                                      color: focused
-                                          ? _blue
-                                          : const Color(0xFF666666))),
+                              const Text(
+                                '🔊 Volume',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Color(0xFF666666),
+                                ),
+                              ),
+                              Text(
+                                '${_volume.round()}%',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: focused
+                                      ? _blue
+                                      : const Color(0xFF666666),
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 6),
                           GestureDetector(
                             onTapDown: (details) {
-                              final box = context.findRenderObject()
-                                  as RenderBox?;
+                              final box =
+                                  context.findRenderObject() as RenderBox?;
                               if (box == null) return;
                               setState(() {
-                                _volume = (details.localPosition.dx /
+                                _volume =
+                                    (details.localPosition.dx /
                                             box.size.width *
                                             100)
                                         .clamp(0, 100);
@@ -956,15 +1042,19 @@ class _ControlsPanelState extends State<_ControlsPanel> {
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       decoration: const BoxDecoration(
                         border: Border(
-                            top: BorderSide(color: Color(0xFF1e1e3a))),
+                          top: BorderSide(color: Color(0xFF1e1e3a)),
+                        ),
                       ),
                       child: Center(
-                        child: Text('← Back',
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: focused
-                                    ? Colors.white
-                                    : const Color(0xFF444444))),
+                        child: Text(
+                          '← Back',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: focused
+                                ? Colors.white
+                                : const Color(0xFF444444),
+                          ),
+                        ),
                       ),
                     );
                   },

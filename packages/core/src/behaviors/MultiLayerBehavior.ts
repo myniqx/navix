@@ -54,6 +54,19 @@ export class MultiLayerBehavior implements IFocusNodeBehavior {
       if (e.action === 'back') {
         this.activePanel = null;
         this._handlers.onPanelClose();
+        return true;
+      }
+      // Panel bubble up etmiş — sadece medya tuşlarını handle et
+      if (e.action === 'program_up') {
+        this._handlers.onChannelNext();
+      } else if (e.action === 'program_down') {
+        this._handlers.onChannelPrev();
+      } else if (
+        e.action === 'play_pause' ||
+        e.action === 'play' ||
+        e.action === 'pause'
+      ) {
+        this._handlers.onTogglePlay();
       }
       return true;
     }
@@ -70,13 +83,13 @@ export class MultiLayerBehavior implements IFocusNodeBehavior {
         this.activePanel = panelId;
         this._handlers.onPanelOpen(panelId);
       }
-    } else if (e.action === 'programup') {
+    } else if (e.action === 'program_up') {
       this._handlers.onChannelNext();
-    } else if (e.action === 'programdown') {
+    } else if (e.action === 'program_down') {
       this._handlers.onChannelPrev();
     } else if (
       e.action === 'enter' ||
-      e.action === 'playpause' ||
+      e.action === 'play_pause' ||
       e.action === 'play' ||
       e.action === 'pause'
     ) {

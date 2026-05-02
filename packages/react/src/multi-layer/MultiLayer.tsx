@@ -38,6 +38,7 @@ interface MultiLayerProps extends BaseComponentProps {
   down?: (props: MultiLayerPanelProps) => ReactNode;
   onPrev?: () => boolean;
   onNext?: () => boolean;
+  onTogglePlay?: () => void;
   zapBanner?: () => ReactNode;
   notification?: () => ReactNode;
   panelTimeout?: number;
@@ -63,9 +64,10 @@ export function MultiLayer({
   notification,
   onNext,
   onPrev,
+  onTogglePlay,
   panelTimeout = 4000,
   triggerSize = 200,
-  hoverDelay = 300,
+  hoverDelay = 100,
   transitionDuration = 250,
 }: MultiLayerProps) {
   const [activePanel, setActivePanel] = useState<MultiLayerPanelId | null>(
@@ -78,7 +80,6 @@ export function MultiLayer({
     null,
   );
   const activePanelRef = useRef<MultiLayerPanelId | null>(null);
-  const [paused, setPaused] = useState(false);
   const [zapChannel, setZapChannel] = useState<boolean>(false);
   const panelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const zapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -88,9 +89,11 @@ export function MultiLayer({
   const onNextRef = useRef(onNext);
   const onPrevRef = useRef(onPrev);
   const onExitRequestRef = useRef(onExitRequest);
+  const onTogglePlayRef = useRef(onTogglePlay);
   onNextRef.current = onNext;
   onPrevRef.current = onPrev;
   onExitRequestRef.current = onExitRequest;
+  onTogglePlayRef.current = onTogglePlay;
 
   const setPanel = useCallback(
     (panel: MultiLayerPanelId | null) => {
@@ -161,7 +164,7 @@ export function MultiLayer({
         onChannelPrev: () => {
           if (onPrevRef.current?.()) showZap();
         },
-        onTogglePlay: () => setPaused((p) => !p),
+        onTogglePlay: () => onTogglePlayRef.current?.(),
         onPanelOpen: (panel: MultiLayerPanelId) => setPanel(panel),
         onPanelClose: () => setPanel(null),
         onExitRequest: () => onExitRequestRef.current?.(),
@@ -267,7 +270,16 @@ export function MultiLayer({
   return (
     <FocusProvider>
       <div data-navix-node-id={node.id} style={wrapperStyle}>
-        {baseLayer()}
+        <div
+          style={{ position: 'absolute', inset: 0 }}
+          onClick={
+            activePanel === null && closingPanel === null
+              ? () => onTogglePlayRef.current?.()
+              : undefined
+          }
+        >
+          {baseLayer()}
+        </div>
 
         {notification && (
           <div style={notificationOverlayStyle}>{notification()}</div>
@@ -279,61 +291,65 @@ export function MultiLayer({
 
         {(activePanel !== null || closingPanel !== null) && (
           <div
-            style={{ position: 'absolute', inset: 0, zIndex: 9 }}
+            style={{ position: 'absolute', inset: 0, zIndex: 10 }}
             onClick={closePanel}
-          />
-        )}
-
-        {(activePanel !== null || closingPanel !== null) && (
-          <div style={{ position: 'absolute', inset: 0, zIndex: 10 }}>
-            {left &&
-              (activePanel === 'left' || closingPanel === 'left') &&
-              left(
-                makePanelProps(
-                  'left',
-                  closingPanel === 'left'
-                    ? 'closing'
-                    : openingPanel === 'left'
-                      ? 'opening'
-                      : 'open',
-                ),
-              )}
-            {right &&
-              (activePanel === 'right' || closingPanel === 'right') &&
-              right(
-                makePanelProps(
-                  'right',
-                  closingPanel === 'right'
-                    ? 'closing'
-                    : openingPanel === 'right'
-                      ? 'opening'
-                      : 'open',
-                ),
-              )}
-            {up &&
-              (activePanel === 'up' || closingPanel === 'up') &&
-              up(
-                makePanelProps(
-                  'up',
-                  closingPanel === 'up'
-                    ? 'closing'
-                    : openingPanel === 'up'
-                      ? 'opening'
-                      : 'open',
-                ),
-              )}
-            {down &&
-              (activePanel === 'down' || closingPanel === 'down') &&
-              down(
-                makePanelProps(
-                  'down',
-                  closingPanel === 'down'
-                    ? 'closing'
-                    : openingPanel === 'down'
-                      ? 'opening'
-                      : 'open',
-                ),
-              )}
+          >
+            {left && (activePanel === 'left' || closingPanel === 'left') && (
+              <div onClick={(e) => e.stopPropagation()}>
+                {left(
+                  makePanelProps(
+                    'left',
+                    closingPanel === 'left'
+                      ? 'closing'
+                      : openingPanel === 'left'
+                        ? 'opening'
+                        : 'open',
+                  ),
+                )}
+              </div>
+            )}
+            {right && (activePanel === 'right' || closingPanel === 'right') && (
+              <div onClick={(e) => e.stopPropagation()}>
+                {right(
+                  makePanelProps(
+                    'right',
+                    closingPanel === 'right'
+                      ? 'closing'
+                      : openingPanel === 'right'
+                        ? 'opening'
+                        : 'open',
+                  ),
+                )}
+              </div>
+            )}
+            {up && (activePanel === 'up' || closingPanel === 'up') && (
+              <div onClick={(e) => e.stopPropagation()}>
+                {up(
+                  makePanelProps(
+                    'up',
+                    closingPanel === 'up'
+                      ? 'closing'
+                      : openingPanel === 'up'
+                        ? 'opening'
+                        : 'open',
+                  ),
+                )}
+              </div>
+            )}
+            {down && (activePanel === 'down' || closingPanel === 'down') && (
+              <div onClick={(e) => e.stopPropagation()}>
+                {down(
+                  makePanelProps(
+                    'down',
+                    closingPanel === 'down'
+                      ? 'closing'
+                      : openingPanel === 'down'
+                        ? 'opening'
+                        : 'open',
+                  ),
+                )}
+              </div>
+            )}
           </div>
         )}
 

@@ -29,27 +29,13 @@ export function PlayerView({
   onTogglePause,
   showPlayIcon,
 }: PlayerViewProps) {
-  const handlePlayerEvent = (e: { type: string; action: string }): boolean => {
-    if (e.type !== 'press') return false;
-    if (
-      e.action === 'enter' ||
-      e.action === 'playpause' ||
-      e.action === 'play' ||
-      e.action === 'pause'
-    ) {
-      onTogglePause();
-      return false;
-    }
-    return false;
-  };
-
   return (
     <MultiLayer
       fKey="home-player"
       onExitRequest={onClose}
       onNext={onNext}
       onPrev={onPrev}
-      onEvent={handlePlayerEvent}
+      onTogglePlay={onTogglePause}
       baseLayer={() => (
         <GradientVideo item={player.current} paused={player.paused} />
       )}
@@ -83,6 +69,7 @@ export function PlayerView({
         />
       )}
       panelTimeout={4000}
+      style={{ overflow: 'hidden' }}
     />
   );
 }
@@ -622,7 +609,7 @@ function NotificationsPanel({
 
 const CONTROL_BUTTONS = [
   { id: 'prev', label: '⏮', title: 'Previous' },
-  { id: 'playpause', label: '', title: 'Play/Pause' },
+  { id: 'play_pause', label: '', title: 'Play/Pause' },
   { id: 'next', label: '⏭', title: 'Next' },
   { id: 'stop', label: '⏹', title: 'Stop' },
 ];
@@ -646,7 +633,7 @@ function ControlsPanel({
   const [volume, setVolume] = useState(80);
 
   const handleControl = (id: string) => {
-    if (id === 'playpause') onTogglePause();
+    if (id === 'play_pause') onTogglePause();
     else if (id === 'next') onNext();
     else if (id === 'prev') onPrev();
     else if (id === 'stop') close();
@@ -708,7 +695,7 @@ function ControlsPanel({
                   }}
                 >
                   <span style={{ fontSize: 24, lineHeight: 1 }}>
-                    {btn.id === 'playpause' ? (paused ? '▶' : '⏸') : btn.label}
+                    {btn.id === 'play_pause' ? (paused ? '▶' : '⏸') : btn.label}
                   </span>
                   <span
                     style={{
@@ -717,7 +704,7 @@ function ControlsPanel({
                       letterSpacing: '0.06em',
                     }}
                   >
-                    {btn.id === 'playpause'
+                    {btn.id === 'play_pause'
                       ? paused
                         ? 'PLAY'
                         : 'PAUSE'

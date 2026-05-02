@@ -70,6 +70,18 @@ class _MultiLayerBehavior extends IFocusNodeBehavior {
       if (event.action == 'back') {
         activePanel = null;
         onPanelClose();
+        return true;
+      }
+      // Panel bubble up etmiş (false döndürdü) — sadece medya tuşlarını handle et
+      switch (event.action) {
+        case 'program_up':
+          onChannelNext();
+        case 'program_down':
+          onChannelPrev();
+        case 'play_pause':
+        case 'play':
+        case 'pause':
+          onTogglePlay();
       }
       return true;
     }
@@ -83,12 +95,12 @@ class _MultiLayerBehavior extends IFocusNodeBehavior {
         _tryOpenPanel(NavixPanelId.up);
       case 'down':
         _tryOpenPanel(NavixPanelId.down);
-      case 'programup':
+      case 'program_up':
         onChannelNext();
-      case 'programdown':
+      case 'program_down':
         onChannelPrev();
       case 'enter':
-      case 'playpause':
+      case 'play_pause':
       case 'play':
       case 'pause':
         onTogglePlay();
@@ -120,6 +132,7 @@ class NavixMultiLayer extends StatefulWidget {
   final Widget Function(NavixMultiLayerPanelProps props)? down;
   final bool Function()? onNext;
   final bool Function()? onPrev;
+  final VoidCallback? onTogglePlay;
   final Widget Function()? zapBanner;
   final Widget Function()? notification;
   final VoidCallback? onExitRequest;
@@ -143,6 +156,7 @@ class NavixMultiLayer extends StatefulWidget {
     this.down,
     this.onNext,
     this.onPrev,
+    this.onTogglePlay,
     this.zapBanner,
     this.notification,
     this.onExitRequest,
@@ -322,7 +336,7 @@ class _NavixMultiLayerState extends State<NavixMultiLayer> {
           onChannelPrev: () {
             if (widget.onPrev?.call() == true) _showZap();
           },
-          onTogglePlay: () {},
+          onTogglePlay: () => widget.onTogglePlay?.call(),
           onPanelOpen: _onPanelOpen,
           onPanelClose: _onPanelClose,
           onExitRequest: () => widget.onExitRequest?.call(),
@@ -339,7 +353,12 @@ class _NavixMultiLayerState extends State<NavixMultiLayer> {
         return Stack(
           children: [
             // Base layer
-            Positioned.fill(child: widget.baseLayer()),
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: _panelVisible ? null : () => widget.onTogglePlay?.call(),
+                child: widget.baseLayer(),
+              ),
+            ),
 
             // Notification overlay
             if (widget.notification != null)
