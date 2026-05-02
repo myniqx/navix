@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:navix/navix.dart';
 import '../data.dart';
 import 'media_card.dart';
+import 'player_view.dart';
 
 const _red = Color(0xFFe53935);
 const _rows = 4;
@@ -11,7 +12,9 @@ const _cardMinHeight = 196.0;
 const _gridPaddingY = 24.0;
 
 class MovieView extends StatelessWidget {
-  const MovieView({super.key});
+  final void Function(PlayerState) onSelect;
+
+  const MovieView({super.key, required this.onSelect});
 
   @override
   Widget build(BuildContext context) {
@@ -66,6 +69,11 @@ class MovieView extends StatelessWidget {
                   fKey: fKey,
                   item: item,
                   variant: HomeRowCardType.movie,
+                  onClick: () => onSelect(PlayerState(
+                    channels: movieChannels,
+                    current: item,
+                    paused: false,
+                  )),
                 ),
               ),
             ),

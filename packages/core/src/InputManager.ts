@@ -6,22 +6,22 @@ export const DEFAULT_INPUT_CONFIG: InputConfig = {
     right: { keys: ['ArrowRight'] },
     up: { keys: ['ArrowUp'] },
     down: { keys: ['ArrowDown'] },
-    enter: { keys: ['Enter'], longpress: true, longpressMs: 500 },
+    enter: { keys: ['Enter'], longPress: true, longPressMs: 500 },
     back: { keys: ['Escape'] },
     play: { keys: ['MediaPlay'] },
     pause: { keys: ['MediaPause'] },
-    playpause: { keys: ['MediaPlayPause', 'Space'] },
-    programup: { keys: ['PageUp'] },
-    programdown: { keys: ['PageDown'] },
+    play_pause: { keys: ['MediaPlayPause', 'Space'] },
+    program_up: { keys: ['PageUp'] },
+    program_down: { keys: ['PageDown'] },
   },
 };
 
 interface KeyState {
   action: string;
   config: ActionConfig;
-  longpressTimer: ReturnType<typeof setTimeout> | null;
-  longpressFired: boolean;
-  // For doublepress: timestamp of last press emission
+  longPressTimer: ReturnType<typeof setTimeout> | null;
+  longPressFired: boolean;
+  repeatFired: boolean;
   lastPressTime: number;
   doublePressTimer: ReturnType<typeof setTimeout> | null;
 }
@@ -54,25 +54,32 @@ export class InputManager {
 
     const cfg = this.config.actions[action]!;
 
-    // Ignore key-repeat events (key already tracked)
-    if (this.keyStates.has(action)) return;
+    if (this.keyStates.has(action)) {
+      const state = this.keyStates.get(action)!;
+      if (!cfg.longPress) {
+        state.repeatFired = true;
+        this._emit({ action, type: 'press' });
+      }
+      return;
+    }
 
     const state: KeyState = {
       action,
       config: cfg,
-      longpressTimer: null,
-      longpressFired: false,
+      longPressTimer: null,
+      longPressFired: false,
+      repeatFired: false,
       lastPressTime: 0,
       doublePressTimer: null,
     };
 
     this.keyStates.set(action, state);
 
-    if (cfg.longpress) {
-      state.longpressTimer = setTimeout(() => {
-        state.longpressFired = true;
-        this._emit({ action, type: 'longpress' });
-      }, cfg.longpressMs ?? 500);
+    if (cfg.longPress) {
+      state.longPressTimer = setTimeout(() => {
+        state.longPressFired = true;
+        this._emit({ action, type: 'longPress' });
+      }, cfg.longPressMs ?? 500);
     }
   }
 
@@ -85,26 +92,25 @@ export class InputManager {
 
     this.keyStates.delete(action);
 
-    // Clear longpress timer
-    if (state.longpressTimer !== null) {
-      clearTimeout(state.longpressTimer);
-      state.longpressTimer = null;
+    // Clear longPress timer
+    if (state.longPressTimer !== null) {
+      clearTimeout(state.longPressTimer);
+      state.longPressTimer = null;
     }
 
-    // Longpress already fired — don't emit press
-    if (state.longpressFired) return;
+    if (state.longPressFired || state.repeatFired) return;
 
     const cfg = state.config;
 
-    if (cfg.doublepress) {
+    if (cfg.doublePress) {
       const now = Date.now();
-      const window = cfg.doublepressMs ?? 300;
+      const window = cfg.doublePressMs ?? 300;
 
       if (state.doublePressTimer !== null) {
-        // Second press within window — emit doublepress
+        // Second press within window — emit doublePress
         clearTimeout(state.doublePressTimer);
         state.doublePressTimer = null;
-        this._emit({ action, type: 'doublepress' });
+        this._emit({ action, type: 'doublePress' });
         return;
       }
 
@@ -130,7 +136,7 @@ export class InputManager {
 
   destroy(): void {
     for (const state of this.keyStates.values()) {
-      if (state.longpressTimer !== null) clearTimeout(state.longpressTimer);
+      if (state.longPressTimer !== null) clearTimeout(state.longPressTimer);
       if (state.doublePressTimer !== null) clearTimeout(state.doublePressTimer);
     }
     this.keyStates.clear();

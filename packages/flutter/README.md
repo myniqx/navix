@@ -123,7 +123,7 @@ class NavEvent {
 | `back`         | `Escape`, `GoBack`                         |
 | `play`         | `MediaPlay`                                |
 | `pause`        | `MediaPause`                               |
-| `playpause`    | `MediaPlayPause`, `Space`                  |
+| `play_pause`   | `MediaPlayPause`, `Space`                  |
 | `program_up`   | `ChannelUp`                                |
 | `program_down` | `ChannelDown`                              |
 
@@ -445,17 +445,17 @@ NavixPaginatedList<Movie>(
 
 > **Important:** the `fKey` argument passed to `renderItem` must be assigned to the `fKey` of the focusable child widget you render (e.g. `NavixButton`, `NavixFocusable`). Assigning a custom key instead breaks focus tracking — a `debugPrint` is emitted in development if the registered child key does not match any key produced by `keyForItem`.
 
-| Prop           | Type                        | Default                  | Description                                                                  |
-| -------------- | --------------------------- | ------------------------ | ---------------------------------------------------------------------------- |
-| `items`        | `List<T>`                   | —                        | Full item array                                                              |
-| `orientation`  | `NavixListOrientation`      | `horizontal`             | `horizontal` or `vertical`                                                   |
-| `visibleCount` | `int`                       | —                        | Items visible at once (min 3)                                                |
-| `threshold`    | `int`                       | —                        | Positions from edge before window slides                                     |
-| `gap`          | `double`                    | `0`                      | Gap between slots in logical pixels                                          |
-| `buffer`       | `int`                       | `2`                      | Extra items rendered outside the visible window                              |
-| `renderItem`   | `(T, fKey, index) → Widget` | —                        | Item builder. The `fKey` argument must be passed to the focusable child      |
-| `keyForItem`   | `(T, int) → String?`        | `'${fKey}-$index'`       | Stable, content-based key for each item. Recommended for content that may change |
-| `groupKey`     | `String?`                   | —                        | Caches `activeIndex`/`viewOffset` per group. When the value changes, the previous group's selection is saved and the new group's saved selection is restored (or 0/0 if first time) |
+| Prop           | Type                        | Default            | Description                                                                                                                                                                         |
+| -------------- | --------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `items`        | `List<T>`                   | —                  | Full item array                                                                                                                                                                     |
+| `orientation`  | `NavixListOrientation`      | `horizontal`       | `horizontal` or `vertical`                                                                                                                                                          |
+| `visibleCount` | `int`                       | —                  | Items visible at once (min 3)                                                                                                                                                       |
+| `threshold`    | `int`                       | —                  | Positions from edge before window slides                                                                                                                                            |
+| `gap`          | `double`                    | `0`                | Gap between slots in logical pixels                                                                                                                                                 |
+| `buffer`       | `int`                       | `2`                | Extra items rendered outside the visible window                                                                                                                                     |
+| `renderItem`   | `(T, fKey, index) → Widget` | —                  | Item builder. The `fKey` argument must be passed to the focusable child                                                                                                             |
+| `keyForItem`   | `(T, int) → String?`        | `'${fKey}-$index'` | Stable, content-based key for each item. Recommended for content that may change                                                                                                    |
+| `groupKey`     | `String?`                   | —                  | Caches `activeIndex`/`viewOffset` per group. When the value changes, the previous group's selection is saved and the new group's saved selection is restored (or 0/0 if first time) |
 
 The widget uses `LayoutBuilder` — it must have a bounded constraint on the main axis.
 
@@ -500,18 +500,18 @@ Left/right moves between columns (pagination axis). Up/down moves within a colum
 - `vertical` — row-major layout, paginates up/down.
 - `autoHorizontal` — behaves like `horizontal` when there are enough items to fill the grid (`items.length >= rows * columns`); otherwise falls back to `vertical` so a partially filled grid lays out as a single row instead of a single column. Useful when item count is unknown at design time but you want the "full grid" case to look like a horizontal pager. Note: if items can grow past the threshold dynamically, the layout will flip and existing items will reflow — prefer plain `horizontal` for lazy-loaded lists.
 
-| Prop          | Type                        | Default                  | Description                                                                                                                                          |
-| ------------- | --------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `items`       | `List<T>`                   | —                        | Full item array                                                                                                                                      |
-| `orientation` | `NavixGridOrientation`      | `horizontal`             | `horizontal` (column-major), `vertical` (row-major), `autoHorizontal`                                                                                |
-| `rows`        | `int`                       | —                        | Number of rows (min 3)                                                                                                                               |
-| `columns`     | `int`                       | —                        | Number of columns (min 3)                                                                                                                            |
-| `threshold`   | `int`                       | —                        | Slices from edge before window slides                                                                                                                |
-| `gap`         | `double`                    | `0`                      | Gap between slots in logical pixels                                                                                                                  |
-| `buffer`      | `int`                       | `1`                      | Extra slices rendered outside the visible window                                                                                                     |
-| `renderItem`  | `(T, fKey, index) → Widget` | —                        | Item builder. The `fKey` argument must be passed to the focusable child                                                                              |
-| `keyForItem`  | `(T, int) → String?`        | `'${fKey}-$index'`       | Stable, content-based key for each item. Recommended when the items list can change                                                                  |
-| `groupKey`    | `String?`                   | —                        | Caches `activeIndex`/`viewOffset` per group. When the value changes, the previous group's selection is saved and the new group's selection restored |
+| Prop          | Type                        | Default            | Description                                                                                                                                         |
+| ------------- | --------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `items`       | `List<T>`                   | —                  | Full item array                                                                                                                                     |
+| `orientation` | `NavixGridOrientation`      | `horizontal`       | `horizontal` (column-major), `vertical` (row-major), `autoHorizontal`                                                                               |
+| `rows`        | `int`                       | —                  | Number of rows (min 3)                                                                                                                              |
+| `columns`     | `int`                       | —                  | Number of columns (min 3)                                                                                                                           |
+| `threshold`   | `int`                       | —                  | Slices from edge before window slides                                                                                                               |
+| `gap`         | `double`                    | `0`                | Gap between slots in logical pixels                                                                                                                 |
+| `buffer`      | `int`                       | `1`                | Extra slices rendered outside the visible window                                                                                                    |
+| `renderItem`  | `(T, fKey, index) → Widget` | —                  | Item builder. The `fKey` argument must be passed to the focusable child                                                                             |
+| `keyForItem`  | `(T, int) → String?`        | `'${fKey}-$index'` | Stable, content-based key for each item. Recommended when the items list can change                                                                 |
+| `groupKey`    | `String?`                   | —                  | Caches `activeIndex`/`viewOffset` per group. When the value changes, the previous group's selection is saved and the new group's selection restored |
 
 ---
 

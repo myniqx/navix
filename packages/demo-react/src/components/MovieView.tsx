@@ -2,12 +2,17 @@ import { PaginatedGrid } from '@navix/react';
 
 import { MOVIE_CHANNELS } from '../data';
 import { MediaCard } from './MediaCard';
+import type { PlayerState } from './PlayerView';
 
 const ROWS = 4;
 const COLUMNS = 6;
 const THRESHOLD = 1;
 
-export function MovieView() {
+interface MovieViewProps {
+  onSelect: (state: PlayerState) => void;
+}
+
+export function MovieView({ onSelect }: MovieViewProps) {
   return (
     <div style={{ padding: '24px 32px 0' }}>
       <div
@@ -44,7 +49,18 @@ export function MovieView() {
         outerStyle={{ padding: '12px 4px', height: 'calc(90vh - 120px)' }}
         slotStyle={{ alignItems: 'stretch' }}
         renderItem={(item, fKey) => (
-          <MediaCard fKey={fKey} item={item} variant="movie" />
+          <MediaCard
+            fKey={fKey}
+            item={item}
+            variant="movie"
+            onClick={() =>
+              onSelect({
+                channels: MOVIE_CHANNELS,
+                current: item,
+                paused: false,
+              })
+            }
+          />
         )}
       />
     </div>

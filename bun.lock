@@ -19,7 +19,7 @@
         "typescript": "^5.8.3",
       },
     },
-    "packages/demo": {
+    "packages/demo-react": {
       "name": "@navix/demo",
       "version": "0.1.0",
       "dependencies": {
@@ -159,7 +159,7 @@
 
     "@navix/core": ["@navix/core@workspace:packages/core"],
 
-    "@navix/demo": ["@navix/demo@workspace:packages/demo"],
+    "@navix/demo": ["@navix/demo@workspace:packages/demo-react"],
 
     "@navix/react": ["@navix/react@workspace:packages/react"],
 

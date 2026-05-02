@@ -1,11 +1,12 @@
 import 'package:flutter/widgets.dart';
 import '../data.dart';
 import 'content_card.dart';
+import 'player_view.dart';
 
 class SeriesView extends StatelessWidget {
-  final void Function(ContentItem) onPlay;
+  final void Function(PlayerState) onSelect;
 
-  const SeriesView({super.key, required this.onPlay});
+  const SeriesView({super.key, required this.onSelect});
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +18,11 @@ class SeriesView extends StatelessWidget {
             rowKey: 'series-row-$i',
             label: rows[i].label,
             items: rows[i].items,
-            onPlay: onPlay,
+            onPlay: (item) => onSelect(PlayerState(
+              channels: rows[i].items,
+              current: item,
+              paused: false,
+            )),
           ),
       ],
     );

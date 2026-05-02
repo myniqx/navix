@@ -510,7 +510,7 @@ Every component accepts `onFocus`, `onBlurred`, `onRegister`, `onUnregister`. Al
 
 Full-screen video player shell with directional panels. Each direction (`left`, `right`, `up`, `down`) optionally renders a panel — only one is open at a time. Focus is trapped inside the active panel; `back` closes it and returns focus to the base layer.
 
-Channel switching (`programup` / `programdown` keys) calls `onNext` / `onPrev`. If the callback returns `true` (meaning the channel actually changed), the `zapBanner` is shown for 2 seconds. State like the current channel and paused/playing mode lives outside `MultiLayer` — use `onEvent` or your own callbacks to manage it.
+Channel switching (`program_up` / `program_down` keys) calls `onNext` / `onPrev`. If the callback returns `true` (meaning the channel actually changed), the `zapBanner` is shown for 2 seconds. State like the current channel and paused/playing mode lives outside `MultiLayer` — use `onEvent` or your own callbacks to manage it.
 
 ```tsx
 const [player, setPlayer] = useState({ channels, current, paused: false });
@@ -534,7 +534,7 @@ const [player, setPlayer] = useState({ channels, current, paused: false });
   onEvent={(e) => {
     if (
       e.type === 'press' &&
-      (e.action === 'playpause' || e.action === 'enter')
+      (e.action === 'play_pause' || e.action === 'enter')
     ) {
       setPlayer((p) => ({ ...p, paused: !p.paused }));
     }
@@ -573,7 +573,7 @@ Panel render functions receive `MultiLayerPanelProps`:
 type MultiLayerPanelState = 'opening' | 'open' | 'closing';
 
 interface MultiLayerPanelProps extends BaseComponentProps {
-  close: () => void;       // close the panel programmatically
+  close: () => void; // close the panel programmatically
   panelState: MultiLayerPanelState; // use for CSS entry/exit transitions
 }
 ```

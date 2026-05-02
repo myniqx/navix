@@ -35,15 +35,21 @@ final InputConfig defaultInputConfig = {
     longPressMs: 500,
   ),
   'back': ActionConfig(
-    keys: [LogicalKeyboardKey.escape, LogicalKeyboardKey.goBack],
+    keys: [
+      LogicalKeyboardKey.escape,
+      LogicalKeyboardKey.goBack,
+      LogicalKeyboardKey.backspace
+    ],
   ),
   'play': ActionConfig(keys: [LogicalKeyboardKey.mediaPlay]),
   'pause': ActionConfig(keys: [LogicalKeyboardKey.mediaPause]),
-  'playpause': ActionConfig(
+  'play_pause': ActionConfig(
     keys: [LogicalKeyboardKey.mediaPlayPause, LogicalKeyboardKey.space],
   ),
-  'program_up': ActionConfig(keys: [LogicalKeyboardKey.channelUp]),
-  'program_down': ActionConfig(keys: [LogicalKeyboardKey.channelDown]),
+  'program_up': ActionConfig(
+      keys: [LogicalKeyboardKey.channelUp, LogicalKeyboardKey.pageUp]),
+  'program_down': ActionConfig(
+      keys: [LogicalKeyboardKey.channelDown, LogicalKeyboardKey.pageDown]),
 };
 
 class _KeyState {
@@ -51,6 +57,7 @@ class _KeyState {
   final ActionConfig config;
   Timer? longPressTimer;
   bool longPressFired = false;
+  bool repeatFired = false;
   int lastPressTime = 0;
   Timer? doublePressTimer;
 
@@ -96,10 +103,18 @@ class NavixFocusManager {
   bool _handleKeyEvent(KeyEvent event) {
     final keyId = event.logicalKey.keyId;
     final action = _keyToAction[keyId];
+    print(
+        'Key event: ${event.logicalKey.debugName} (${event.runtimeType}), action: $action');
     if (action == null) return false;
 
     if (event is KeyDownEvent) {
       _handleKeyDown(action);
+    } else if (event is KeyRepeatEvent) {
+      final state = _keyStates[action];
+      if (state != null && !state.config.longPress) {
+        state.repeatFired = true;
+        _emit(NavEvent(action: action, type: NavEventType.press));
+      }
     } else if (event is KeyUpEvent) {
       _handleKeyUp(action);
     }
@@ -129,7 +144,7 @@ class NavixFocusManager {
     state.longPressTimer?.cancel();
     state.longPressTimer = null;
 
-    if (state.longPressFired) return;
+    if (state.longPressFired || state.repeatFired) return;
 
     final cfg = state.config;
 

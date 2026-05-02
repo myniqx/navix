@@ -108,9 +108,7 @@ export function PaginatedGrid<T>({
 
   const itemKeys = useMemo(() => {
     const fn = keyForItemRef.current;
-    return items.map((item, i) =>
-      fn ? fn(item, i) : `${fKey}-${i}`,
-    );
+    return items.map((item, i) => (fn ? fn(item, i) : `${fKey}-${i}`));
   }, [fKey, items, keyForItem]);
 
   const itemKeysRef = useRef(itemKeys);

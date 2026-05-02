@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:navix/navix.dart';
 import '../data.dart';
 import 'content_card.dart';
+import 'player_view.dart';
 
 const _blue = Color(0xFF4fc3f7);
 const _columns = 8;
 
 class LiveView extends StatelessWidget {
-  final void Function(ContentItem) onPlay;
+  final void Function(PlayerState) onSelect;
 
-  const LiveView({super.key, required this.onPlay});
+  const LiveView({super.key, required this.onSelect});
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +59,11 @@ class LiveView extends StatelessWidget {
                                   key: ValueKey(rows[r][c].id),
                                   fKey: 'live-${rows[r][c].id}',
                                   item: rows[r][c],
-                                  onPlay: () => onPlay(rows[r][c]),
+                                  onPlay: () => onSelect(PlayerState(
+                                    channels: liveGrid,
+                                    current: rows[r][c],
+                                    paused: false,
+                                  )),
                                 ),
                               ),
                               if (c < rows[r].length - 1)

@@ -2,7 +2,7 @@ import type { FocusNode } from './FocusNode';
 
 export interface NavEvent {
   action: string;
-  type: 'press' | 'longpress' | 'doublepress';
+  type: 'press' | 'longPress' | 'doublePress';
 }
 
 /**
@@ -26,10 +26,10 @@ export interface IFocusNodeBehavior {
 
 export interface ActionConfig {
   keys: string[];
-  longpress?: boolean;
-  longpressMs?: number;
-  doublepress?: boolean;
-  doublepressMs?: number;
+  longPress?: boolean;
+  longPressMs?: number;
+  doublePress?: boolean;
+  doublePressMs?: number;
 }
 
 export interface InputConfig {

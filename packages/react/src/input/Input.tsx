@@ -93,7 +93,8 @@ export function Input({
     () => ({
       ...style,
       ...(focused
-        ? (focusedStyle ?? (!focusedClassName ? DEFAULT_FOCUSED_STYLE : undefined))
+        ? (focusedStyle ??
+          (!focusedClassName ? DEFAULT_FOCUSED_STYLE : undefined))
         : undefined),
       ...(isEditing ? editingStyle : undefined),
     }),

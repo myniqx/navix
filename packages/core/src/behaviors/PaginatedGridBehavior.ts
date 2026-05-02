@@ -36,8 +36,8 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
   get effectiveOrientation(): 'horizontal' | 'vertical' {
     if (this.orientation === 'auto-horizontal') {
       return this.totalCount < this._rows * this._columns
-          ? 'vertical'
-          : 'horizontal';
+        ? 'vertical'
+        : 'horizontal';
     }
     return this.orientation;
   }

@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:navix/navix.dart';
 import 'components/home_view.dart';
 import 'components/live_view.dart';
 import 'components/menu_row.dart';
 import 'components/movie_view.dart';
+import 'components/player_view.dart';
 import 'components/series_view.dart';
 
 void main() {
@@ -33,6 +35,9 @@ class _AppShell extends StatefulWidget {
 class _AppShellState extends State<_AppShell> {
   String _activeTab = 'Home';
   final List<String> _log = [];
+  PlayerState? _selectedEntry;
+  bool _showPlayIcon = false;
+  Timer? _playIconTimer;
 
   void _emit(String msg) {
     final now = TimeOfDay.now();
@@ -44,18 +49,65 @@ class _AppShellState extends State<_AppShell> {
     });
   }
 
+  void _handleSelect(PlayerState state) {
+    setState(() => _selectedEntry = state);
+    _emit('Play: ${state.current.title} (${state.current.year})');
+  }
+
+  void _handleClose() => setState(() => _selectedEntry = null);
+
+  bool _handleNext() {
+    if (_selectedEntry == null) return false;
+    final idx = _selectedEntry!.channels
+        .indexWhere((c) => c.id == _selectedEntry!.current.id);
+    if (idx < 0 || idx + 1 >= _selectedEntry!.channels.length) return false;
+    setState(() => _selectedEntry =
+        _selectedEntry!.copyWith(current: _selectedEntry!.channels[idx + 1]));
+    return true;
+  }
+
+  bool _handlePrev() {
+    if (_selectedEntry == null) return false;
+    final idx = _selectedEntry!.channels
+        .indexWhere((c) => c.id == _selectedEntry!.current.id);
+    if (idx <= 0) return false;
+    setState(() => _selectedEntry =
+        _selectedEntry!.copyWith(current: _selectedEntry!.channels[idx - 1]));
+    return true;
+  }
+
+  void _handleTogglePause() {
+    if (_selectedEntry == null) return;
+    final nextPaused = !_selectedEntry!.paused;
+    setState(() => _selectedEntry = _selectedEntry!.copyWith(paused: nextPaused));
+    if (!nextPaused) {
+      _playIconTimer?.cancel();
+      setState(() => _showPlayIcon = true);
+      _playIconTimer = Timer(const Duration(seconds: 2), () {
+        if (mounted) setState(() => _showPlayIcon = false);
+      });
+    } else {
+      _playIconTimer?.cancel();
+      setState(() => _showPlayIcon = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _playIconTimer?.cancel();
+    super.dispose();
+  }
+
   Widget _buildView() {
     switch (_activeTab) {
       case 'Movie':
-        return const MovieView();
+        return MovieView(onSelect: _handleSelect);
       case 'Series':
-        return SeriesView(
-            onPlay: (item) => _emit('Play: ${item.title} (${item.year})'));
+        return SeriesView(onSelect: _handleSelect);
       case 'Live':
-        return LiveView(
-            onPlay: (item) => _emit('Play: ${item.title} (${item.year})'));
+        return LiveView(onSelect: _handleSelect);
       default:
-        return const HomeView();
+        return HomeView(onSelect: _handleSelect);
     }
   }
 
@@ -87,6 +139,22 @@ class _AppShellState extends State<_AppShell> {
             height: 200,
             child: _EventLog(entries: _log),
           ),
+          if (_selectedEntry != null)
+            Positioned.fill(
+              child: ColoredBox(
+                color: Colors.black,
+                child: PlayerView(
+                  player: _selectedEntry!,
+                  onClose: _handleClose,
+                  onNext: _handleNext,
+                  onPrev: _handlePrev,
+                  onChannelSelect: (ch) => setState(
+                      () => _selectedEntry = _selectedEntry!.copyWith(current: ch)),
+                  onTogglePause: _handleTogglePause,
+                  showPlayIcon: _showPlayIcon,
+                ),
+              ),
+            ),
         ],
       ),
     );

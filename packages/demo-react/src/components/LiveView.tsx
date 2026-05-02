@@ -16,16 +16,16 @@
 import { Grid } from '@navix/react';
 
 import { LIVE_GRID } from '../data';
-import type { ContentItem } from '../data';
 import { ContentCard } from './ContentCard';
+import type { PlayerState } from './PlayerView';
 
 const COLUMNS = 8;
 
 interface LiveViewProps {
-  onPlay: (item: ContentItem) => void;
+  onSelect: (state: PlayerState) => void;
 }
 
-export function LiveView({ onPlay }: LiveViewProps) {
+export function LiveView({ onSelect }: LiveViewProps) {
   return (
     <div style={{ padding: '24px 32px 0' }}>
       <div
@@ -61,7 +61,9 @@ export function LiveView({ onPlay }: LiveViewProps) {
               key={item.id}
               fKey={`live-${item.id}`}
               item={item}
-              onPlay={() => onPlay(item)}
+              onPlay={() =>
+                onSelect({ channels: LIVE_GRID, current: item, paused: false })
+              }
             />
           ))}
         </div>

@@ -6,7 +6,8 @@
   ],
   "scripts": {
     "build": "bun run --filter '@navix/core' build && bun run --filter '@navix/react' build",
-    "dev": "concurrently --kill-others --names 'core,react,demo' --prefix-colors 'cyan,magenta,green' 'bun run --cwd packages/core dev' 'bun run --cwd packages/react dev' 'bun run --cwd packages/demo dev'",
+    "dev": "concurrently --kill-others --names 'core,react' --prefix-colors 'cyan,magenta' 'bun run --cwd packages/core dev' 'bun run --cwd packages/react dev'",
+    "react-demo": "concurrently --kill-others --names 'core,react,demo' --prefix-colors 'cyan,magenta,green' 'bun run --cwd packages/core dev' 'bun run --cwd packages/react dev' 'bun run --cwd packages/demo-react dev'",
     "format": "oxfmt",
     "format:check": "oxfmt --check"
   },

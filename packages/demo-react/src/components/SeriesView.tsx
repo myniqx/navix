@@ -10,14 +10,14 @@
  */
 
 import { ROWS } from '../data';
-import type { ContentItem } from '../data';
 import { ContentRow } from './ContentRow';
+import type { PlayerState } from './PlayerView';
 
-interface HomeViewProps {
-  onPlay: (item: ContentItem) => void;
+interface SeriesViewProps {
+  onSelect: (state: PlayerState) => void;
 }
 
-export function SeriesView({ onPlay }: HomeViewProps) {
+export function SeriesView({ onSelect }: SeriesViewProps) {
   return (
     <>
       {ROWS.map((row, i) => (
@@ -26,7 +26,9 @@ export function SeriesView({ onPlay }: HomeViewProps) {
           rowKey={`home-row-${i}`}
           label={row.label}
           items={row.items}
-          onPlay={onPlay}
+          onPlay={(item) =>
+            onSelect({ channels: row.items, current: item, paused: false })
+          }
         />
       ))}
     </>
