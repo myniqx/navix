@@ -27,13 +27,14 @@ interface KeyState {
 }
 
 export class InputManager {
-  onNavEvent: ((event: NavEvent) => void) | null = null;
+  onNavEvent: ((event: NavEvent) => boolean) | null = null;
 
   private config: InputConfig;
-  // Map from KeyboardEvent.code → action name
   private keyToAction: Map<string, string> = new Map();
-  // Per-action runtime state
   private keyStates: Map<string, KeyState> = new Map();
+
+  private _backPendingExit = false;
+  private _backExitTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(config?: InputConfig) {
     this.config = config ?? DEFAULT_INPUT_CONFIG;
@@ -48,9 +49,9 @@ export class InputManager {
     }
   }
 
-  handleKeyDown(code: string): void {
+  handleKeyDown(code: string): boolean {
     const action = this.keyToAction.get(code);
-    if (!action) return;
+    if (!action) return false;
 
     const cfg = this.config.actions[action]!;
 
@@ -60,7 +61,7 @@ export class InputManager {
         state.repeatFired = true;
         this._emit({ action, type: 'press' });
       }
-      return;
+      return true;
     }
 
     const state: KeyState = {
@@ -81,24 +82,25 @@ export class InputManager {
         this._emit({ action, type: 'longPress' });
       }, cfg.longPressMs ?? 500);
     }
+
+    return true;
   }
 
-  handleKeyUp(code: string): void {
+  handleKeyUp(code: string): boolean {
     const action = this.keyToAction.get(code);
-    if (!action) return;
+    if (!action) return false;
 
     const state = this.keyStates.get(action);
-    if (!state) return;
+    if (!state) return false;
 
     this.keyStates.delete(action);
 
-    // Clear longPress timer
     if (state.longPressTimer !== null) {
       clearTimeout(state.longPressTimer);
       state.longPressTimer = null;
     }
 
-    if (state.longPressFired || state.repeatFired) return;
+    if (state.longPressFired || state.repeatFired) return true;
 
     const cfg = state.config;
 
@@ -107,14 +109,12 @@ export class InputManager {
       const window = cfg.doublePressMs ?? 300;
 
       if (state.doublePressTimer !== null) {
-        // Second press within window — emit doublePress
         clearTimeout(state.doublePressTimer);
         state.doublePressTimer = null;
         this._emit({ action, type: 'doublePress' });
-        return;
+        return true;
       }
 
-      // First press — hold it, wait for possible second press
       const capturedState = state;
       capturedState.lastPressTime = now;
       capturedState.doublePressTimer = setTimeout(() => {
@@ -122,19 +122,46 @@ export class InputManager {
         this._emit({ action, type: 'press' });
       }, window);
 
-      // Keep state alive for the double-press window
       this.keyStates.set(action, capturedState);
-      return;
+      return true;
     }
 
-    this._emit({ action, type: 'press' });
+    const consumed = this._emit({ action, type: 'press' });
+
+    if (!consumed && action === 'back') {
+      return this._handleBackExit();
+    }
+
+    return consumed;
   }
 
-  private _emit(event: NavEvent): void {
-    this.onNavEvent?.(event);
+  private _handleBackExit(): boolean {
+    if (this._backPendingExit) {
+      if (this._backExitTimer !== null) {
+        clearTimeout(this._backExitTimer);
+        this._backExitTimer = null;
+      }
+      this._backPendingExit = false;
+      return false;
+    }
+    this._backPendingExit = true;
+    this._backExitTimer = setTimeout(() => {
+      this._backPendingExit = false;
+      this._backExitTimer = null;
+    }, 2000);
+    return true;
+  }
+
+  private _emit(event: NavEvent): boolean {
+    return this.onNavEvent?.(event) ?? false;
   }
 
   destroy(): void {
+    if (this._backExitTimer !== null) {
+      clearTimeout(this._backExitTimer);
+      this._backExitTimer = null;
+    }
+    this._backPendingExit = false;
     for (const state of this.keyStates.values()) {
       if (state.longPressTimer !== null) clearTimeout(state.longPressTimer);
       if (state.doublePressTimer !== null) clearTimeout(state.doublePressTimer);

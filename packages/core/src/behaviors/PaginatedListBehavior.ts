@@ -3,19 +3,21 @@ import type { NavEvent, IFocusNodeBehavior } from '../types';
 
 export type PaginatedListOrientation = 'horizontal' | 'vertical';
 
+const MIN_VISIBLE_COUNT = 2;
+
 export class PaginatedListBehavior implements IFocusNodeBehavior {
   totalCount: number;
   activeIndex: number = 0;
   viewOffset: number = 0;
 
-  private _visibleCount: number = 3;
+  private _visibleCount: number = MIN_VISIBLE_COUNT;
   private _threshold: number = 1;
 
   get visibleCount(): number {
     return this._visibleCount;
   }
   set visibleCount(value: number) {
-    this._visibleCount = Math.max(3, value);
+    this._visibleCount = Math.max(MIN_VISIBLE_COUNT, value);
   }
 
   get threshold(): number {

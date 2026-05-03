@@ -5,6 +5,8 @@ import '../core/nav_event.dart';
 import '../core/focus_node.dart';
 import 'navix_focusable.dart';
 
+const int _kMinGridDimension = 2;
+
 enum NavixGridOrientation { horizontal, vertical, autoHorizontal }
 
 class NavixPaginatedGridBehavior extends IFocusNodeBehavior {
@@ -37,10 +39,10 @@ class NavixPaginatedGridBehavior extends IFocusNodeBehavior {
   }
 
   int get rows => _rows;
-  set rows(int value) => _rows = value < 3 ? 3 : value;
+  set rows(int value) => _rows = value < _kMinGridDimension ? _kMinGridDimension : value;
 
   int get columns => _columns;
-  set columns(int value) => _columns = value < 3 ? 3 : value;
+  set columns(int value) => _columns = value < _kMinGridDimension ? _kMinGridDimension : value;
 
   int get threshold => _threshold;
   set threshold(int value) {
@@ -64,8 +66,8 @@ class NavixPaginatedGridBehavior extends IFocusNodeBehavior {
     required int threshold,
     required String Function(int index) keyForIndex,
   })  : _node = node,
-        _rows = rows < 3 ? 3 : rows,
-        _columns = columns < 3 ? 3 : columns,
+        _rows = rows < _kMinGridDimension ? _kMinGridDimension : rows,
+        _columns = columns < _kMinGridDimension ? _kMinGridDimension : columns,
         _threshold = 1,
         _keyForIndex = keyForIndex {
     this.threshold = threshold;

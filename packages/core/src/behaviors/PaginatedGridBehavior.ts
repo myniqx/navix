@@ -20,14 +20,16 @@ export type PaginatedGridOrientation =
   | 'vertical'
   | 'auto-horizontal';
 
+const MIN_GRID_DIMENSION = 2;
+
 export class PaginatedGridBehavior implements IFocusNodeBehavior {
   totalCount: number;
   activeIndex: number = 0;
   viewOffset: number = 0;
   orientation: PaginatedGridOrientation;
 
-  private _rows: number = 3;
-  private _columns: number = 3;
+  private _rows: number = MIN_GRID_DIMENSION;
+  private _columns: number = MIN_GRID_DIMENSION;
   private _threshold: number = 1;
 
   // Resolves 'auto-horizontal' to 'horizontal' or 'vertical' based on
@@ -46,14 +48,14 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
     return this._rows;
   }
   set rows(value: number) {
-    this._rows = Math.max(3, value);
+    this._rows = Math.max(MIN_GRID_DIMENSION, value);
   }
 
   get columns(): number {
     return this._columns;
   }
   set columns(value: number) {
-    this._columns = Math.max(3, value);
+    this._columns = Math.max(MIN_GRID_DIMENSION, value);
   }
 
   get threshold(): number {

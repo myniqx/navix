@@ -11,12 +11,12 @@ export class FocusTree {
     this.inputManager = new InputManager(config);
 
     this.inputManager.onNavEvent = (event: NavEvent) => {
-      this.handleNavEvent(event);
+      return this.handleNavEvent(event);
     };
   }
 
-  handleNavEvent(event: NavEvent): void {
-    this.root.handleEvent(event);
+  handleNavEvent(event: NavEvent): boolean {
+    return this.root.handleEvent(event);
   }
 
   destroy(): void {

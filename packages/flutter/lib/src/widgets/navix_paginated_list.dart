@@ -5,6 +5,8 @@ import '../core/nav_event.dart';
 import '../core/focus_node.dart';
 import 'navix_focusable.dart';
 
+const int _kMinVisibleCount = 2;
+
 enum NavixListOrientation { horizontal, vertical }
 
 class NavixPaginatedListBehavior extends IFocusNodeBehavior {
@@ -25,7 +27,7 @@ class NavixPaginatedListBehavior extends IFocusNodeBehavior {
   void Function(int newIndex, int newOffset)? onChange;
 
   int get visibleCount => _visibleCount;
-  set visibleCount(int value) => _visibleCount = value < 3 ? 3 : value;
+  set visibleCount(int value) => _visibleCount = value < _kMinVisibleCount ? _kMinVisibleCount : value;
 
   int get threshold => _threshold;
   set threshold(int value) {
@@ -47,7 +49,7 @@ class NavixPaginatedListBehavior extends IFocusNodeBehavior {
         _prev = orientation == NavixListOrientation.horizontal ? 'left' : 'up',
         _next =
             orientation == NavixListOrientation.horizontal ? 'right' : 'down',
-        _visibleCount = visibleCount < 3 ? 3 : visibleCount,
+        _visibleCount = visibleCount < _kMinVisibleCount ? _kMinVisibleCount : visibleCount,
         _threshold = 1,
         _keyForIndex = keyForIndex {
     this.threshold = threshold;

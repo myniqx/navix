@@ -36,9 +36,14 @@ export function FocusRoot({
     }
     const tree = treeRef.current;
 
-    const onKeyDown = (e: KeyboardEvent) =>
-      tree.inputManager.handleKeyDown(e.code);
-    const onKeyUp = (e: KeyboardEvent) => tree.inputManager.handleKeyUp(e.code);
+    const onKeyDown = (e: KeyboardEvent) => {
+      const consumed = tree.inputManager.handleKeyDown(e.code);
+      if (consumed) e.preventDefault();
+    };
+    const onKeyUp = (e: KeyboardEvent) => {
+      const consumed = tree.inputManager.handleKeyUp(e.code);
+      if (consumed) e.preventDefault();
+    };
 
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('keyup', onKeyUp);
