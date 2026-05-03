@@ -73,6 +73,10 @@ class NavixFocusManager {
 
   bool _isAttached = false;
 
+  // Double-back-to-exit state
+  bool _backPendingExit = false;
+  Timer? _backExitTimer;
+
   NavixFocusManager({InputConfig? inputConfig}) {
     root = NavixFocusNode('root');
     _config = inputConfig ?? defaultInputConfig;
@@ -103,23 +107,44 @@ class NavixFocusManager {
   bool _handleKeyEvent(KeyEvent event) {
     final keyId = event.logicalKey.keyId;
     final action = _keyToAction[keyId];
-    print(
-        'Key event: ${event.logicalKey.debugName} (${event.runtimeType}), action: $action');
     if (action == null) return false;
+
+    bool consumed = false;
 
     if (event is KeyDownEvent) {
       _handleKeyDown(action);
+      consumed = true;
     } else if (event is KeyRepeatEvent) {
       final state = _keyStates[action];
       if (state != null && !state.config.longPress) {
         state.repeatFired = true;
-        _emit(NavEvent(action: action, type: NavEventType.press));
+        consumed = _emit(NavEvent(action: action, type: NavEventType.press));
       }
+      consumed = true;
     } else if (event is KeyUpEvent) {
-      _handleKeyUp(action);
+      consumed = _handleKeyUp(action);
     }
 
-    return false;
+    if (!consumed && action == 'back') {
+      return _handleBackExit();
+    }
+
+    return consumed;
+  }
+
+  bool _handleBackExit() {
+    if (_backPendingExit) {
+      _backExitTimer?.cancel();
+      _backExitTimer = null;
+      _backPendingExit = false;
+      return false;
+    }
+    _backPendingExit = true;
+    _backExitTimer = Timer(const Duration(milliseconds: 2000), () {
+      _backPendingExit = false;
+      _backExitTimer = null;
+    });
+    return true;
   }
 
   void _handleKeyDown(String action) {
@@ -137,14 +162,14 @@ class NavixFocusManager {
     }
   }
 
-  void _handleKeyUp(String action) {
+  bool _handleKeyUp(String action) {
     final state = _keyStates.remove(action);
-    if (state == null) return;
+    if (state == null) return false;
 
     state.longPressTimer?.cancel();
     state.longPressTimer = null;
 
-    if (state.longPressFired || state.repeatFired) return;
+    if (state.longPressFired || state.repeatFired) return true;
 
     final cfg = state.config;
 
@@ -152,8 +177,7 @@ class NavixFocusManager {
       if (state.doublePressTimer != null) {
         state.doublePressTimer!.cancel();
         state.doublePressTimer = null;
-        _emit(NavEvent(action: action, type: NavEventType.doublePress));
-        return;
+        return _emit(NavEvent(action: action, type: NavEventType.doublePress));
       }
 
       state.lastPressTime = DateTime.now().millisecondsSinceEpoch;
@@ -165,17 +189,20 @@ class NavixFocusManager {
         },
       );
       _keyStates[action] = state;
-      return;
+      return true;
     }
 
-    _emit(NavEvent(action: action, type: NavEventType.press));
+    return _emit(NavEvent(action: action, type: NavEventType.press));
   }
 
-  void _emit(NavEvent event) {
-    root.handleEvent(event);
+  bool _emit(NavEvent event) {
+    return root.handleEvent(event);
   }
 
   void _destroy() {
+    _backExitTimer?.cancel();
+    _backExitTimer = null;
+    _backPendingExit = false;
     for (final state in _keyStates.values) {
       state.longPressTimer?.cancel();
       state.doublePressTimer?.cancel();
