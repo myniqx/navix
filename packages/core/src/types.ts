@@ -22,6 +22,7 @@ export interface IFocusNodeBehavior {
   onFocus?: (child: FocusNode) => void;
   onBlurred?: (child: FocusNode) => void;
   onEvent: (event: NavEvent) => boolean;
+  onConsumedByChild?: (event: NavEvent) => void;
 }
 
 export interface ActionConfig {

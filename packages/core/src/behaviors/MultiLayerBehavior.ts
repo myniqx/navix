@@ -10,6 +10,7 @@ export interface MultiLayerHandlers {
   onPanelOpen: (panel: MultiLayerPanelId) => void;
   onPanelClose: () => void;
   onExitRequest: () => void;
+  onPanelReset?: () => void;
 }
 
 /**
@@ -99,6 +100,10 @@ export class MultiLayerBehavior implements IFocusNodeBehavior {
     }
 
     return true;
+  };
+
+  onConsumedByChild = (_e: NavEvent): void => {
+    if (this.activePanel !== null) this._handlers.onPanelReset?.();
   };
 
   onUnregister(): void {

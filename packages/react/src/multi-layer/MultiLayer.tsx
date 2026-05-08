@@ -90,6 +90,7 @@ export function MultiLayer({
   const onPrevRef = useRef(onPrev);
   const onExitRequestRef = useRef(onExitRequest);
   const onTogglePlayRef = useRef(onTogglePlay);
+  const resetPanelTimeoutRef = useRef<() => void>(() => {});
   onNextRef.current = onNext;
   onPrevRef.current = onPrev;
   onExitRequestRef.current = onExitRequest;
@@ -130,6 +131,7 @@ export function MultiLayer({
     if (activePanelRef.current === null) return;
     panelTimeoutRef.current = setTimeout(() => setPanel(null), panelTimeout);
   }, [setPanel, panelTimeout]);
+  resetPanelTimeoutRef.current = resetPanelTimeout;
 
   const showZap = useCallback(() => {
     setZapChannel(true);
@@ -168,6 +170,7 @@ export function MultiLayer({
         onPanelOpen: (panel: MultiLayerPanelId) => setPanel(panel),
         onPanelClose: () => setPanel(null),
         onExitRequest: () => onExitRequestRef.current?.(),
+        onPanelReset: () => resetPanelTimeoutRef.current(),
       }),
   );
 

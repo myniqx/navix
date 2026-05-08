@@ -47,6 +47,7 @@ class _MultiLayerBehavior extends IFocusNodeBehavior {
   final void Function(NavixPanelId panel) onPanelOpen;
   final VoidCallback onPanelClose;
   final VoidCallback onExitRequest;
+  final VoidCallback onPanelReset;
 
   @override
   final bool isTrapped = true;
@@ -58,9 +59,11 @@ class _MultiLayerBehavior extends IFocusNodeBehavior {
     required this.onPanelOpen,
     required this.onPanelClose,
     required this.onExitRequest,
+    required this.onPanelReset,
   }) {
     onEvent = _handleEvent;
     onUnregister = _onUnregister;
+    onConsumedByChild = (_) { if (activePanel != null) onPanelReset(); };
   }
 
   bool _handleEvent(NavEvent event) {
@@ -162,7 +165,7 @@ class NavixMultiLayer extends StatefulWidget {
     this.onExitRequest,
     this.panelTimeout = 4000,
     this.triggerSize = 200,
-    this.hoverDelay = 300,
+    this.hoverDelay = 100,
     this.transitionDuration = 250,
     this.onFocus,
     this.onBlurred,
@@ -228,7 +231,7 @@ class _NavixMultiLayerState extends State<NavixMultiLayer> {
     if (_activePanel == null) return;
     _panelTimer = Timer(
       Duration(milliseconds: widget.panelTimeout),
-      () => _setPanel(null),
+      () => _closePanel(),
     );
   }
 
@@ -243,6 +246,7 @@ class _NavixMultiLayerState extends State<NavixMultiLayer> {
   void _onPanelOpen(NavixPanelId panel) {
     _setPanel(panel);
     _behavior?.activePanel = panel;
+    _resetPanelTimeout();
 
     // Focus the panel's node after it mounts
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -340,6 +344,7 @@ class _NavixMultiLayerState extends State<NavixMultiLayer> {
           onPanelOpen: _onPanelOpen,
           onPanelClose: _onPanelClose,
           onExitRequest: () => widget.onExitRequest?.call(),
+          onPanelReset: _resetPanelTimeout,
         );
         _behavior!.panels = {
           NavixPanelId.left: widget.left != null,

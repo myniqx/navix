@@ -14,6 +14,7 @@ abstract class IFocusNodeBehavior {
   void Function(NavixFocusNode node)? onFocus;
   void Function(NavixFocusNode node)? onBlurred;
   bool Function(NavEvent event)? onEvent;
+  void Function(NavEvent event)? onConsumedByChild;
 }
 
 class _DefaultFocusNodeBehavior extends IFocusNodeBehavior {}
@@ -110,7 +111,10 @@ class NavixFocusNode {
 
   bool handleEvent(NavEvent event) {
     final active = getActiveChild();
-    if (active != null && active.handleEvent(event)) return true;
+    if (active != null && active.handleEvent(event)) {
+      behavior.onConsumedByChild?.call(event);
+      return true;
+    }
     return behavior.onEvent?.call(event) ?? false;
   }
 

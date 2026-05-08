@@ -90,7 +90,10 @@ export class FocusNode {
 
     if (activeChild) {
       const consumed = activeChild.handleEvent(event);
-      if (consumed) return true;
+      if (consumed) {
+        this.behavior?.onConsumedByChild?.(event);
+        return true;
+      }
     }
 
     return this.behavior?.onEvent(event) ?? false;
