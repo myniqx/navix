@@ -1,6 +1,6 @@
 # Navix
 
-Spatial navigation library for TV platforms. Manages keyboard-driven focus across a tree of components — the same model used in every TV UI. You describe the structure (rows, grids, buttons), and Navix routes arrow key events through the tree automatically.
+Spatial navigation library for TV platforms. Framework-agnostic core with adapters for React and Flutter. You group your elements into lists and grids — Navix manages focus traversal across that hierarchy automatically, using the keys you assign.
 
 Targets **web** (Tizen, WebOS, browser) and **Flutter** (Android TV, Fire TV, Apple TV, desktop).
 

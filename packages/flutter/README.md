@@ -2,7 +2,7 @@
 
 A spatial navigation library for Flutter TV platforms (Android TV, Fire TV, Apple TV, desktop).
 
-Navix manages keyboard-driven focus across a tree of widgets — the same model used in every TV UI. You describe the structure (which rows, which grids, which buttons), and Navix routes arrow key events through the tree automatically.
+Flutter's default directional navigation relies heavily on the geometric position of widgets on screen, which can lead to unpredictable focus transitions in complex layouts. Navix closes this gap with a hierarchical model. You group your elements inside Horizontal/Vertical lists to define the structure. Decorative widgets and focusable elements can coexist freely within the same list — Navix only manages registered focusable nodes and ignores the rest. Built-in virtualized widgets can also be placed inside these lists. Focus is managed automatically across widgets in exactly the structure you defined, using the keys you assign.
 
 ---
 
@@ -54,11 +54,13 @@ One node in the focus tree. Every focusable widget is backed by a node.
 | `activeChildId`      | `id` of the currently active child node                      |
 | `register(child)`    | Adds a child node; auto-focuses if first child               |
 | `unregister(child)`  | Removes a child node; focus falls back to adjacent sibling   |
+| `reorderChildren(ordered)` | Reorders existing children without firing register/unregister callbacks |
 | `handleEvent(event)` | Routes event down to active child, then up via behavior      |
 | `focusNext()`        | Moves active child to the next sibling                       |
 | `focusPrev()`        | Moves active child to the previous sibling                   |
 | `focusChild(id)`     | Focuses a specific child by its `id`                         |
 | `getActiveChild()`   | Returns the currently active child node                      |
+| `getActivePath()`    | Returns the list of nodes from root to the active leaf       |
 | `requestFocus()`     | Programmatically focuses this node from anywhere in the tree |
 | `subscribe(fn)`      | Registers a change listener; returns an unsubscribe callback |
 | `destroy()`          | Detaches from parent and disposes all children               |
@@ -113,19 +115,19 @@ class NavEvent {
 
 #### Default key mappings
 
-| Action         | Keys                                       |
-| -------------- | ------------------------------------------ |
-| `left`         | `ArrowLeft`                                |
-| `right`        | `ArrowRight`                               |
-| `up`           | `ArrowUp`                                  |
-| `down`         | `ArrowDown`                                |
-| `enter`        | `Enter`, `Select` (longpress after 500 ms) |
-| `back`         | `Escape`, `GoBack`                         |
-| `play`         | `MediaPlay`                                |
-| `pause`        | `MediaPause`                               |
-| `play_pause`   | `MediaPlayPause`, `Space`                  |
-| `program_up`   | `ChannelUp`                                |
-| `program_down` | `ChannelDown`                              |
+| Action         | Keys                                                    |
+| -------------- | ------------------------------------------------------- |
+| `left`         | `ArrowLeft`                                             |
+| `right`        | `ArrowRight`                                            |
+| `up`           | `ArrowUp`                                               |
+| `down`         | `ArrowDown`                                             |
+| `enter`        | `Enter`, `Select` (longPress after 500 ms)              |
+| `back`         | `Escape`, `GoBack`, `Backspace`                         |
+| `play`         | `MediaPlay`                                             |
+| `pause`        | `MediaPause`                                            |
+| `play_pause`   | `MediaPlayPause`, `Space`                               |
+| `program_up`   | `ChannelUp`, `PageUp`                                   |
+| `program_down` | `ChannelDown`, `PageDown`                               |
 
 ---
 
@@ -137,12 +139,40 @@ The primitive widget all higher-level widgets are built on. Creates a `NavixFocu
 
 ```dart
 NavixFocusable(
+  /*
+    Required. Identifies this node in the tree.
+    type: String
+  */
   fKey: 'my-item',
+
+  /*
+    Factory called once at mount to create the behavior for this node.
+    Omit to use the default no-op behavior.
+    type: IFocusNodeBehavior Function(NavixFocusNode node)?
+  */
   createBehavior: (node) => MyBehavior(node),
+
+  /*
+    Lifecycle and event callbacks. All receive the fKey of the widget.
+    onFocus / onBlurred fire when isDirectlyFocused changes.
+    onRegister / onUnregister fire when the node enters/leaves the tree.
+    onEvent: return true to consume the event, false to let it bubble.
+    type: NavixFocusableCallbacks?
+  */
   callbacks: NavixFocusableCallbacks(
     onFocus: (key) => print('$key focused'),
     onBlurred: (key) => print('$key blurred'),
+    onRegister: (key) => print('$key mounted'),
+    onUnregister: (key) => print('$key unmounted'),
+    onEvent: (event) => false,
   ),
+
+  /*
+    Required. Builds the widget subtree.
+    focused: true for every node on the active path to the leaf.
+    directlyFocused: true only for the deepest active leaf.
+    type: Widget Function(context, NavixFocusNode node, bool focused, bool directlyFocused)
+  */
   builder: (context, node, focused, directlyFocused) {
     return Container(
       color: directlyFocused ? Colors.blue : Colors.grey,
@@ -151,13 +181,6 @@ NavixFocusable(
   },
 )
 ```
-
-| Prop             | Type                       | Description                                                      |
-| ---------------- | -------------------------- | ---------------------------------------------------------------- |
-| `fKey`           | `String`                   | Required. Identifies this node in the tree                       |
-| `builder`        | `NavixFocusableBuilder`    | `(context, node, focused, directlyFocused) → Widget`             |
-| `createBehavior` | `NavixBehaviorFactory?`    | `(node) → IFocusNodeBehavior`. Omit for a default no-op behavior |
-| `callbacks`      | `NavixFocusableCallbacks?` | `onFocus`, `onBlurred`, `onRegister`, `onUnregister`, `onEvent`  |
 
 Access the nearest `NavixFocusNode` from a descendant:
 
@@ -174,7 +197,17 @@ Container nodes that route arrow key navigation between their children. Horizont
 
 ```dart
 NavixVerticalList(
+  /*
+    Required. Identifies this node in the tree.
+    type: String
+  */
   fKey: 'page',
+
+  /*
+    Required. The widget subtree containing the focusable children.
+    Rendered as-is — no wrapper is injected.
+    type: Widget
+  */
   child: Column(
     children: [
       NavixHorizontalList(
@@ -193,10 +226,10 @@ NavixVerticalList(
       ),
     ],
   ),
+
+  // onFocus, onBlurred, onRegister, onUnregister also accepted
 )
 ```
-
-Both accept `onFocus`, `onBlurred`, `onRegister`, `onUnregister`. The `child` is rendered as-is — no wrapper is injected.
 
 ---
 
@@ -206,8 +239,22 @@ Fixed 2D grid. Navigates in all four directions, stopping at row edges on left/r
 
 ```dart
 NavixGrid(
+  /*
+    Required. Identifies this node in the tree.
+    type: String
+  */
   fKey: 'channel-grid',
+
+  /*
+    Required. Number of columns. Synced on every rebuild — can be changed dynamically.
+    type: int
+  */
   columns: 5,
+
+  /*
+    Required. The widget subtree containing the focusable children.
+    type: Widget
+  */
   child: Wrap(
     children: channels.map((ch) =>
       NavixButton(
@@ -217,31 +264,49 @@ NavixGrid(
       ),
     ).toList(),
   ),
+
+  // onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
 )
 ```
-
-`columns` is synced on every rebuild — you can change it dynamically.
 
 ---
 
 #### `NavixButton`
 
-Leaf focusable. Fires `onClick` on keyboard enter and on tap. Supports `onLongPress` and `onDoublePress` for keyboard-only gestures. Mouse hover calls `requestFocus()`.
+Leaf focusable. Fires `onClick` on keyboard enter and on tap. Supports `onLongPress` and `onDoublePress` for keyboard-only gestures. Mouse hover calls `requestFocus()`. All callbacks are synced on every rebuild.
 
 Provide either a `builder` or a `child`:
 
 ```dart
-// Static child
 NavixButton(
+  /*
+    Required. Identifies this node in the tree.
+    type: String
+  */
   fKey: 'play',
-  onClick: play,
-  child: const Text('▶ Play'),
-)
 
-// Builder — full control over focused state
-NavixButton(
-  fKey: 'play',
+  /*
+    Called on Enter key press and on tap.
+    type: VoidCallback?
+  */
   onClick: play,
+
+  /*
+    Called on Enter long-press (requires longPress: true in ActionConfig).
+    type: VoidCallback?
+  */
+  onLongPress: null,
+
+  /*
+    Called on Enter double-press (requires doublePress: true in ActionConfig).
+    type: VoidCallback?
+  */
+  onDoublePress: null,
+
+  /*
+    Builder for full control over focused state. Provide this or child, not both.
+    type: Widget Function(BuildContext context, bool focused)?
+  */
   builder: (context, focused) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
     decoration: BoxDecoration(
@@ -250,6 +315,9 @@ NavixButton(
     ),
     child: const Text('▶ Play'),
   ),
+
+  // child: const Text('▶ Play'),  // alternative to builder
+  // onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
 )
 ```
 
@@ -261,9 +329,28 @@ Controlled boolean toggle built on `NavixButton`. Enter or tap flips `checked` a
 
 ```dart
 NavixSwitch(
+  /*
+    Required. Identifies this node in the tree.
+    type: String
+  */
   fKey: 'notifications',
+
+  /*
+    Required. Current checked state.
+    type: bool
+  */
   checked: enabled,
+
+  /*
+    Required. Called with the new value when toggled.
+    type: void Function(bool checked)
+  */
   onChange: (value) => setState(() => enabled = value),
+
+  /*
+    Required. Builds the widget. checked reflects current state.
+    type: Widget Function(BuildContext context, bool checked, bool focused)
+  */
   builder: (context, checked, focused) => Row(
     children: [
       const Text('Notifications'),
@@ -279,6 +366,8 @@ NavixSwitch(
       ),
     ],
   ),
+
+  // onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
 )
 ```
 
@@ -292,9 +381,36 @@ Two-state text input. **Idle**: navigable like any other widget. **Editing**: fo
 
 ```dart
 NavixInput(
+  /*
+    Required. Identifies this node in the tree.
+    type: String
+  */
   fKey: 'search',
+
+  /*
+    Required. Controlled value. Synced to the controller when not editing.
+    type: String
+  */
   value: query,
+
+  /*
+    Required. Called on every keystroke while editing.
+    type: void Function(String value)
+  */
   onChange: (v) => setState(() => query = v),
+
+  /*
+    Required. Builds the input widget.
+    focused:       this node is on the active focus path.
+    editing:       currently in editing mode (keyboard trapped).
+    controller:    synced with value; pass directly to TextField.
+    textFocusNode: Flutter's own FocusNode; pass directly to TextField.
+    stopEditing:   call to exit editing mode programmatically.
+    type: Widget Function(context, bool focused, bool editing,
+                          TextEditingController controller,
+                          FocusNode textFocusNode,
+                          VoidCallback stopEditing)
+  */
   builder: (context, focused, editing, controller, textFocusNode, stopEditing) {
     return Container(
       decoration: BoxDecoration(
@@ -318,18 +434,10 @@ NavixInput(
       ),
     );
   },
+
+  // onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
 )
 ```
-
-The builder receives:
-
-| Param           | Type                    | Description                                   |
-| --------------- | ----------------------- | --------------------------------------------- |
-| `focused`       | `bool`                  | This node is on the active focus path         |
-| `editing`       | `bool`                  | Currently in editing mode                     |
-| `controller`    | `TextEditingController` | Synced with `value`; pass to `TextField`      |
-| `textFocusNode` | `FocusNode`             | Flutter's own focus node; pass to `TextField` |
-| `stopEditing`   | `VoidCallback`          | Call to exit editing mode programmatically    |
 
 ---
 
@@ -339,7 +447,23 @@ Two-state container. Enter expands, back collapses. Only one expandable can be o
 
 ```dart
 NavixExpandable(
+  /*
+    Required. Identifies this node in the tree.
+    type: String
+  */
   fKey: 'card',
+
+  /*
+    Required. Builds the widget.
+    isExpanded:      whether this expandable is currently open.
+    focused:         true for every node on the active path.
+    directlyFocused: true only when this node is the active leaf.
+    expand:          programmatically open this expandable.
+    collapse:        programmatically close this expandable.
+    type: Widget Function(context, bool isExpanded, bool focused,
+                          bool directlyFocused,
+                          VoidCallback expand, VoidCallback collapse)
+  */
   builder: (context, isExpanded, focused, directlyFocused, expand, collapse) {
     return Container(
       decoration: BoxDecoration(
@@ -372,10 +496,12 @@ NavixExpandable(
       ),
     );
   },
+
+  // onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
 )
 ```
 
-The builder receives `expand` and `collapse` callbacks for programmatic control. Mouse enter calls `requestFocus()`; tap calls `expand()`.
+Mouse enter calls `requestFocus()`; tap calls `expand()`.
 
 ---
 
@@ -385,19 +511,90 @@ Single or multi-select dropdown built on `NavixExpandable` + `NavixPaginatedList
 
 ```dart
 NavixDropdown(
+  /*
+    Required. Identifies this node in the tree.
+    type: String
+  */
   fKey: 'resolution',
+
+  /*
+    Required. The full list of options.
+    type: List<NavixDropdownOption>
+  */
   options: const [
     NavixDropdownOption(value: '4k', label: '4K'),
     NavixDropdownOption(value: '1080p', label: '1080p'),
     NavixDropdownOption(value: '720p', label: '720p'),
   ],
+
+  /*
+    Currently selected values.
+    Default: []
+    type: List<String>
+  */
   value: resolution,
+
+  /*
+    Called when selection changes.
+    type: void Function(List<String>)?
+  */
   onChange: (v) => setState(() => resolution = v),
-  maxVisible: 3,
+
+  /*
+    Allow selecting multiple options. Default: false.
+    type: bool
+  */
+  multiple: false,
+
+  /*
+    Panel opens above or below the trigger. Default: bottom.
+    type: NavixDropdownPosition
+  */
   position: NavixDropdownPosition.bottom,
+
+  /*
+    Max visible options before scrolling. Default: 3.
+    type: int
+  */
+  maxVisible: 3,
+
+  /*
+    Height of each option slot in px. Default: 44.
+    type: double
+  */
   slotHeight: 44,
+
+  /*
+    Fixed panel width. Defaults to trigger width (min: minPanelWidth).
+    type: double?
+  */
+  panelWidth: null,
+
+  /*
+    Minimum panel width. Default: 160.
+    type: double
+  */
+  minPanelWidth: 160,
+
+  /*
+    Required. Builds the trigger widget.
+    label:      current display text (selected label or placeholder).
+    isExpanded: whether the panel is open.
+    focused:    this node is on the active focus path.
+    type: Widget Function(context, String label, bool isExpanded, bool focused)
+  */
   renderTrigger: (context, label, isExpanded, focused) =>
     Text(label, style: TextStyle(color: focused ? Colors.blue : Colors.white)),
+
+  /*
+    Required. Builds each option row.
+    option:   the NavixDropdownOption for this row.
+    selected: whether this option is in the current value list.
+    focused:  this option row is directly focused.
+    index:    position in the options list.
+    type: Widget Function(context, NavixDropdownOption option,
+                          bool selected, bool focused, int index)
+  */
   renderOption: (context, option, selected, focused, index) =>
     Container(
       color: focused ? Colors.blue.shade900 : Colors.transparent,
@@ -406,22 +603,10 @@ NavixDropdown(
         Text(option.label),
       ]),
     ),
+
+  // onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
 )
 ```
-
-| Prop            | Type                           | Default  | Description                                            |
-| --------------- | ------------------------------ | -------- | ------------------------------------------------------ |
-| `options`       | `List<NavixDropdownOption>`    | —        | Option list                                            |
-| `value`         | `List<String>`                 | `[]`     | Selected values                                        |
-| `onChange`      | `void Function(List<String>)?` | —        | Called on selection change                             |
-| `multiple`      | `bool`                         | `false`  | Allow multiple selections                              |
-| `position`      | `NavixDropdownPosition`        | `bottom` | Panel opens above or below trigger                     |
-| `maxVisible`    | `int`                          | `3`      | Max visible options before scrolling                   |
-| `slotHeight`    | `double`                       | `44`     | Height of each option slot in px                       |
-| `panelWidth`    | `double?`                      | —        | Fixed panel width; defaults to trigger width           |
-| `minPanelWidth` | `double`                       | `160`    | Minimum panel width                                    |
-| `renderTrigger` | `NavixDropdownTriggerBuilder`  | —        | `(context, label, isExpanded, focused) → Widget`       |
-| `renderOption`  | `NavixDropdownOptionBuilder`   | —        | `(context, option, selected, focused, index) → Widget` |
 
 ---
 
@@ -431,31 +616,76 @@ Virtualized 1D list with sliding window pagination. Only items within the visibl
 
 ```dart
 NavixPaginatedList<Movie>(
+  /*
+    Required. Identifies this node in the tree.
+    type: String
+  */
   fKey: 'movies-row',
-  orientation: NavixListOrientation.horizontal,
+
+  /*
+    Required. Full item array.
+    type: List<T>
+  */
   items: movies,
+
+  /*
+    Scroll axis. Default: horizontal.
+    type: NavixListOrientation
+  */
+  orientation: NavixListOrientation.horizontal,
+
+  /*
+    Required. Items visible at once (min 3).
+    type: int
+  */
   visibleCount: 6,
+
+  /*
+    Required. Positions from edge before the window slides.
+    type: int
+  */
   threshold: 1,
+
+  /*
+    Gap between slots in logical pixels. Default: 0.
+    type: double
+  */
   gap: 12,
+
+  /*
+    Extra items rendered outside the visible window. Default: 2.
+    type: int
+  */
   buffer: 2,
+
+  /*
+    Stable content-based key per item. Default: '${fKey}-$index'.
+    Recommended when item identity matters across items list changes.
+    type: String Function(T item, int index)?
+  */
   keyForItem: (movie, _) => 'movie-${movie.id}',
+
+  /*
+    Required. Item builder.
+    Note: the fKey argument must be forwarded to the focusable child widget —
+    it ties the rendered widget back to the key the behavior expects.
+    type: Widget Function(T item, String fKey, int index)
+  */
   renderItem: (movie, fKey, index) => MovieCard(fKey: fKey, movie: movie),
+
+  /*
+    Caches activeIndex/viewOffset per group key. When the value changes,
+    the previous group's selection is saved and the new group's saved
+    selection is restored (or 0/0 if first time).
+    type: String?
+  */
+  groupKey: null,
+
+  // onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
 )
 ```
 
 > **Important:** the `fKey` argument passed to `renderItem` must be assigned to the `fKey` of the focusable child widget you render (e.g. `NavixButton`, `NavixFocusable`). Assigning a custom key instead breaks focus tracking — a `debugPrint` is emitted in development if the registered child key does not match any key produced by `keyForItem`.
-
-| Prop           | Type                        | Default            | Description                                                                                                                                                                         |
-| -------------- | --------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `items`        | `List<T>`                   | —                  | Full item array                                                                                                                                                                     |
-| `orientation`  | `NavixListOrientation`      | `horizontal`       | `horizontal` or `vertical`                                                                                                                                                          |
-| `visibleCount` | `int`                       | —                  | Items visible at once (min 3)                                                                                                                                                       |
-| `threshold`    | `int`                       | —                  | Positions from edge before window slides                                                                                                                                            |
-| `gap`          | `double`                    | `0`                | Gap between slots in logical pixels                                                                                                                                                 |
-| `buffer`       | `int`                       | `2`                | Extra items rendered outside the visible window                                                                                                                                     |
-| `renderItem`   | `(T, fKey, index) → Widget` | —                  | Item builder. The `fKey` argument must be passed to the focusable child                                                                                                             |
-| `keyForItem`   | `(T, int) → String?`        | `'${fKey}-$index'` | Stable, content-based key for each item. Recommended for content that may change                                                                                                    |
-| `groupKey`     | `String?`                   | —                  | Caches `activeIndex`/`viewOffset` per group. When the value changes, the previous group's selection is saved and the new group's saved selection is restored (or 0/0 if first time) |
 
 The widget uses `LayoutBuilder` — it must have a bounded constraint on the main axis.
 
@@ -467,16 +697,80 @@ Virtualized 2D grid with sliding window pagination. Pagination moves one slice a
 
 ```dart
 NavixPaginatedGrid<Channel>(
+  /*
+    Required. Identifies this node in the tree.
+    type: String
+  */
   fKey: 'channel-grid',
-  orientation: NavixGridOrientation.horizontal,
+
+  /*
+    Required. Full item array.
+    type: List<T>
+  */
   items: channels,
+
+  /*
+    Layout and pagination axis. Default: horizontal.
+    horizontal:    column-major, paginates left/right.
+    vertical:      row-major, paginates up/down.
+    autoHorizontal: behaves like horizontal when items.length >= rows * columns,
+                   otherwise falls back to vertical. Useful when item count is
+                   unknown at design time. Avoid for lazy-loaded lists — the layout
+                   will flip and items will reflow if count crosses the threshold.
+    type: NavixGridOrientation
+  */
+  orientation: NavixGridOrientation.horizontal,
+
+  /*
+    Required. Number of rows (min 3).
+    type: int
+  */
   rows: 4,
+
+  /*
+    Required. Number of columns (min 3).
+    type: int
+  */
   columns: 6,
+
+  /*
+    Required. Slices from edge before the window slides.
+    type: int
+  */
   threshold: 1,
+
+  /*
+    Gap between slots in logical pixels. Default: 0.
+    type: double
+  */
   gap: 8,
+
+  /*
+    Extra slices rendered outside the visible window. Default: 1.
+    type: int
+  */
   buffer: 1,
+
+  /*
+    Stable content-based key per item. Default: '${fKey}-$index'.
+    type: String Function(T item, int index)?
+  */
   keyForItem: (channel, _) => 'channel-${channel.id}',
+
+  /*
+    Required. Item builder.
+    Note: the fKey argument must be forwarded to the focusable child widget.
+    type: Widget Function(T item, String fKey, int index)
+  */
   renderItem: (channel, fKey, index) => ChannelCard(fKey: fKey, channel: channel),
+
+  /*
+    Caches activeIndex/viewOffset per group key.
+    type: String?
+  */
+  groupKey: null,
+
+  // onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
 )
 ```
 
@@ -494,25 +788,6 @@ col 0       col 1       col 2
 
 Left/right moves between columns (pagination axis). Up/down moves within a column (stops at edges).
 
-**Orientation values:**
-
-- `horizontal` — column-major layout, paginates left/right.
-- `vertical` — row-major layout, paginates up/down.
-- `autoHorizontal` — behaves like `horizontal` when there are enough items to fill the grid (`items.length >= rows * columns`); otherwise falls back to `vertical` so a partially filled grid lays out as a single row instead of a single column. Useful when item count is unknown at design time but you want the "full grid" case to look like a horizontal pager. Note: if items can grow past the threshold dynamically, the layout will flip and existing items will reflow — prefer plain `horizontal` for lazy-loaded lists.
-
-| Prop          | Type                        | Default            | Description                                                                                                                                         |
-| ------------- | --------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `items`       | `List<T>`                   | —                  | Full item array                                                                                                                                     |
-| `orientation` | `NavixGridOrientation`      | `horizontal`       | `horizontal` (column-major), `vertical` (row-major), `autoHorizontal`                                                                               |
-| `rows`        | `int`                       | —                  | Number of rows (min 3)                                                                                                                              |
-| `columns`     | `int`                       | —                  | Number of columns (min 3)                                                                                                                           |
-| `threshold`   | `int`                       | —                  | Slices from edge before window slides                                                                                                               |
-| `gap`         | `double`                    | `0`                | Gap between slots in logical pixels                                                                                                                 |
-| `buffer`      | `int`                       | `1`                | Extra slices rendered outside the visible window                                                                                                    |
-| `renderItem`  | `(T, fKey, index) → Widget` | —                  | Item builder. The `fKey` argument must be passed to the focusable child                                                                             |
-| `keyForItem`  | `(T, int) → String?`        | `'${fKey}-$index'` | Stable, content-based key for each item. Recommended when the items list can change                                                                 |
-| `groupKey`    | `String?`                   | —                  | Caches `activeIndex`/`viewOffset` per group. When the value changes, the previous group's selection is saved and the new group's selection restored |
-
 ---
 
 #### `NavixMultiLayer`
@@ -523,8 +798,32 @@ Channel switching (`program_up` / `program_down`) calls `onNext` / `onPrev`. If 
 
 ```dart
 NavixMultiLayer(
+  /*
+    Required. Identifies this node in the tree.
+    type: String
+  */
   fKey: 'player',
-  onExitRequest: () => setState(() => playerOpen = false),
+
+  /*
+    Required. Always-visible base layer.
+    type: Widget Function()
+  */
+  baseLayer: () => VideoWidget(src: current.url),
+
+  /*
+    Optional directional panels. Each receives NavixMultiLayerPanelProps.
+    type: Widget Function(NavixMultiLayerPanelProps)?
+  */
+  left:  (props) => AudioSubtitlesPanel(props: props),
+  right: (props) => ChannelListPanel(props: props, channels: channels),
+  up:    (props) => NotificationsPanel(props: props),
+  down:  (props) => ControlsPanel(props: props, paused: paused),
+
+  /*
+    Channel switch callbacks. Return true if the channel actually changed
+    (triggers the zap banner). Return false to do nothing.
+    type: bool Function()?
+  */
   onNext: () {
     final next = getNextChannel();
     if (next == null) return false;
@@ -537,15 +836,48 @@ NavixMultiLayer(
     setState(() => current = prev);
     return true;
   },
-  baseLayer: () => VideoWidget(src: current.url),
+
+  /*
+    Shown for 2 s after a successful channel change.
+    type: Widget Function()?
+  */
   zapBanner: () => ZapBannerWidget(channel: current),
+
+  /*
+    Persistent overlay above base layer. Return null to hide.
+    type: Widget Function()?
+  */
   notification: () => paused ? const PauseOverlay() : null,
-  left: (props) => AudioSubtitlesPanel(props: props),
-  right: (props) => ChannelListPanel(props: props, channels: channels),
-  up: (props) => NotificationsPanel(props: props),
-  down: (props) => ControlsPanel(props: props, paused: paused),
+
+  /*
+    Called on back when no panel is open.
+    type: VoidCallback?
+  */
+  onExitRequest: () => setState(() => playerOpen = false),
+
+  /*
+    Ms of inactivity before active panel auto-closes. Default: 4000.
+    type: int
+  */
   panelTimeout: 4000,
+
+  /*
+    Ms to wait before unmounting a closing panel (use for exit animations). Default: 250.
+    type: int
+  */
   transitionDuration: 250,
+
+  /*
+    Px width/height of the hover trigger zone on each edge. Default: 200.
+    type: double
+  */
+  triggerSize: 200,
+
+  /*
+    Ms the pointer must dwell in a trigger zone before the panel opens. Default: 300.
+    type: int
+  */
+  hoverDelay: 300,
 )
 ```
 
@@ -571,19 +903,6 @@ left: (props) => AnimatedSlide(
   child: AudioSubtitlesPanel(props: props),
 )
 ```
-
-| Prop                 | Type                                          | Default | Description                                                |
-| -------------------- | --------------------------------------------- | ------- | ---------------------------------------------------------- |
-| `baseLayer`          | `Widget Function()`                           | —       | Always-visible base layer                                  |
-| `left/right/up/down` | `Widget Function(NavixMultiLayerPanelProps)?` | —       | Optional directional panels                                |
-| `onNext` / `onPrev`  | `bool Function()?`                            | —       | Channel switch callbacks; return `true` if channel changed |
-| `zapBanner`          | `Widget Function()?`                          | —       | Shown for 2 s after a channel change                       |
-| `notification`       | `Widget Function()?`                          | —       | Persistent overlay above base layer                        |
-| `onExitRequest`      | `VoidCallback?`                               | —       | Called on `back` when no panel is open                     |
-| `panelTimeout`       | `int`                                         | `4000`  | Ms of inactivity before active panel auto-closes           |
-| `transitionDuration` | `int`                                         | `250`   | Ms to wait before unmounting a closing panel               |
-| `triggerSize`        | `double`                                      | `200`   | Px width/height of the hover trigger zone on each edge     |
-| `hoverDelay`         | `int`                                         | `300`   | Ms the pointer must dwell in a trigger zone before opening |
 
 ---
 
@@ -819,7 +1138,7 @@ Navigate with arrow keys. `Enter` to select. `Escape` to go back.
 | Home    | `NavixPaginatedList` + `NavixMultiLayer`                           | Three paginated rows — movies, series, live channels. Selecting an item opens a `NavixMultiLayer` player with left (audio/subtitles), right (channel list), up (notifications), and down (controls) panels. |
 | Movie   | `NavixPaginatedGrid`                                               | Movies in a paginated 4×6 grid.                                                                                                                                                                             |
 | Series  | `NavixHorizontalList`                                              | Classic horizontal shelves.                                                                                                                                                                                 |
-| Live    | `NavixGrid`                                                        | Fixed grid of live channels.                                                                                                                                                                                |
+| Live    | `NavixGrid`                                                        | Fixed grid of live channels.                                                                                                                                                                                 |
 | Options | `NavixExpandable` + `NavixDropdown` + `NavixSwitch` + `NavixInput` | Settings modal with dropdowns, a boolean toggle, and a text input — all keyboard navigable.                                                                                                                 |
 
 ---

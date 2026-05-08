@@ -9,7 +9,7 @@ typedef NavixButtonBuilder = Widget Function(
   bool focused,
 );
 
-class NavixButton extends StatelessWidget {
+class NavixButton extends StatefulWidget {
   final String fKey;
   final VoidCallback? onClick;
   final VoidCallback? onLongPress;
@@ -41,29 +41,57 @@ class NavixButton extends StatelessWidget {
         );
 
   @override
+  State<NavixButton> createState() => _NavixButtonState();
+}
+
+class _NavixButtonState extends State<NavixButton> {
+  late final _ButtonBehavior _behavior;
+
+  @override
+  void initState() {
+    super.initState();
+    _behavior = _ButtonBehavior(
+      onPress: widget.onClick,
+      onLongPress: widget.onLongPress,
+      onDoublePress: widget.onDoublePress,
+    );
+  }
+
+  @override
+  void didUpdateWidget(NavixButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.onClick != widget.onClick ||
+        oldWidget.onLongPress != widget.onLongPress ||
+        oldWidget.onDoublePress != widget.onDoublePress) {
+      _behavior.update(
+        onPress: widget.onClick,
+        onLongPress: widget.onLongPress,
+        onDoublePress: widget.onDoublePress,
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return NavixFocusable(
-      fKey: fKey,
+      fKey: widget.fKey,
       callbacks: NavixFocusableCallbacks(
-        onFocus: onFocus,
-        onBlurred: onBlurred,
-        onRegister: onRegister,
-        onUnregister: onUnregister,
-        onEvent: onEvent,
+        onFocus: widget.onFocus,
+        onBlurred: widget.onBlurred,
+        onRegister: widget.onRegister,
+        onUnregister: widget.onUnregister,
+        onEvent: widget.onEvent,
       ),
-      createBehavior: (node) => _ButtonBehavior(
-        onPress: onClick,
-        onLongPress: onLongPress,
-        onDoublePress: onDoublePress,
-      ),
+      createBehavior: (_) => _behavior,
       builder: (context, node, focused, directlyFocused) {
-        final content =
-            builder != null ? builder!(context, directlyFocused) : child!;
+        final content = widget.builder != null
+            ? widget.builder!(context, directlyFocused)
+            : widget.child!;
 
         return MouseRegion(
           onEnter: (_) => node.requestFocus(),
           child: GestureDetector(
-            onTap: onClick,
+            onTap: widget.onClick,
             child: content,
           ),
         );
@@ -73,9 +101,9 @@ class NavixButton extends StatelessWidget {
 }
 
 class _ButtonBehavior extends IFocusNodeBehavior {
-  final VoidCallback? _onPress;
-  final VoidCallback? _onLongPress;
-  final VoidCallback? _onDoublePress;
+  VoidCallback? _onPress;
+  VoidCallback? _onLongPress;
+  VoidCallback? _onDoublePress;
 
   _ButtonBehavior({
     VoidCallback? onPress,
@@ -85,6 +113,16 @@ class _ButtonBehavior extends IFocusNodeBehavior {
         _onLongPress = onLongPress,
         _onDoublePress = onDoublePress {
     this.onEvent = _handleEvent;
+  }
+
+  void update({
+    VoidCallback? onPress,
+    VoidCallback? onLongPress,
+    VoidCallback? onDoublePress,
+  }) {
+    _onPress = onPress;
+    _onLongPress = onLongPress;
+    _onDoublePress = onDoublePress;
   }
 
   bool _handleEvent(NavEvent event) {

@@ -20,11 +20,11 @@ export class ButtonBehavior implements IFocusNodeBehavior {
       this.handlers.onPress?.();
       return true;
     }
-    if (event.type === 'longpress') {
+    if (event.type === 'longPress') {
       this.handlers.onLongPress?.();
       return true;
     }
-    if (event.type === 'doublepress') {
+    if (event.type === 'doublePress') {
       this.handlers.onDoublePress?.();
       return true;
     }

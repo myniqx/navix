@@ -356,7 +356,9 @@ class _NavixPaginatedGridState<T> extends State<NavixPaginatedGrid<T>> {
 
     if (behavior.viewOffset > maxOffset) behavior.viewOffset = maxOffset;
     if (behavior.viewOffset < 0) behavior.viewOffset = 0;
-    _viewOffset = behavior.viewOffset;
+    if (_viewOffset != behavior.viewOffset) {
+      setState(() => _viewOffset = behavior.viewOffset);
+    }
   }
 
   @override
