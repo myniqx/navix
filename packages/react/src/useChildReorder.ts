@@ -1,4 +1,4 @@
-import type { FocusNode } from '@navix/core';
+import type { FocusNode } from './core/FocusNode';
 import { useEffect, useRef, type RefObject } from 'react';
 
 const REORDER_DEBOUNCE_MS = 500;

@@ -2,6 +2,10 @@ export { FocusRoot } from './FocusRoot';
 export { useFocusable } from './useFocusable';
 export { FocusContext } from './FocusContext';
 export type { BaseComponentProps } from './types';
+export type { NavEvent, IFocusNodeBehavior, InputConfig, ActionConfig } from './core/types';
+export { FocusNode } from './core/FocusNode';
+export { FocusTree } from './core/FocusTree';
+export { InputManager, DEFAULT_INPUT_CONFIG } from './core/InputManager';
 
 export { HorizontalList } from './horizontal-list';
 export { VerticalList } from './vertical-list';

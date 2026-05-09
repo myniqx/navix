@@ -1,5 +1,5 @@
-import type { FocusNode } from '../FocusNode';
-import type { NavEvent, IFocusNodeBehavior } from '../types';
+import type { FocusNode } from '../core/FocusNode';
+import type { NavEvent, IFocusNodeBehavior } from '../core/types';
 
 export class GridBehavior implements IFocusNodeBehavior {
   onRegister(): void {}

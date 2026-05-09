@@ -1,6 +1,6 @@
-import { FocusTree } from '@navix/core';
-import type { InputConfig } from '@navix/core';
-import type { FocusNode } from '@navix/core';
+import { FocusTree } from './core/FocusTree';
+import type { InputConfig } from './core/types';
+import type { FocusNode } from './core/FocusNode';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { FocusContext } from './FocusContext';

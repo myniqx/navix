@@ -1,5 +1,6 @@
-import { PaginatedListBehavior } from '@navix/core';
-import type { FocusNode, PaginatedListOrientation } from '@navix/core';
+import { PaginatedListBehavior } from './PaginatedListBehavior';
+import type { PaginatedListOrientation } from './PaginatedListBehavior';
+import type { FocusNode } from '../core/FocusNode';
 import {
   useState,
   useRef,

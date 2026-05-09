@@ -5,11 +5,6 @@ export interface NavEvent {
   type: 'press' | 'longPress' | 'doublePress';
 }
 
-/**
- * Interface that all behavior classes implement.
- * Behaviors attach themselves to a FocusNode via node.behavior = this.
- * All methods are optional — implement only what the behavior needs.
- */
 export interface IFocusNodeBehavior {
   onRegister?: () => void;
   onUnregister?: () => void;

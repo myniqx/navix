@@ -1,5 +1,5 @@
-import type { FocusNode } from '../FocusNode';
-import type { NavEvent, IFocusNodeBehavior } from '../types';
+import type { FocusNode } from './FocusNode';
+import type { NavEvent, IFocusNodeBehavior } from './types';
 
 export type ListOrientation = 'horizontal' | 'vertical';
 

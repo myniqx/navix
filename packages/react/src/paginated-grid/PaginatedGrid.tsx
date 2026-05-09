@@ -1,5 +1,6 @@
-import { PaginatedGridBehavior } from '@navix/core';
-import type { FocusNode, PaginatedGridOrientation } from '@navix/core';
+import { PaginatedGridBehavior } from './PaginatedGridBehavior';
+import type { PaginatedGridOrientation } from './PaginatedGridBehavior';
+import type { FocusNode } from '../core/FocusNode';
 import {
   useState,
   useRef,

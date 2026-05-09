@@ -1,5 +1,5 @@
-import { FocusNode } from '../FocusNode';
-import type { NavEvent, IFocusNodeBehavior } from '../types';
+import { FocusNode } from '../core/FocusNode';
+import type { NavEvent, IFocusNodeBehavior } from '../core/types';
 
 export type MultiLayerPanelId = 'left' | 'right' | 'up' | 'down';
 
@@ -13,24 +13,6 @@ export interface MultiLayerHandlers {
   onPanelReset?: () => void;
 }
 
-/**
- * MultiLayerBehavior
- *
- * Manages panel routing and channel navigation for a video player node.
- *
- * No panel open:
- *   left  → open left panel
- *   right → open right panel
- *   up    → next channel
- *   down  → prev channel
- *   enter → toggle play/pause
- *   back  → exit request (caller decides confirm logic)
- *
- * Panel open:
- *   All events routed to active child first (standard tree routing).
- *   If child does not consume back → close panel.
- *   All other unconsumed events → swallowed (focus stays in player).
- */
 export class MultiLayerBehavior implements IFocusNodeBehavior {
   activePanel: MultiLayerPanelId | null = null;
   panels: Record<MultiLayerPanelId, boolean> = {
@@ -57,7 +39,6 @@ export class MultiLayerBehavior implements IFocusNodeBehavior {
         this._handlers.onPanelClose();
         return true;
       }
-      // Panel bubble up etmiş — sadece medya tuşlarını handle et
       if (e.action === 'program_up') {
         this._handlers.onChannelNext();
       } else if (e.action === 'program_down') {
@@ -72,7 +53,6 @@ export class MultiLayerBehavior implements IFocusNodeBehavior {
       return true;
     }
 
-    // No panel open
     if (
       e.action === 'left' ||
       e.action === 'right' ||

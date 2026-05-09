@@ -1,20 +1,6 @@
-import type { FocusNode } from '../FocusNode';
-import type { NavEvent, IFocusNodeBehavior } from '../types';
+import type { FocusNode } from '../core/FocusNode';
+import type { NavEvent, IFocusNodeBehavior } from '../core/types';
 
-/**
- * Orientation of a `PaginatedGrid`.
- *
- * - `horizontal` — column-major layout, paginates left/right.
- * - `vertical` — row-major layout, paginates up/down.
- * - `auto-horizontal` — behaves like `horizontal` when there are enough items
- *   to fill the grid (`items.length >= rows * columns`); otherwise falls back
- *   to `vertical` so a partially filled grid lays out as a single row instead
- *   of a single column. Useful when item count is unknown at design time but
- *   you want the "full grid" case to look like a horizontal pager. Note: if
- *   items can grow past the threshold dynamically, the layout will flip and
- *   existing items will reflow — prefer plain `horizontal` for lazy-loaded
- *   lists.
- */
 export type PaginatedGridOrientation =
   | 'horizontal'
   | 'vertical'
@@ -32,9 +18,6 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
   private _columns: number = MIN_GRID_DIMENSION;
   private _threshold: number = 1;
 
-  // Resolves 'auto-horizontal' to 'horizontal' or 'vertical' based on
-  // whether all items fit into a single page. When items don't fill the
-  // grid, vertical (row-major) layout looks better.
   get effectiveOrientation(): 'horizontal' | 'vertical' {
     if (this.orientation === 'auto-horizontal') {
       return this.totalCount < this._rows * this._columns
@@ -72,8 +55,6 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
   private _onChange: (newIndex: number, newOffset: number) => void;
   private _keyToIndex: (key: string) => number;
 
-  // Called with (newIndex, newOffset) after every navigation step.
-  // React adapter uses this to sync viewOffset state and resolve focusChild.
   set onChange(fn: (newIndex: number, newOffset: number) => void) {
     this._onChange = fn;
   }
@@ -93,7 +74,7 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
     this.totalCount = totalCount;
     this.rows = rows;
     this.columns = columns;
-    this.threshold = threshold; // setter clamps the value
+    this.threshold = threshold;
     this._onChange = onChange;
     this._keyToIndex = keyToIndex;
   }
@@ -124,8 +105,6 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
     return false;
   };
 
-  // Called by React adapter after resolving the key for newIndex.
-  // Focuses the child if mounted, otherwise stores as pending.
   focusByKey(key: string): void {
     const child = this._node.children.find((c) => c.key === key);
     if (child) {
@@ -158,7 +137,6 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
   private _moveTo(newIndex: number, axis: 'main' | 'cross'): boolean {
     if (newIndex < 0 || newIndex >= this.totalCount) return false;
 
-    // Cross axis boundary check — don't wrap across slices
     if (axis === 'cross') {
       const sliceSize =
         this.effectiveOrientation === 'horizontal' ? this.rows : this.columns;

@@ -1,6 +1,6 @@
-import { MultiLayerBehavior } from '@navix/core';
-import type { MultiLayerPanelId } from '@navix/core';
-import type { FocusNode } from '@navix/core';
+import { MultiLayerBehavior } from './MultiLayerBehavior';
+import type { MultiLayerPanelId } from './MultiLayerBehavior';
+import type { FocusNode } from '../core/FocusNode';
 import {
   useState,
   useEffect,
@@ -80,7 +80,7 @@ export function MultiLayer({
     null,
   );
   const activePanelRef = useRef<MultiLayerPanelId | null>(null);
-  const [zapChannel, setZapChannel] = useState<boolean>(false);
+  const [zapChannel, setZapChannel] = useState<boolean>(true);
   const panelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const zapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -90,7 +90,7 @@ export function MultiLayer({
   const onPrevRef = useRef(onPrev);
   const onExitRequestRef = useRef(onExitRequest);
   const onTogglePlayRef = useRef(onTogglePlay);
-  const resetPanelTimeoutRef = useRef<() => void>(() => {});
+  const resetPanelTimeoutRef = useRef<() => void>(() => { });
   onNextRef.current = onNext;
   onPrevRef.current = onPrev;
   onExitRequestRef.current = onExitRequest;

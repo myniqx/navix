@@ -1,5 +1,5 @@
-import { ExpandableBehavior } from '@navix/core';
-import type { FocusNode } from '@navix/core';
+import { ExpandableBehavior } from './ExpandableBehavior';
+import type { FocusNode } from '../core/FocusNode';
 import { useState, useCallback, useMemo, type ReactNode } from 'react';
 
 import type { BaseComponentProps } from '../types';

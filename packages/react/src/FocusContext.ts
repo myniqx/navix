@@ -1,4 +1,4 @@
-import type { FocusNode } from '@navix/core';
+import type { FocusNode } from './core/FocusNode';
 import { createContext } from 'react';
 
 // Context value is the parent FocusNode that children register themselves into

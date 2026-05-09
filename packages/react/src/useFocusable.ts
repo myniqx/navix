@@ -1,5 +1,5 @@
-import { FocusNode } from '@navix/core';
-import type { IFocusNodeBehavior, NavEvent } from '@navix/core';
+import { FocusNode } from './core/FocusNode';
+import type { IFocusNodeBehavior, NavEvent } from './core/types';
 import {
   useContext,
   useEffect,

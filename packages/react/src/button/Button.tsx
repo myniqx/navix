@@ -1,5 +1,5 @@
-import { ButtonBehavior } from '@navix/core';
-import type { FocusNode } from '@navix/core';
+import { ButtonBehavior } from './ButtonBehavior';
+import type { FocusNode } from '../core/FocusNode';
 import { useRef, useMemo, useCallback, type ReactNode } from 'react';
 import type React from 'react';
 

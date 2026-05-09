@@ -1,4 +1,4 @@
-import type { NavEvent } from '@navix/core';
+import type { NavEvent } from './core/types';
 
 export interface BaseComponentProps {
   fKey: string;

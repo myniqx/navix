@@ -1,5 +1,5 @@
-import { GridBehavior } from '@navix/core';
-import type { FocusNode } from '@navix/core';
+import { GridBehavior } from './GridBehavior';
+import type { FocusNode } from '../core/FocusNode';
 import { useEffect, useMemo, type ReactNode } from 'react';
 import type React from 'react';
 

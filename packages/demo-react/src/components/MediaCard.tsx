@@ -1,4 +1,4 @@
-import type { NavEvent } from '@navix/core';
+import type { NavEvent } from '@navix/react';
 import { useFocusable } from '@navix/react';
 import { useState, useRef } from 'react';
 

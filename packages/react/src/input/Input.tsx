@@ -1,5 +1,5 @@
-import { InputBehavior } from '@navix/core';
-import type { FocusNode } from '@navix/core';
+import { InputBehavior } from './InputBehavior';
+import type { FocusNode } from '../core/FocusNode';
 import {
   useState,
   useEffect,

@@ -1,5 +1,5 @@
-import type { FocusNode } from '../FocusNode';
-import type { NavEvent, IFocusNodeBehavior } from '../types';
+import type { FocusNode } from '../core/FocusNode';
+import type { NavEvent, IFocusNodeBehavior } from '../core/types';
 
 export class InputBehavior implements IFocusNodeBehavior {
   isEditing: boolean = false;
@@ -30,7 +30,6 @@ export class InputBehavior implements IFocusNodeBehavior {
       return true;
     }
 
-    // Editing: swallow all nav events — focus stays on this input.
     return true;
   };
 
