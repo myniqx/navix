@@ -45,25 +45,25 @@ Flutter's default directional navigation relies heavily on the geometric positio
 
 One node in the focus tree. Every focusable widget is backed by a node.
 
-| Member               | Description                                                  |
-| -------------------- | ------------------------------------------------------------ |
-| `key`                | String identifier provided by the widget                     |
-| `id`                 | Unique auto-generated ID (`fn_N`) used internally            |
-| `isFocused`          | `true` for every node on the active path from root to leaf   |
-| `isDirectlyFocused`  | `true` only for the deepest active leaf                      |
-| `activeChildId`      | `id` of the currently active child node                      |
-| `register(child)`    | Adds a child node; auto-focuses if first child               |
-| `unregister(child)`  | Removes a child node; focus falls back to adjacent sibling   |
+| Member                     | Description                                                             |
+| -------------------------- | ----------------------------------------------------------------------- |
+| `key`                      | String identifier provided by the widget                                |
+| `id`                       | Unique auto-generated ID (`fn_N`) used internally                       |
+| `isFocused`                | `true` for every node on the active path from root to leaf              |
+| `isDirectlyFocused`        | `true` only for the deepest active leaf                                 |
+| `activeChildId`            | `id` of the currently active child node                                 |
+| `register(child)`          | Adds a child node; auto-focuses if first child                          |
+| `unregister(child)`        | Removes a child node; focus falls back to adjacent sibling              |
 | `reorderChildren(ordered)` | Reorders existing children without firing register/unregister callbacks |
-| `handleEvent(event)` | Routes event down to active child, then up via behavior      |
-| `focusNext()`        | Moves active child to the next sibling                       |
-| `focusPrev()`        | Moves active child to the previous sibling                   |
-| `focusChild(id)`     | Focuses a specific child by its `id`                         |
-| `getActiveChild()`   | Returns the currently active child node                      |
-| `getActivePath()`    | Returns the list of nodes from root to the active leaf       |
-| `requestFocus()`     | Programmatically focuses this node from anywhere in the tree |
-| `subscribe(fn)`      | Registers a change listener; returns an unsubscribe callback |
-| `destroy()`          | Detaches from parent and disposes all children               |
+| `handleEvent(event)`       | Routes event down to active child, then up via behavior                 |
+| `focusNext()`              | Moves active child to the next sibling                                  |
+| `focusPrev()`              | Moves active child to the previous sibling                              |
+| `focusChild(id)`           | Focuses a specific child by its `id`                                    |
+| `getActiveChild()`         | Returns the currently active child node                                 |
+| `getActivePath()`          | Returns the list of nodes from root to the active leaf                  |
+| `requestFocus()`           | Programmatically focuses this node from anywhere in the tree            |
+| `subscribe(fn)`            | Registers a change listener; returns an unsubscribe callback            |
+| `destroy()`                | Detaches from parent and disposes all children                          |
 
 #### `IFocusNodeBehavior`
 
@@ -115,19 +115,19 @@ class NavEvent {
 
 #### Default key mappings
 
-| Action         | Keys                                                    |
-| -------------- | ------------------------------------------------------- |
-| `left`         | `ArrowLeft`                                             |
-| `right`        | `ArrowRight`                                            |
-| `up`           | `ArrowUp`                                               |
-| `down`         | `ArrowDown`                                             |
-| `enter`        | `Enter`, `Select` (longPress after 500 ms)              |
-| `back`         | `Escape`, `GoBack`, `Backspace`                         |
-| `play`         | `MediaPlay`                                             |
-| `pause`        | `MediaPause`                                            |
-| `play_pause`   | `MediaPlayPause`, `Space`                               |
-| `program_up`   | `ChannelUp`, `PageUp`                                   |
-| `program_down` | `ChannelDown`, `PageDown`                               |
+| Action         | Keys                                       |
+| -------------- | ------------------------------------------ |
+| `left`         | `ArrowLeft`                                |
+| `right`        | `ArrowRight`                               |
+| `up`           | `ArrowUp`                                  |
+| `down`         | `ArrowDown`                                |
+| `enter`        | `Enter`, `Select` (longPress after 500 ms) |
+| `back`         | `Escape`, `GoBack`, `Backspace`            |
+| `play`         | `MediaPlay`                                |
+| `pause`        | `MediaPause`                               |
+| `play_pause`   | `MediaPlayPause`, `Space`                  |
+| `program_up`   | `ChannelUp`, `PageUp`                      |
+| `program_down` | `ChannelDown`, `PageDown`                  |
 
 ---
 
@@ -1138,7 +1138,7 @@ Navigate with arrow keys. `Enter` to select. `Escape` to go back.
 | Home    | `NavixPaginatedList` + `NavixMultiLayer`                           | Three paginated rows — movies, series, live channels. Selecting an item opens a `NavixMultiLayer` player with left (audio/subtitles), right (channel list), up (notifications), and down (controls) panels. |
 | Movie   | `NavixPaginatedGrid`                                               | Movies in a paginated 4×6 grid.                                                                                                                                                                             |
 | Series  | `NavixHorizontalList`                                              | Classic horizontal shelves.                                                                                                                                                                                 |
-| Live    | `NavixGrid`                                                        | Fixed grid of live channels.                                                                                                                                                                                 |
+| Live    | `NavixGrid`                                                        | Fixed grid of live channels.                                                                                                                                                                                |
 | Options | `NavixExpandable` + `NavixDropdown` + `NavixSwitch` + `NavixInput` | Settings modal with dropdowns, a boolean toggle, and a text input — all keyboard navigable.                                                                                                                 |
 
 ---

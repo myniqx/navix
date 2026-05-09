@@ -1,11 +1,11 @@
-import { GridBehavior } from './GridBehavior';
-import type { FocusNode } from '../core/FocusNode';
 import { useEffect, useMemo, type ReactNode } from 'react';
 import type React from 'react';
 
+import type { FocusNode } from '../core/FocusNode';
 import { mergeClassName } from '../mergeClassName';
 import type { BaseComponentProps } from '../types';
 import { useFocusable } from '../useFocusable';
+import { GridBehavior } from './GridBehavior';
 
 interface GridProps extends BaseComponentProps {
   columns: number;

@@ -1,6 +1,3 @@
-import { PaginatedGridBehavior } from './PaginatedGridBehavior';
-import type { PaginatedGridOrientation } from './PaginatedGridBehavior';
-import type { FocusNode } from '../core/FocusNode';
 import {
   useState,
   useRef,
@@ -12,8 +9,11 @@ import {
   type CSSProperties,
 } from 'react';
 
+import type { FocusNode } from '../core/FocusNode';
 import type { BaseComponentProps } from '../types';
 import { useFocusable } from '../useFocusable';
+import { PaginatedGridBehavior } from './PaginatedGridBehavior';
+import type { PaginatedGridOrientation } from './PaginatedGridBehavior';
 
 interface SlotProps {
   item: any;

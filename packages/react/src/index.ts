@@ -2,7 +2,12 @@ export { NavixScope } from './NavixScope';
 export { useFocusable } from './useFocusable';
 export { FocusContext } from './FocusContext';
 export type { BaseComponentProps } from './types';
-export type { NavEvent, IFocusNodeBehavior, InputConfig, ActionConfig } from './core/types';
+export type {
+  NavEvent,
+  IFocusNodeBehavior,
+  InputConfig,
+  ActionConfig,
+} from './core/types';
 export { FocusNode } from './core/FocusNode';
 export { FocusTree } from './core/FocusTree';
 export { InputManager, DEFAULT_INPUT_CONFIG } from './core/InputManager';
@@ -16,7 +21,10 @@ export { NavixInput } from './input';
 export type { NavixInputRenderProps } from './input';
 
 export { NavixMultiLayer } from './multi-layer';
-export type { NavixMultiLayerPanelProps, NavixMultiLayerPanelId } from './multi-layer';
+export type {
+  NavixMultiLayerPanelProps,
+  NavixMultiLayerPanelId,
+} from './multi-layer';
 
 export { NavixExpandable, useExpandable } from './expandable';
 export { NavixDropdown } from './dropdown';

@@ -1,11 +1,11 @@
-import { ButtonBehavior } from './ButtonBehavior';
-import type { FocusNode } from '../core/FocusNode';
 import { useRef, useMemo, useCallback, type ReactNode } from 'react';
 import type React from 'react';
 
+import type { FocusNode } from '../core/FocusNode';
 import { mergeClassName } from '../mergeClassName';
 import type { BaseComponentProps } from '../types';
 import { useFocusable } from '../useFocusable';
+import { ButtonBehavior } from './ButtonBehavior';
 
 type ButtonRenderFn = (props: { focused: boolean }) => ReactNode;
 

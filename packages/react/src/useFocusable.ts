@@ -1,5 +1,3 @@
-import { FocusNode } from './core/FocusNode';
-import type { IFocusNodeBehavior, NavEvent } from './core/types';
 import {
   useContext,
   useEffect,
@@ -10,6 +8,8 @@ import {
   createElement,
 } from 'react';
 
+import { FocusNode } from './core/FocusNode';
+import type { IFocusNodeBehavior, NavEvent } from './core/types';
 import { FocusContext } from './FocusContext';
 
 interface UseFocusableCallbacks {

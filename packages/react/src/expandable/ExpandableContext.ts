@@ -13,9 +13,8 @@ export interface NavixExpandableContextValue {
   collapse: () => void;
 }
 
-export const ExpandableContext = createContext<NavixExpandableContextValue | null>(
-  null,
-);
+export const ExpandableContext =
+  createContext<NavixExpandableContextValue | null>(null);
 
 /**
  * useExpandable
@@ -25,6 +24,7 @@ export const ExpandableContext = createContext<NavixExpandableContextValue | nul
  */
 export function useExpandable(): NavixExpandableContextValue {
   const ctx = useContext(ExpandableContext);
-  if (!ctx) throw new Error('useExpandable must be used inside <NavixExpandable>');
+  if (!ctx)
+    throw new Error('useExpandable must be used inside <NavixExpandable>');
   return ctx;
 }

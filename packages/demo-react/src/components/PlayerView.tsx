@@ -1,4 +1,9 @@
-import { NavixMultiLayer, NavixVerticalList, NavixHorizontalList, NavixButton } from '@navix/react';
+import {
+  NavixMultiLayer,
+  NavixVerticalList,
+  NavixHorizontalList,
+  NavixButton,
+} from '@navix/react';
 import type { NavixMultiLayerPanelProps } from '@navix/react';
 import { useState } from 'react';
 
@@ -200,7 +205,12 @@ const TRACK_OPTIONS = [
   { id: 'sub-en', label: 'English', group: 'Subtitles' },
 ];
 
-function SidePanel({ fKey, onEvent, close, panelState }: NavixMultiLayerPanelProps) {
+function SidePanel({
+  fKey,
+  onEvent,
+  close,
+  panelState,
+}: NavixMultiLayerPanelProps) {
   const [selected, setSelected] = useState('audio-tr');
 
   return (
@@ -522,7 +532,7 @@ function NotificationsPanel({
           flexDirection: 'column',
         }}
       >
-        <NavixButton fKey={`${fKey}-nowplaying`} onClick={() => { }}>
+        <NavixButton fKey={`${fKey}-nowplaying`} onClick={() => {}}>
           {({ focused }) => (
             <div
               style={{
@@ -557,7 +567,7 @@ function NotificationsPanel({
           )}
         </NavixButton>
         {NOTIFICATIONS.slice(1).map((n) => (
-          <NavixButton key={n.id} fKey={`${fKey}-${n.id}`} onClick={() => { }}>
+          <NavixButton key={n.id} fKey={`${fKey}-${n.id}`} onClick={() => {}}>
             {({ focused }) => (
               <div
                 style={{
@@ -715,7 +725,7 @@ function ControlsPanel({
           ))}
         </NavixHorizontalList>
 
-        <NavixButton fKey={`${fKey}-progress`} onClick={() => { }}>
+        <NavixButton fKey={`${fKey}-progress`} onClick={() => {}}>
           {({ focused }) => (
             <div style={{ padding: '4px 0 8px' }}>
               <div
@@ -762,7 +772,7 @@ function ControlsPanel({
           )}
         </NavixButton>
 
-        <NavixButton fKey={`${fKey}-volume`} onClick={() => { }}>
+        <NavixButton fKey={`${fKey}-volume`} onClick={() => {}}>
           {({ focused }) => (
             <div style={{ padding: '4px 0' }}>
               <div

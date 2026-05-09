@@ -1,8 +1,8 @@
-import { ListBehavior } from '../core/ListBehavior';
-import type { FocusNode } from '../core/FocusNode';
 import { useMemo, useRef, type ReactNode } from 'react';
 import type React from 'react';
 
+import type { FocusNode } from '../core/FocusNode';
+import { ListBehavior } from '../core/ListBehavior';
 import { mergeClassName } from '../mergeClassName';
 import type { BaseComponentProps } from '../types';
 import { useChildReorder } from '../useChildReorder';

@@ -1,8 +1,8 @@
-import { FocusTree } from './core/FocusTree';
-import type { InputConfig } from './core/types';
-import type { FocusNode } from './core/FocusNode';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
+import type { FocusNode } from './core/FocusNode';
+import { FocusTree } from './core/FocusTree';
+import type { InputConfig } from './core/types';
 import { FocusContext } from './FocusContext';
 import { setMergeClassName } from './mergeClassName';
 

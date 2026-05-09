@@ -22,7 +22,11 @@
  *   onPress — called when the user confirms Play.
  */
 
-import { NavixHorizontalList, NavixExpandable, NavixButton } from '@navix/react';
+import {
+  NavixHorizontalList,
+  NavixExpandable,
+  NavixButton,
+} from '@navix/react';
 import { useState } from 'react';
 
 import type { ContentItem } from '../data';

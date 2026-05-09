@@ -1,6 +1,3 @@
-import { MultiLayerBehavior } from './MultiLayerBehavior';
-import type { NavixMultiLayerPanelId } from './MultiLayerBehavior';
-import type { FocusNode } from '../core/FocusNode';
 import {
   useState,
   useEffect,
@@ -11,7 +8,10 @@ import {
 } from 'react';
 import type { CSSProperties } from 'react';
 
+import type { FocusNode } from '../core/FocusNode';
 import type { BaseComponentProps } from '../types';
+import { MultiLayerBehavior } from './MultiLayerBehavior';
+import type { NavixMultiLayerPanelId } from './MultiLayerBehavior';
 
 const notificationOverlayStyle: CSSProperties = {
   position: 'absolute',
@@ -73,14 +73,12 @@ export function NavixMultiLayer({
   const [activePanel, setActivePanel] = useState<NavixMultiLayerPanelId | null>(
     null,
   );
-  const [openingPanel, setOpeningPanel] = useState<NavixMultiLayerPanelId | null>(
-    null,
-  );
-  const [closingPanel, setClosingPanel] = useState<NavixMultiLayerPanelId | null>(
-    null,
-  );
+  const [openingPanel, setOpeningPanel] =
+    useState<NavixMultiLayerPanelId | null>(null);
+  const [closingPanel, setClosingPanel] =
+    useState<NavixMultiLayerPanelId | null>(null);
   const activePanelRef = useRef<NavixMultiLayerPanelId | null>(null);
-  const [zapChannel, setZapChannel] = useState<boolean>(true);
+  const [zapChannel, setZapChannel] = useState<boolean>(false);
   const panelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const zapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

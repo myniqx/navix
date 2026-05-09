@@ -1,5 +1,3 @@
-import { ButtonBehavior } from '../button/ButtonBehavior';
-import type { FocusNode } from '../core/FocusNode';
 import {
   useRef,
   useMemo,
@@ -8,6 +6,8 @@ import {
   type CSSProperties,
 } from 'react';
 
+import { ButtonBehavior } from '../button/ButtonBehavior';
+import type { FocusNode } from '../core/FocusNode';
 import { NavixExpandable } from '../expandable/NavixExpandable';
 import { NavixPaginatedList } from '../paginated-list/NavixPaginatedList';
 import type { BaseComponentProps } from '../types';

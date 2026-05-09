@@ -1,9 +1,9 @@
-import { ExpandableBehavior } from './ExpandableBehavior';
-import type { FocusNode } from '../core/FocusNode';
 import { useState, useCallback, useMemo, type ReactNode } from 'react';
 
+import type { FocusNode } from '../core/FocusNode';
 import type { BaseComponentProps } from '../types';
 import { useFocusable } from '../useFocusable';
+import { ExpandableBehavior } from './ExpandableBehavior';
 import { ExpandableContext } from './ExpandableContext';
 
 /**

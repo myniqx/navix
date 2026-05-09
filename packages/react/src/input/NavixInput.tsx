@@ -1,5 +1,3 @@
-import { InputBehavior } from './InputBehavior';
-import type { FocusNode } from '../core/FocusNode';
 import {
   useState,
   useEffect,
@@ -11,9 +9,11 @@ import {
   type HTMLAttributes,
 } from 'react';
 
+import type { FocusNode } from '../core/FocusNode';
 import { mergeClassName } from '../mergeClassName';
 import type { BaseComponentProps } from '../types';
 import { useFocusable } from '../useFocusable';
+import { InputBehavior } from './InputBehavior';
 
 export interface NavixInputRenderProps {
   value: string;

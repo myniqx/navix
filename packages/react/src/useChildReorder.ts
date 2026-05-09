@@ -1,5 +1,6 @@
-import type { FocusNode } from './core/FocusNode';
 import { useEffect, useRef, type RefObject } from 'react';
+
+import type { FocusNode } from './core/FocusNode';
 
 const REORDER_DEBOUNCE_MS = 500;
 
