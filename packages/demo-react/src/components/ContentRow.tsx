@@ -3,17 +3,17 @@
  *
  * A labeled horizontal shelf of content cards.
  * Each row is independently navigable with left/right arrow keys.
- * Up/down switches between rows — handled by the parent VerticalList.
+ * Up/down switches between rows — handled by the parent NavixVerticalList.
  *
  * Props:
- *   rowKey  — unique key for this row's HorizontalList node in the focus tree.
+ *   rowKey  — unique key for this row's NavixHorizontalList node in the focus tree.
  *             Also used as a prefix for each card's fKey to guarantee uniqueness.
  *   label   — section heading displayed above the cards (e.g. "Action", "Series").
  *   items   — array of content items to render as cards.
  *   onPress — called with the selected ContentItem when the user presses Enter.
  */
 
-import { HorizontalList } from '@navix/react';
+import { NavixHorizontalList } from '@navix/react';
 
 import type { ContentItem } from '../data';
 import { ContentCard } from './ContentCard';
@@ -43,12 +43,12 @@ export function ContentRow({ rowKey, label, items, onPlay }: ContentRowProps) {
       </div>
 
       {/*
-        HorizontalList creates a focus node keyed by `rowKey`.
+        NavixHorizontalList creates a focus node keyed by `rowKey`.
         It handles left/right navigation between its child ContentCards.
         Up/down events are not consumed here — they bubble to the parent
-        VerticalList which moves focus between rows.
+        NavixVerticalList which moves focus between rows.
       */}
-      <HorizontalList fKey={rowKey}>
+      <NavixHorizontalList fKey={rowKey}>
         {/*
           overflow: visible — allows scaled cards to render outside the row bounds.
           padding: 12px 4px — reserves space so the scale(1.08) shadow/border
@@ -67,7 +67,7 @@ export function ContentRow({ rowKey, label, items, onPlay }: ContentRowProps) {
             />
           ))}
         </div>
-      </HorizontalList>
+      </NavixHorizontalList>
     </div>
   );
 }

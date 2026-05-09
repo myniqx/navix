@@ -8,25 +8,25 @@ import {
   type CSSProperties,
 } from 'react';
 
-import { Expandable } from '../expandable/Expandable';
-import { PaginatedList } from '../paginated-list/PaginatedList';
+import { NavixExpandable } from '../expandable/NavixExpandable';
+import { NavixPaginatedList } from '../paginated-list/NavixPaginatedList';
 import type { BaseComponentProps } from '../types';
 import { useFocusable } from '../useFocusable';
 
-export interface DropdownOption {
+export interface NavixDropdownOption {
   label: string;
   value: string;
 }
 
 type DropdownRenderOptionFn = (props: {
-  option: DropdownOption;
+  option: NavixDropdownOption;
   selected: boolean;
   focused: boolean;
   index: number;
 }) => ReactNode;
 
 interface DropdownProps extends BaseComponentProps {
-  options: DropdownOption[];
+  options: NavixDropdownOption[];
   value?: string[];
   onChange?: (value: string[]) => void;
   multiple?: boolean;
@@ -48,7 +48,7 @@ function DefaultOption({
   selected,
   focused,
 }: {
-  option: DropdownOption;
+  option: NavixDropdownOption;
   selected: boolean;
   focused: boolean;
 }) {
@@ -138,7 +138,7 @@ function DefaultTrigger({
 
 const SLOT_HEIGHT = 34;
 
-export function Dropdown({
+export function NavixDropdown({
   fKey,
   options,
   value = [],
@@ -216,7 +216,7 @@ export function Dropdown({
   );
 
   return (
-    <Expandable
+    <NavixExpandable
       fKey={fKey}
       onFocus={onFocus}
       onBlurred={onBlurred}
@@ -243,7 +243,7 @@ export function Dropdown({
           {/* Options panel */}
           {isExpanded && (
             <div style={panelStyle}>
-              <PaginatedList
+              <NavixPaginatedList
                 fKey={listFKey}
                 orientation="vertical"
                 visibleCount={maxVisible}
@@ -282,7 +282,7 @@ export function Dropdown({
           )}
         </div>
       )}
-    </Expandable>
+    </NavixExpandable>
   );
 }
 

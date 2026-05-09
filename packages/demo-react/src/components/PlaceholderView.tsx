@@ -3,7 +3,7 @@
  *
  * Generic placeholder shown for tabs that have no content yet
  * (Series, Live, Options). Not focusable — purely presentational.
- * The parent VerticalList will have no children when this is shown,
+ * The parent NavixVerticalList will have no children when this is shown,
  * so up/down from the menu row finds nothing below and stays put.
  *
  * Props:

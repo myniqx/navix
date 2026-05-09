@@ -1,4 +1,4 @@
-export { FocusRoot } from './FocusRoot';
+export { NavixScope } from './NavixScope';
 export { useFocusable } from './useFocusable';
 export { FocusContext } from './FocusContext';
 export type { BaseComponentProps } from './types';
@@ -7,24 +7,24 @@ export { FocusNode } from './core/FocusNode';
 export { FocusTree } from './core/FocusTree';
 export { InputManager, DEFAULT_INPUT_CONFIG } from './core/InputManager';
 
-export { HorizontalList } from './horizontal-list';
-export { VerticalList } from './vertical-list';
-export { Grid } from './grid';
-export { Button } from './button';
-export { Switch } from './switch';
-export { Input } from './input';
-export type { InputRenderProps } from './input';
+export { NavixHorizontalList } from './horizontal-list';
+export { NavixVerticalList } from './vertical-list';
+export { NavixGrid } from './grid';
+export { NavixButton } from './button';
+export { NavixSwitch } from './switch';
+export { NavixInput } from './input';
+export type { NavixInputRenderProps } from './input';
 
-export { MultiLayer } from './multi-layer';
-export type { MultiLayerPanelProps, MultiLayerPanelId } from './multi-layer';
+export { NavixMultiLayer } from './multi-layer';
+export type { NavixMultiLayerPanelProps, NavixMultiLayerPanelId } from './multi-layer';
 
-export { Expandable, useExpandable } from './expandable';
-export { Dropdown } from './dropdown';
-export type { DropdownOption } from './dropdown';
+export { NavixExpandable, useExpandable } from './expandable';
+export { NavixDropdown } from './dropdown';
+export type { NavixDropdownOption } from './dropdown';
 export type {
-  ExpandableRenderProps,
-  ExpandableContextValue,
+  NavixExpandableRenderProps,
+  NavixExpandableContextValue,
 } from './expandable';
 
-export { PaginatedList } from './paginated-list';
-export { PaginatedGrid } from './paginated-grid';
+export { NavixPaginatedList } from './paginated-list';
+export { NavixPaginatedGrid } from './paginated-grid';

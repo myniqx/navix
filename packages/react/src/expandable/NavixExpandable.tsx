@@ -9,7 +9,7 @@ import { ExpandableContext } from './ExpandableContext';
 /**
  * Values passed to the render prop child function.
  */
-export interface ExpandableRenderProps {
+export interface NavixExpandableRenderProps {
   /** Whether the expandable is currently open. Use this to conditionally render children. */
   isExpanded: boolean;
   /** True when this node or any of its descendants is in the active focus path. */
@@ -37,11 +37,11 @@ interface ExpandableProps extends BaseComponentProps {
    *     </>
    *   )}
    */
-  children: (props: ExpandableRenderProps) => ReactNode;
+  children: (props: NavixExpandableRenderProps) => ReactNode;
 }
 
 /**
- * Expandable
+ * NavixExpandable
  *
  * A focus node that wraps ExpandableBehavior from core.
  * Manages two states — collapsed and expanded — and exposes them via:
@@ -52,7 +52,7 @@ interface ExpandableProps extends BaseComponentProps {
  *   Collapsed: enter → expands. All other events bubble to parent.
  *   Expanded:  back → collapses. All other events route to active children first.
  */
-export function Expandable({
+export function NavixExpandable({
   fKey,
   onFocus,
   onBlurred,
@@ -80,7 +80,7 @@ export function Expandable({
     [isExpanded, expand, collapse],
   );
 
-  const renderProps = useMemo<ExpandableRenderProps>(
+  const renderProps = useMemo<NavixExpandableRenderProps>(
     () => ({ isExpanded, focused, directlyFocused, expand, collapse }),
     [isExpanded, focused, directlyFocused, expand, collapse],
   );

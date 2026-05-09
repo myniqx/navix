@@ -1,1 +1,1 @@
-export { PaginatedList } from './PaginatedList';
+export { NavixPaginatedList } from './NavixPaginatedList';

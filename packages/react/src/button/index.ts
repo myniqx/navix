@@ -1,1 +1,1 @@
-export { Button } from './Button';
+export { NavixButton } from './NavixButton';

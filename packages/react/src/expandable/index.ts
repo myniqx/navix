@@ -1,4 +1,4 @@
-export { Expandable } from './Expandable';
-export type { ExpandableRenderProps } from './Expandable';
+export { NavixExpandable } from './NavixExpandable';
+export type { NavixExpandableRenderProps } from './NavixExpandable';
 export { useExpandable } from './ExpandableContext';
-export type { ExpandableContextValue } from './ExpandableContext';
+export type { NavixExpandableContextValue } from './ExpandableContext';

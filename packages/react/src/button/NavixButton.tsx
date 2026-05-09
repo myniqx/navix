@@ -21,7 +21,7 @@ interface ButtonProps extends BaseComponentProps {
 }
 
 /**
- * Button — leaf focusable node.
+ * NavixButton — leaf focusable node.
  *
  * onClick fires on both mouse click and keyboard Enter — they are the same action.
  * onLongPress and onDoublePress are keyboard-only (no mouse equivalent).
@@ -29,21 +29,21 @@ interface ButtonProps extends BaseComponentProps {
  * Two ways to handle focus styling:
  *
  * 1. focusedStyle prop — merged onto the wrapper div when focused:
- *      <Button style={{ background: '#222' }} focusedStyle={{ background: '#4fc3f7' }}>
+ *      <NavixButton style={{ background: '#222' }} focusedStyle={{ background: '#4fc3f7' }}>
  *        Play
- *      </Button>
+ *      </NavixButton>
  *
  * 2. Render prop — children as a function that receives { focused }:
- *      <Button>
+ *      <NavixButton>
  *        {({ focused }) => (
  *          <div style={{ color: focused ? '#fff' : '#888' }}>Play</div>
  *        )}
- *      </Button>
+ *      </NavixButton>
  *
  * Both can be used at the same time. All other div props (className, etc.)
  * are forwarded to the wrapper div.
  */
-export function Button({
+export function NavixButton({
   fKey,
   onClick,
   onLongPress,

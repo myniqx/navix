@@ -1,2 +1,2 @@
-export { MultiLayer } from './MultiLayer';
-export type { MultiLayerPanelProps, MultiLayerPanelId } from './MultiLayer';
+export { NavixMultiLayer } from './NavixMultiLayer';
+export type { NavixMultiLayerPanelProps, NavixMultiLayerPanelId } from './NavixMultiLayer';

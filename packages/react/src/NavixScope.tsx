@@ -12,7 +12,7 @@ interface FocusRootProps {
   mergeClassName?: (...classes: (string | undefined)[]) => string;
 }
 
-export function FocusRoot({
+export function NavixScope({
   children,
   inputConfig,
   mergeClassName,

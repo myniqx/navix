@@ -1,2 +1,2 @@
-export { Input } from './Input';
-export type { InputRenderProps } from './Input';
+export { NavixInput } from './NavixInput';
+export type { NavixInputRenderProps } from './NavixInput';

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { Button } from '../button';
+import { NavixButton } from '../button';
 import type { BaseComponentProps } from '../types';
 
 type SwitchRenderFn = (checked: boolean, focused: boolean) => ReactNode;
@@ -12,7 +12,7 @@ interface SwitchProps extends BaseComponentProps {
   children: SwitchRenderFn;
 }
 
-export function Switch({
+export function NavixSwitch({
   fKey,
   checked,
   onChange,
@@ -20,8 +20,8 @@ export function Switch({
   ...rest
 }: SwitchProps) {
   return (
-    <Button fKey={fKey} onClick={() => onChange(!checked)} {...rest}>
+    <NavixButton fKey={fKey} onClick={() => onChange(!checked)} {...rest}>
       {({ focused }) => children(checked, focused)}
-    </Button>
+    </NavixButton>
   );
 }

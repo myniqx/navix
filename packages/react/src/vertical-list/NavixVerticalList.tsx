@@ -16,7 +16,7 @@ interface VerticalListProps extends BaseComponentProps {
   focusedStyle?: React.CSSProperties;
 }
 
-export function VerticalList({
+export function NavixVerticalList({
   fKey,
   onFocus,
   onBlurred,

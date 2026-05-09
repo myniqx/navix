@@ -2,8 +2,8 @@
  * HomeView
  *
  * Default tab content — three horizontal shelves (Action, Series, Live TV).
- * Each shelf is an independent HorizontalList in the focus tree.
- * The parent VerticalList in App.tsx handles up/down between shelves.
+ * Each shelf is an independent NavixHorizontalList in the focus tree.
+ * The parent NavixVerticalList in App.tsx handles up/down between shelves.
  *
  * Props:
  *   onPlay — forwarded to each ContentCard; called when the user confirms Play.

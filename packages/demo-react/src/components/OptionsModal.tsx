@@ -1,10 +1,10 @@
 import {
-  VerticalList,
-  HorizontalList,
-  Button,
-  Dropdown,
-  Switch,
-  Input,
+  NavixVerticalList,
+  NavixHorizontalList,
+  NavixButton,
+  NavixDropdown,
+  NavixSwitch,
+  NavixInput,
 } from '@navix/react';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -75,7 +75,7 @@ export function OptionsModal({
           Options
         </div>
 
-        <VerticalList fKey="options-list">
+        <NavixVerticalList fKey="options-list">
           <div
             style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}
           >
@@ -84,7 +84,7 @@ export function OptionsModal({
             >
               Language
             </div>
-            <Dropdown
+            <NavixDropdown
               fKey="options-language"
               options={LANGUAGES}
               value={language}
@@ -94,7 +94,7 @@ export function OptionsModal({
             />
           </div>
 
-          <Switch
+          <NavixSwitch
             fKey="options-notifications"
             checked={notifications}
             onChange={setNotifications}
@@ -153,7 +153,7 @@ export function OptionsModal({
                 </div>
               </div>
             )}
-          </Switch>
+          </NavixSwitch>
 
           {notifications && (
             <div
@@ -173,7 +173,7 @@ export function OptionsModal({
               >
                 Email
               </div>
-              <Input
+              <NavixInput
                 fKey="options-email"
                 value=""
                 onChange={() => {}}
@@ -200,7 +200,7 @@ export function OptionsModal({
             >
               Nickname
             </div>
-            <Input
+            <NavixInput
               fKey="options-nickname"
               value={nickname}
               onChange={setNickname}
@@ -244,9 +244,9 @@ export function OptionsModal({
               justifyContent: 'flex-end',
             }}
           >
-            <HorizontalList fKey="options-actions">
+            <NavixHorizontalList fKey="options-actions">
               <div style={{ display: 'flex', gap: 12 }}>
-                <Button
+                <NavixButton
                   fKey="options-close"
                   style={{
                     padding: '8px 24px',
@@ -260,11 +260,11 @@ export function OptionsModal({
                   onClick={onClose}
                 >
                   Close
-                </Button>
+                </NavixButton>
               </div>
-            </HorizontalList>
+            </NavixHorizontalList>
           </div>
-        </VerticalList>
+        </NavixVerticalList>
       </div>
     </div>,
     document.body,
@@ -297,12 +297,12 @@ function OptionRow({
       <div style={{ width: 100, fontSize: 13, color: '#666', flexShrink: 0 }}>
         {label}
       </div>
-      <HorizontalList fKey={fKey}>
+      <NavixHorizontalList fKey={fKey}>
         <div style={{ display: 'flex', gap: 8 }}>
           {choices.map((choice) => {
             const isSelected = choice === selected;
             return (
-              <Button
+              <NavixButton
                 key={choice}
                 fKey={`${fKey}-${choice}`}
                 style={{
@@ -324,11 +324,11 @@ function OptionRow({
                 onClick={() => onSelect(choice)}
               >
                 {choice}
-              </Button>
+              </NavixButton>
             );
           })}
         </div>
-      </HorizontalList>
+      </NavixHorizontalList>
     </div>
   );
 }

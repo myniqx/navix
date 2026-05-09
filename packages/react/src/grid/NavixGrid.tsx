@@ -16,7 +16,7 @@ interface GridProps extends BaseComponentProps {
   focusedStyle?: React.CSSProperties;
 }
 
-export function Grid({
+export function NavixGrid({
   fKey,
   columns,
   onFocus,

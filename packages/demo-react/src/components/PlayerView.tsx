@@ -1,5 +1,5 @@
-import { MultiLayer, VerticalList, HorizontalList, Button } from '@navix/react';
-import type { MultiLayerPanelProps } from '@navix/react';
+import { NavixMultiLayer, NavixVerticalList, NavixHorizontalList, NavixButton } from '@navix/react';
+import type { NavixMultiLayerPanelProps } from '@navix/react';
 import { useState } from 'react';
 
 import type { ContentItem } from '../data';
@@ -30,7 +30,7 @@ export function PlayerView({
   showPlayIcon,
 }: PlayerViewProps) {
   return (
-    <MultiLayer
+    <NavixMultiLayer
       fKey="home-player"
       onExitRequest={onClose}
       onNext={onNext}
@@ -47,8 +47,8 @@ export function PlayerView({
           <PlayPauseNotification paused={false} />
         ) : null
       }
-      left={(props: MultiLayerPanelProps) => <SidePanel {...props} />}
-      right={(props: MultiLayerPanelProps) => (
+      left={(props: NavixMultiLayerPanelProps) => <SidePanel {...props} />}
+      right={(props: NavixMultiLayerPanelProps) => (
         <ChannelListPanel
           {...props}
           channels={player.channels}
@@ -56,10 +56,10 @@ export function PlayerView({
           onSelect={onChannelSelect}
         />
       )}
-      up={(props: MultiLayerPanelProps) => (
+      up={(props: NavixMultiLayerPanelProps) => (
         <NotificationsPanel {...props} current={player.current} />
       )}
-      down={(props: MultiLayerPanelProps) => (
+      down={(props: NavixMultiLayerPanelProps) => (
         <ControlsPanel
           {...props}
           paused={player.paused}
@@ -69,7 +69,6 @@ export function PlayerView({
         />
       )}
       panelTimeout={4000}
-      style={{ overflow: 'hidden' }}
     />
   );
 }
@@ -201,7 +200,7 @@ const TRACK_OPTIONS = [
   { id: 'sub-en', label: 'English', group: 'Subtitles' },
 ];
 
-function SidePanel({ fKey, onEvent, close, panelState }: MultiLayerPanelProps) {
+function SidePanel({ fKey, onEvent, close, panelState }: NavixMultiLayerPanelProps) {
   const [selected, setSelected] = useState('audio-tr');
 
   return (
@@ -236,7 +235,7 @@ function SidePanel({ fKey, onEvent, close, panelState }: MultiLayerPanelProps) {
       >
         Audio & Subtitles
       </div>
-      <VerticalList
+      <NavixVerticalList
         fKey={fKey}
         onEvent={onEvent}
         style={{
@@ -247,7 +246,7 @@ function SidePanel({ fKey, onEvent, close, panelState }: MultiLayerPanelProps) {
         }}
       >
         {TRACK_OPTIONS.map((opt, i) => (
-          <Button
+          <NavixButton
             key={opt.id}
             fKey={`${fKey}-${opt.id}`}
             onClick={() => setSelected(opt.id)}
@@ -302,9 +301,9 @@ function SidePanel({ fKey, onEvent, close, panelState }: MultiLayerPanelProps) {
                 </span>
               </div>
             )}
-          </Button>
+          </NavixButton>
         ))}
-        <Button fKey={`${fKey}-close`} onClick={close}>
+        <NavixButton fKey={`${fKey}-close`} onClick={close}>
           {({ focused }) => (
             <div
               style={{
@@ -320,8 +319,8 @@ function SidePanel({ fKey, onEvent, close, panelState }: MultiLayerPanelProps) {
               ← Back
             </div>
           )}
-        </Button>
-      </VerticalList>
+        </NavixButton>
+      </NavixVerticalList>
     </div>
   );
 }
@@ -334,7 +333,7 @@ function ChannelListPanel({
   onSelect,
   close,
   panelState,
-}: MultiLayerPanelProps & {
+}: NavixMultiLayerPanelProps & {
   channels: ContentItem[];
   current: ContentItem;
   onSelect: (ch: ContentItem) => void;
@@ -370,7 +369,7 @@ function ChannelListPanel({
       >
         Channels
       </div>
-      <VerticalList
+      <NavixVerticalList
         fKey={fKey}
         onEvent={onEvent}
         style={{
@@ -383,7 +382,7 @@ function ChannelListPanel({
         {channels.map((ch) => {
           const isActive = ch.id === current.id;
           return (
-            <Button
+            <NavixButton
               key={ch.id}
               fKey={`${fKey}-${ch.id}`}
               onClick={() => {
@@ -430,10 +429,10 @@ function ChannelListPanel({
                   </span>
                 </div>
               )}
-            </Button>
+            </NavixButton>
           );
         })}
-        <Button fKey={`${fKey}-close`} onClick={close}>
+        <NavixButton fKey={`${fKey}-close`} onClick={close}>
           {({ focused }) => (
             <div
               style={{
@@ -449,8 +448,8 @@ function ChannelListPanel({
               ← Back
             </div>
           )}
-        </Button>
-      </VerticalList>
+        </NavixButton>
+      </NavixVerticalList>
     </div>
   );
 }
@@ -480,7 +479,7 @@ function NotificationsPanel({
   close,
   current,
   panelState,
-}: MultiLayerPanelProps & { current: ContentItem }) {
+}: NavixMultiLayerPanelProps & { current: ContentItem }) {
   return (
     <div
       style={{
@@ -513,7 +512,7 @@ function NotificationsPanel({
       >
         Notifications
       </div>
-      <VerticalList
+      <NavixVerticalList
         fKey={fKey}
         onEvent={onEvent}
         style={{
@@ -523,7 +522,7 @@ function NotificationsPanel({
           flexDirection: 'column',
         }}
       >
-        <Button fKey={`${fKey}-nowplaying`} onClick={() => {}}>
+        <NavixButton fKey={`${fKey}-nowplaying`} onClick={() => { }}>
           {({ focused }) => (
             <div
               style={{
@@ -556,9 +555,9 @@ function NotificationsPanel({
               </div>
             </div>
           )}
-        </Button>
+        </NavixButton>
         {NOTIFICATIONS.slice(1).map((n) => (
-          <Button key={n.id} fKey={`${fKey}-${n.id}`} onClick={() => {}}>
+          <NavixButton key={n.id} fKey={`${fKey}-${n.id}`} onClick={() => { }}>
             {({ focused }) => (
               <div
                 style={{
@@ -583,9 +582,9 @@ function NotificationsPanel({
                 </div>
               </div>
             )}
-          </Button>
+          </NavixButton>
         ))}
-        <Button fKey={`${fKey}-close`} onClick={close}>
+        <NavixButton fKey={`${fKey}-close`} onClick={close}>
           {({ focused }) => (
             <div
               style={{
@@ -601,8 +600,8 @@ function NotificationsPanel({
               ← Back
             </div>
           )}
-        </Button>
-      </VerticalList>
+        </NavixButton>
+      </NavixVerticalList>
     </div>
   );
 }
@@ -623,7 +622,7 @@ function ControlsPanel({
   onNext,
   onPrev,
   panelState,
-}: MultiLayerPanelProps & {
+}: NavixMultiLayerPanelProps & {
   paused: boolean;
   onTogglePause: () => void;
   onNext: () => boolean;
@@ -655,12 +654,12 @@ function ControlsPanel({
         zIndex: 10,
       }}
     >
-      <VerticalList
+      <NavixVerticalList
         fKey={fKey}
         onEvent={onEvent}
         style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
       >
-        <HorizontalList
+        <NavixHorizontalList
           fKey={`${fKey}-buttons`}
           style={{
             display: 'flex',
@@ -670,7 +669,7 @@ function ControlsPanel({
           }}
         >
           {CONTROL_BUTTONS.map((btn) => (
-            <Button
+            <NavixButton
               key={btn.id}
               fKey={`${fKey}-${btn.id}`}
               onClick={() => handleControl(btn.id)}
@@ -712,11 +711,11 @@ function ControlsPanel({
                   </span>
                 </div>
               )}
-            </Button>
+            </NavixButton>
           ))}
-        </HorizontalList>
+        </NavixHorizontalList>
 
-        <Button fKey={`${fKey}-progress`} onClick={() => {}}>
+        <NavixButton fKey={`${fKey}-progress`} onClick={() => { }}>
           {({ focused }) => (
             <div style={{ padding: '4px 0 8px' }}>
               <div
@@ -761,9 +760,9 @@ function ControlsPanel({
               </div>
             </div>
           )}
-        </Button>
+        </NavixButton>
 
-        <Button fKey={`${fKey}-volume`} onClick={() => {}}>
+        <NavixButton fKey={`${fKey}-volume`} onClick={() => { }}>
           {({ focused }) => (
             <div style={{ padding: '4px 0' }}>
               <div
@@ -808,9 +807,9 @@ function ControlsPanel({
               </div>
             </div>
           )}
-        </Button>
+        </NavixButton>
 
-        <Button fKey={`${fKey}-close`} onClick={close}>
+        <NavixButton fKey={`${fKey}-close`} onClick={close}>
           {({ focused }) => (
             <div
               style={{
@@ -825,8 +824,8 @@ function ControlsPanel({
               ← Back
             </div>
           )}
-        </Button>
-      </VerticalList>
+        </NavixButton>
+      </NavixVerticalList>
     </div>
   );
 }

@@ -1,2 +1,2 @@
-export { Dropdown } from './Dropdown';
-export type { DropdownOption } from './Dropdown';
+export { NavixDropdown } from './NavixDropdown';
+export type { NavixDropdownOption } from './NavixDropdown';

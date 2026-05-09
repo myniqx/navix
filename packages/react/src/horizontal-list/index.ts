@@ -1,1 +1,1 @@
-export { HorizontalList } from './HorizontalList';
+export { NavixHorizontalList } from './NavixHorizontalList';

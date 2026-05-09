@@ -5,7 +5,7 @@ const REORDER_DEBOUNCE_MS = 500;
 
 // Walks the DOM subtree under `root` in document order and collects the
 // nearest `[data-navix-node-id]` element at each branch — descent stops as
-// soon as a navix node is found, so nested HorizontalList/VerticalList
+// soon as a navix node is found, so nested NavixHorizontalList/NavixVerticalList
 // instances are not flattened into the outer parent.
 function collectImmediateNodeIds(root: HTMLElement): string[] {
   const result: string[] = [];

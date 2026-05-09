@@ -1,4 +1,4 @@
-import { PaginatedList } from '@navix/react';
+import { NavixPaginatedList } from '@navix/react';
 
 import { HOME_ROWS } from '../data';
 import type { ContentItem, HomeRowCardType } from '../data';
@@ -58,7 +58,7 @@ function HomeRow({
     cardType === 'live' ? 'live' : cardType === 'series' ? 'series' : 'movie';
 
   return (
-    <PaginatedList
+    <NavixPaginatedList
       fKey={`home-row-${rowIndex}`}
       visibleCount={VISIBLE_COUNT}
       threshold={THRESHOLD}

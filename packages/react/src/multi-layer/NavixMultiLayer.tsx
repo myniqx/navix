@@ -1,5 +1,5 @@
 import { MultiLayerBehavior } from './MultiLayerBehavior';
-import type { MultiLayerPanelId } from './MultiLayerBehavior';
+import type { NavixMultiLayerPanelId } from './MultiLayerBehavior';
 import type { FocusNode } from '../core/FocusNode';
 import {
   useState,
@@ -20,22 +20,22 @@ const notificationOverlayStyle: CSSProperties = {
 };
 import { useFocusable } from '../useFocusable';
 
-export type { MultiLayerPanelId };
+export type { NavixMultiLayerPanelId };
 
-export type MultiLayerPanelState = 'opening' | 'open' | 'closing';
+export type NavixMultiLayerPanelState = 'opening' | 'open' | 'closing';
 
-export interface MultiLayerPanelProps extends BaseComponentProps {
+export interface NavixMultiLayerPanelProps extends BaseComponentProps {
   close: () => void;
-  panelState: MultiLayerPanelState;
+  panelState: NavixMultiLayerPanelState;
 }
 
 interface MultiLayerProps extends BaseComponentProps {
   onExitRequest?: () => void;
   baseLayer: () => ReactNode;
-  left?: (props: MultiLayerPanelProps) => ReactNode;
-  right?: (props: MultiLayerPanelProps) => ReactNode;
-  up?: (props: MultiLayerPanelProps) => ReactNode;
-  down?: (props: MultiLayerPanelProps) => ReactNode;
+  left?: (props: NavixMultiLayerPanelProps) => ReactNode;
+  right?: (props: NavixMultiLayerPanelProps) => ReactNode;
+  up?: (props: NavixMultiLayerPanelProps) => ReactNode;
+  down?: (props: NavixMultiLayerPanelProps) => ReactNode;
   onPrev?: () => boolean;
   onNext?: () => boolean;
   onTogglePlay?: () => void;
@@ -47,7 +47,7 @@ interface MultiLayerProps extends BaseComponentProps {
   transitionDuration?: number;
 }
 
-export function MultiLayer({
+export function NavixMultiLayer({
   fKey,
   onFocus,
   onBlurred,
@@ -70,16 +70,16 @@ export function MultiLayer({
   hoverDelay = 100,
   transitionDuration = 250,
 }: MultiLayerProps) {
-  const [activePanel, setActivePanel] = useState<MultiLayerPanelId | null>(
+  const [activePanel, setActivePanel] = useState<NavixMultiLayerPanelId | null>(
     null,
   );
-  const [openingPanel, setOpeningPanel] = useState<MultiLayerPanelId | null>(
+  const [openingPanel, setOpeningPanel] = useState<NavixMultiLayerPanelId | null>(
     null,
   );
-  const [closingPanel, setClosingPanel] = useState<MultiLayerPanelId | null>(
+  const [closingPanel, setClosingPanel] = useState<NavixMultiLayerPanelId | null>(
     null,
   );
-  const activePanelRef = useRef<MultiLayerPanelId | null>(null);
+  const activePanelRef = useRef<NavixMultiLayerPanelId | null>(null);
   const [zapChannel, setZapChannel] = useState<boolean>(true);
   const panelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const zapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -97,7 +97,7 @@ export function MultiLayer({
   onTogglePlayRef.current = onTogglePlay;
 
   const setPanel = useCallback(
-    (panel: MultiLayerPanelId | null) => {
+    (panel: NavixMultiLayerPanelId | null) => {
       if (panel === null) {
         // Start closing animation then unmount
         const current = activePanelRef.current;
@@ -167,7 +167,7 @@ export function MultiLayer({
           if (onPrevRef.current?.()) showZap();
         },
         onTogglePlay: () => onTogglePlayRef.current?.(),
-        onPanelOpen: (panel: MultiLayerPanelId) => setPanel(panel),
+        onPanelOpen: (panel: NavixMultiLayerPanelId) => setPanel(panel),
         onPanelClose: () => setPanel(null),
         onExitRequest: () => onExitRequestRef.current?.(),
         onPanelReset: () => resetPanelTimeoutRef.current(),
@@ -196,7 +196,7 @@ export function MultiLayer({
   }, [activePanel, node, fKey]);
 
   const handleTriggerEnter = useCallback(
-    (panel: MultiLayerPanelId) => {
+    (panel: NavixMultiLayerPanelId) => {
       if (hoverTimerRef.current !== null) clearTimeout(hoverTimerRef.current);
       hoverTimerRef.current = setTimeout(() => setPanel(panel), hoverDelay);
     },
@@ -246,9 +246,9 @@ export function MultiLayer({
 
   const makePanelProps = useCallback(
     (
-      side: MultiLayerPanelId,
-      panelState: MultiLayerPanelState,
-    ): MultiLayerPanelProps => ({
+      side: NavixMultiLayerPanelId,
+      panelState: NavixMultiLayerPanelState,
+    ): NavixMultiLayerPanelProps => ({
       fKey: `${fKey}-panel-${side}`,
       close: closePanel,
       panelState,

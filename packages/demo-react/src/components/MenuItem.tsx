@@ -4,10 +4,10 @@
  * A single focusable item inside the top navigation bar.
  * Uses `useFocusable` directly because it needs `directlyFocused` to apply
  * custom focus styling (underline + color). For simpler cases where you don't
- * need to read focus state in children, use <Button> instead.
+ * need to read focus state in children, use <NavixButton> instead.
  *
  * Props:
- *   fKey    — unique key within the parent HorizontalList's focus scope.
+ *   fKey    — unique key within the parent NavixHorizontalList's focus scope.
  *   label   — display text.
  *   onPress — called when the user confirms with Enter.
  */

@@ -15,7 +15,7 @@ import { mergeClassName } from '../mergeClassName';
 import type { BaseComponentProps } from '../types';
 import { useFocusable } from '../useFocusable';
 
-export interface InputRenderProps {
+export interface NavixInputRenderProps {
   value: string;
   focused: boolean;
   editing: boolean;
@@ -23,9 +23,9 @@ export interface InputRenderProps {
   stopEditing: () => void;
 }
 
-type InputRenderFn = (props: InputRenderProps) => ReactNode;
+type NavixInputRenderFn = (props: NavixInputRenderProps) => ReactNode;
 
-interface InputProps extends BaseComponentProps {
+interface NavixInputProps extends BaseComponentProps {
   value: string;
   onChange: (value: string) => void;
   style?: CSSProperties;
@@ -39,14 +39,14 @@ interface InputProps extends BaseComponentProps {
   maxLength?: number;
   autoComplete?: string;
   inputMode?: HTMLAttributes<HTMLInputElement>['inputMode'];
-  children?: InputRenderFn;
+  children?: NavixInputRenderFn;
 }
 
 const DEFAULT_FOCUSED_STYLE: CSSProperties = {
   outline: '2px solid rgba(255,255,255,0.25)',
 };
 
-export function Input({
+export function NavixInput({
   fKey,
   onFocus,
   onBlurred,
@@ -67,7 +67,7 @@ export function Input({
   autoComplete,
   inputMode,
   children,
-}: InputProps) {
+}: NavixInputProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
@@ -111,7 +111,7 @@ export function Input({
     [className, focusedClassName, editingClassName, focused, isEditing],
   );
 
-  const renderProps = useMemo<InputRenderProps>(
+  const renderProps = useMemo<NavixInputRenderProps>(
     () => ({ value, focused, editing: isEditing, inputRef, stopEditing }),
     [value, focused, isEditing, stopEditing],
   );

@@ -1,4 +1,4 @@
-import { PaginatedGrid } from '@navix/react';
+import { NavixPaginatedGrid } from '@navix/react';
 
 import { MOVIE_CHANNELS } from '../data';
 import { MediaCard } from './MediaCard';
@@ -39,7 +39,7 @@ export function MovieView({ onSelect }: MovieViewProps) {
         </span>
       </div>
 
-      <PaginatedGrid
+      <NavixPaginatedGrid
         fKey="movie-grid"
         rows={ROWS}
         columns={COLUMNS}

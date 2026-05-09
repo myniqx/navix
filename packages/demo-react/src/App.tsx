@@ -6,9 +6,9 @@
  * in sync with what is visible on screen.
  *
  * Focus tree structure (example: Home tab active):
- *   FocusRoot
- *   └─ VerticalList "app"
- *      ├─ MenuRow               (HorizontalList "menu")
+ *   NavixScope
+ *   └─ NavixVerticalList "app"
+ *      ├─ MenuRow               (NavixHorizontalList "menu")
  *      │  ├─ MenuItem "menu-Home"
  *      │  └─ ...
  *      ├─ ContentRow "home-row-0"   ← HomeView renders these
@@ -20,7 +20,7 @@
  * no manual focus management needed.
  */
 
-import { FocusRoot, VerticalList } from '@navix/react';
+import { NavixScope, NavixVerticalList } from '@navix/react';
 import { useState, useRef } from 'react';
 
 import { EventLog } from './components/EventLog';
@@ -114,8 +114,8 @@ export function App() {
         flexDirection: 'column',
       }}
     >
-      <FocusRoot>
-        <VerticalList
+      <NavixScope>
+        <NavixVerticalList
           fKey="app"
           style={{
             flex: 1,
@@ -130,7 +130,7 @@ export function App() {
           {activeTab === 'Movie' && <MovieView onSelect={handleSelect} />}
           {activeTab === 'Series' && <SeriesView onSelect={handleSelect} />}
           {activeTab === 'Live' && <LiveView onSelect={handleSelect} />}
-        </VerticalList>
+        </NavixVerticalList>
 
         {selectedEntry !== null && (
           <div
@@ -154,7 +154,7 @@ export function App() {
             />
           </div>
         )}
-      </FocusRoot>
+      </NavixScope>
 
       <EventLog entries={log} />
     </div>

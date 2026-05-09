@@ -1,21 +1,21 @@
 import { FocusNode } from '../core/FocusNode';
 import type { NavEvent, IFocusNodeBehavior } from '../core/types';
 
-export type MultiLayerPanelId = 'left' | 'right' | 'up' | 'down';
+export type NavixMultiLayerPanelId = 'left' | 'right' | 'up' | 'down';
 
-export interface MultiLayerHandlers {
+export interface NavixMultiLayerHandlers {
   onChannelNext: () => void;
   onChannelPrev: () => void;
   onTogglePlay: () => void;
-  onPanelOpen: (panel: MultiLayerPanelId) => void;
+  onPanelOpen: (panel: NavixMultiLayerPanelId) => void;
   onPanelClose: () => void;
   onExitRequest: () => void;
   onPanelReset?: () => void;
 }
 
 export class MultiLayerBehavior implements IFocusNodeBehavior {
-  activePanel: MultiLayerPanelId | null = null;
-  panels: Record<MultiLayerPanelId, boolean> = {
+  activePanel: NavixMultiLayerPanelId | null = null;
+  panels: Record<NavixMultiLayerPanelId, boolean> = {
     left: false,
     right: false,
     up: false,
@@ -24,9 +24,9 @@ export class MultiLayerBehavior implements IFocusNodeBehavior {
 
   readonly isTrapped = true;
 
-  private _handlers: MultiLayerHandlers;
+  private _handlers: NavixMultiLayerHandlers;
 
-  constructor(_node: FocusNode, handlers: MultiLayerHandlers) {
+  constructor(_node: FocusNode, handlers: NavixMultiLayerHandlers) {
     this._handlers = handlers;
   }
 
@@ -59,7 +59,7 @@ export class MultiLayerBehavior implements IFocusNodeBehavior {
       e.action === 'up' ||
       e.action === 'down'
     ) {
-      const panelId = e.action as MultiLayerPanelId;
+      const panelId = e.action as NavixMultiLayerPanelId;
       if (this.panels[panelId]) {
         this.activePanel = panelId;
         this._handlers.onPanelOpen(panelId);

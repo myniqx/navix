@@ -76,7 +76,7 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
   onChildRegistered = (child: FocusNode): void => {
     if (this._keyToIndex(child.key) === -1) {
       console.warn(
-        `[PaginatedList:${this._node.key}] Registered child key "${child.key}" does not match any key produced by keyForItem. ` +
+        `[NavixPaginatedList:${this._node.key}] Registered child key "${child.key}" does not match any key produced by keyForItem. ` +
           `Pass the fKey argument from renderItem to your child component instead of assigning a custom fKey, ` +
           `or supply a keyForItem that returns the same key your child uses.`,
       );

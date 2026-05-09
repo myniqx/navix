@@ -1,17 +1,17 @@
 /**
  * MenuRow
  *
- * The top navigation bar. Wraps all menu items in a HorizontalList so
+ * The top navigation bar. Wraps all menu items in a NavixHorizontalList so
  * left/right arrow keys move focus between them.
  *
- * Layout note: HorizontalList only manages focus — it renders no DOM of its
+ * Layout note: NavixHorizontalList only manages focus — it renders no DOM of its
  * own. The inner <div style="display:flex"> provides the actual horizontal layout.
  *
  * Props:
  *   onSelect — called with the label string when the user presses Enter on an item.
  */
 
-import { HorizontalList, Expandable } from '@navix/react';
+import { NavixHorizontalList, NavixExpandable } from '@navix/react';
 import { useState } from 'react';
 
 import { MENU_ITEMS, DEFAULT_OPTIONS } from '../data';
@@ -36,14 +36,14 @@ export function MenuRow({ onSelect }: MenuRowProps) {
     >
       {/*
         fKey="menu" — identifier for this node in the focus tree.
-        HorizontalList attaches HorizontalListBehavior: left→focusPrev, right→focusNext.
-        Events not handled here (up/down) bubble up to the parent VerticalList.
+        NavixHorizontalList attaches HorizontalListBehavior: left→focusPrev, right→focusNext.
+        Events not handled here (up/down) bubble up to the parent NavixVerticalList.
       */}
-      <HorizontalList fKey="menu">
+      <NavixHorizontalList fKey="menu">
         <div style={{ display: 'flex', gap: 4 }}>
           {MENU_ITEMS.map((item) =>
             item === 'Options' ? (
-              <Expandable key={item} fKey="menu-Options">
+              <NavixExpandable key={item} fKey="menu-Options">
                 {({ isExpanded, directlyFocused, focused, collapse }) => (
                   <>
                     <div
@@ -79,7 +79,7 @@ export function MenuRow({ onSelect }: MenuRowProps) {
                     )}
                   </>
                 )}
-              </Expandable>
+              </NavixExpandable>
             ) : (
               <MenuItem
                 key={item}
@@ -90,7 +90,7 @@ export function MenuRow({ onSelect }: MenuRowProps) {
             ),
           )}
         </div>
-      </HorizontalList>
+      </NavixHorizontalList>
     </div>
   );
 }

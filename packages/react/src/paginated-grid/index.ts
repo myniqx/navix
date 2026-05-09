@@ -1,1 +1,1 @@
-export { PaginatedGrid } from './PaginatedGrid';
+export { NavixPaginatedGrid } from './NavixPaginatedGrid';

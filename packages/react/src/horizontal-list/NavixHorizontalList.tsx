@@ -16,7 +16,7 @@ interface HorizontalListProps extends BaseComponentProps {
   focusedStyle?: React.CSSProperties;
 }
 
-export function HorizontalList({
+export function NavixHorizontalList({
   fKey,
   onFocus,
   onBlurred,
