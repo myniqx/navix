@@ -37,11 +37,11 @@ export function NavixScope({
     const tree = treeRef.current;
 
     const onKeyDown = (e: KeyboardEvent) => {
-      const consumed = tree.inputManager.handleKeyDown(e.code);
+      const consumed = tree.inputManager.handleKeyDown(e.code, e.keyCode);
       if (consumed) e.preventDefault();
     };
     const onKeyUp = (e: KeyboardEvent) => {
-      const consumed = tree.inputManager.handleKeyUp(e.code);
+      const consumed = tree.inputManager.handleKeyUp(e.code, e.keyCode);
       if (consumed) e.preventDefault();
     };
 

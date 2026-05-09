@@ -7,12 +7,12 @@ export const DEFAULT_INPUT_CONFIG: InputConfig = {
     up: { keys: ['ArrowUp'] },
     down: { keys: ['ArrowDown'] },
     enter: { keys: ['Enter'], longPress: true, longPressMs: 500 },
-    back: { keys: ['Escape'] },
-    play: { keys: ['MediaPlay'] },
-    pause: { keys: ['MediaPause'] },
-    play_pause: { keys: ['MediaPlayPause', 'Space'] },
-    program_up: { keys: ['PageUp'] },
-    program_down: { keys: ['PageDown'] },
+    back: { keys: ['Escape'], keyCodes: [10009] },
+    play: { keys: ['MediaPlay'], keyCodes: [415] },
+    pause: { keys: ['MediaPause'], keyCodes: [19] },
+    play_pause: { keys: ['MediaPlayPause', 'Space'], keyCodes: [10252] },
+    program_up: { keys: ['PageUp'], keyCodes: [427] },
+    program_down: { keys: ['PageDown'], keyCodes: [428] },
   },
 };
 
@@ -31,6 +31,7 @@ export class InputManager {
 
   private config: InputConfig;
   private keyToAction: Map<string, string> = new Map();
+  private keyCodeToAction: Map<number, string> = new Map();
   private keyStates: Map<string, KeyState> = new Map();
 
   private _backPendingExit = false;
@@ -43,14 +44,17 @@ export class InputManager {
 
   private _buildKeyMap(): void {
     for (const [action, cfg] of Object.entries(this.config.actions)) {
-      for (const key of cfg.keys) {
+      for (const key of cfg.keys ?? []) {
         this.keyToAction.set(key, action);
+      }
+      for (const keyCode of cfg.keyCodes ?? []) {
+        this.keyCodeToAction.set(keyCode, action);
       }
     }
   }
 
-  handleKeyDown(code: string): boolean {
-    const action = this.keyToAction.get(code);
+  handleKeyDown(code: string, keyCode?: number): boolean {
+    const action = this.keyToAction.get(code) ?? (keyCode !== undefined ? this.keyCodeToAction.get(keyCode) : undefined);
     if (!action) return false;
 
     const cfg = this.config.actions[action]!;
@@ -86,8 +90,8 @@ export class InputManager {
     return true;
   }
 
-  handleKeyUp(code: string): boolean {
-    const action = this.keyToAction.get(code);
+  handleKeyUp(code: string, keyCode?: number): boolean {
+    const action = this.keyToAction.get(code) ?? (keyCode !== undefined ? this.keyCodeToAction.get(keyCode) : undefined);
     if (!action) return false;
 
     const state = this.keyStates.get(action);

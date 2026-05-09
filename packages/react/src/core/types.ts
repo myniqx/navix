@@ -21,7 +21,8 @@ export interface IFocusNodeBehavior {
 }
 
 export interface ActionConfig {
-  keys: string[];
+  keys?: string[];
+  keyCodes?: number[];
   longPress?: boolean;
   longPressMs?: number;
   doublePress?: boolean;
