@@ -10,17 +10,13 @@ Navix manages keyboard-driven focus across a tree of components — the same mod
 
 ```
 ┌─────────────────────────────────────┐
-│  @navix/core                        │
+│  @navix/react                       │
 │                                     │
 │  FocusNode  ←  FocusTree            │
 │     ↑              ↑                │
 │  register     InputManager          │
 │                    ↑                │
 │              keydown / keyup        │
-└─────────────────────────────────────┘
-         ↑ consumed by
-┌─────────────────────────────────────┐
-│  @navix/react  (thin adapter)       │
 │                                     │
 │  FocusRoot   useFocusable           │
 │  HorizontalList  VerticalList       │
@@ -30,30 +26,11 @@ Navix manages keyboard-driven focus across a tree of components — the same mod
 └─────────────────────────────────────┘
 ```
 
-**Core owns all logic.** It is DOM-aware but has no dependency on any UI framework. React (or Vue, Solid, Vanilla — future adapters) is a thin lifecycle + context layer on top.
+**Navigation logic is self-contained.** The focus tree, behaviors, and input manager all live inside `@navix/react` — no separate core package needed.
 
 ---
 
-## Packages
-
-### `@navix/core`
-
-All navigation logic lives here.
-
-| Export                  | Description                                                                                                                                                                                                                           |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `FocusNode`             | One node in the focus tree. Every focusable element is a node.                                                                                                                                                                        |
-| `FocusTree`             | Root node + InputManager wired together.                                                                                                                                                                                              |
-| `InputManager`          | Maps `KeyboardEvent.code` values to named actions. Detects longpress and doublepress via timers.                                                                                                                                      |
-| `ListBehavior`          | Attaches left/right (horizontal) or up/down (vertical) navigation to a node. Stops at boundaries.                                                                                                                                     |
-| `GridBehavior`          | Attaches 4-direction navigation with column-based row wrapping. Stops at row boundaries on left/right.                                                                                                                                |
-| `ButtonBehavior`        | Handles enter/longpress/doublepress on a leaf node.                                                                                                                                                                                   |
-| `ExpandableBehavior`    | Two-state container (collapsed/expanded). Traps focus when expanded. Expanding one node collapses all others, except ancestors on the active path.                                                                                    |
-| `InputBehavior`         | Two-state leaf (idle/editing). Enter starts editing, Enter/back stops editing. Traps focus while editing.                                                                                                                             |
-| `PaginatedListBehavior` | Index-based 1D pagination. Tracks `activeIndex` and `viewOffset` independently of DOM children. Notifies React via `onChange` when either changes.                                                                                    |
-| `PaginatedGridBehavior` | Index-based 2D pagination. Supports horizontal (column-major), vertical (row-major), and autoHorizontal orientation.                                                                                                                  |
-| `MultiLayerBehavior`    | Panel routing and channel navigation for video player nodes. Manages which panel is open (left/right/up/down), traps focus while a panel is active, and exposes callbacks for channel prev/next, play/pause toggle, and exit request. |
-| `IFocusNodeBehavior`    | Interface all behaviors implement. Lifecycle hooks: `onRegister`, `onUnregister`, `onChildRegistered`, `onChildUnregistered`, `onFocus`, `onBlurred`, `collapse`, `expand`.                                                           |
+## Exports
 
 ### `@navix/react`
 
@@ -201,9 +178,9 @@ While expanded, all events are trapped inside the node. `back` collapses and rel
 ## Getting Started
 
 ```bash
-bun add @navix/core @navix/react
+bun add @navix/react
 # or
-npm install @navix/core @navix/react
+npm install @navix/react
 ```
 
 ### 1. FocusRoot
@@ -605,9 +582,8 @@ Mouse users can also open panels by hovering near the edge of the base layer. `t
 For components that need direct access to focus state without using a built-in component.
 
 ```tsx
-import { useFocusable } from '@navix/react';
-import { ButtonBehavior } from '@navix/core';
-import type { FocusNode } from '@navix/core';
+import { useFocusable, ButtonBehavior } from '@navix/react';
+import type { FocusNode } from '@navix/react';
 
 function MenuItem({ fKey, label, onPress, onFocus }) {
   const { directlyFocused, focusSelf } = useFocusable(
@@ -676,7 +652,7 @@ Navigate with arrow keys. `Enter` to select. `Backspace` or `Escape` to go back.
 
 **Callbacks always wired** — `useFocusable` attaches a minimal default behavior when no `createBehavior` is provided, ensuring `onFocus`/`onBlurred`/`onRegister`/`onUnregister` callbacks are always delivered regardless of whether the component uses a built-in behavior.
 
-**Exclusive expand in core** — `ExpandableBehavior` walks the tree on expand to close all other expandables. Ancestors on the active path are skipped. This is a core concern — the rule holds regardless of framework.
+**Exclusive expand** — `ExpandableBehavior` walks the tree on expand to close all other expandables. Ancestors on the active path are skipped. The rule holds regardless of how components are composed.
 
 **Pagination decoupled from DOM** — `PaginatedListBehavior` and `PaginatedGridBehavior` track `activeIndex` and `viewOffset` independently of `node.children`. Navigation decisions happen before React re-renders. `onChildRegistered` is used to hand focus to newly mounted children after the render cycle completes.
 
