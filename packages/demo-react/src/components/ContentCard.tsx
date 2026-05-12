@@ -40,14 +40,15 @@ interface ContentCardProps {
   item: ContentItem;
   // Called when the user confirms Play — used by the parent to log the event
   onPlay: () => void;
+  disabled?: boolean;
 }
 
-export function ContentCard({ fKey, item, onPlay }: ContentCardProps) {
+export function ContentCard({ fKey, item, onPlay, disabled = false }: ContentCardProps) {
   // posterColor starts as the item's original color, changes on Play/Info
   const [posterColor, setPosterColor] = useState(item.color);
 
   return (
-    <NavixExpandable fKey={fKey}>
+    <NavixExpandable fKey={fKey} disabled={disabled}>
       {({ isExpanded, focused, directlyFocused, collapse }) => {
         const isActive = directlyFocused || (focused && isExpanded);
 
@@ -56,7 +57,7 @@ export function ContentCard({ fKey, item, onPlay }: ContentCardProps) {
             style={{
               width: 140,
               marginRight: 12,
-              cursor: 'pointer',
+              cursor: disabled ? 'not-allowed' : 'pointer',
               userSelect: 'none',
               transform: isActive ? 'scale(1)' : 'scale(0.94)',
               transition: 'transform 0.15s ease, box-shadow 0.15s ease',
@@ -65,6 +66,7 @@ export function ContentCard({ fKey, item, onPlay }: ContentCardProps) {
                 : '0 2px 8px rgba(0,0,0,0.4)',
               borderRadius: 6,
               overflow: 'hidden',
+              opacity: disabled ? 0.4 : 1,
             }}
           >
             {/* Poster — color transitions when Play or Info is activated */}
@@ -79,6 +81,24 @@ export function ContentCard({ fKey, item, onPlay }: ContentCardProps) {
                 transition: 'background 0.3s ease',
               }}
             >
+              {disabled && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'rgba(0,0,0,0.3)',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: '#666',
+                    letterSpacing: '0.1em',
+                  }}
+                >
+                  LOCKED
+                </div>
+              )}
               <div
                 style={{
                   position: 'absolute',

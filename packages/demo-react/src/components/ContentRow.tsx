@@ -23,9 +23,10 @@ interface ContentRowProps {
   label: string;
   items: ContentItem[];
   onPlay: (item: ContentItem) => void;
+  isItemDisabled?: (index: number) => boolean;
 }
 
-export function ContentRow({ rowKey, label, items, onPlay }: ContentRowProps) {
+export function ContentRow({ rowKey, label, items, onPlay, isItemDisabled }: ContentRowProps) {
   return (
     <div style={{ padding: '24px 32px 0' }}>
       {/* Section heading */}
@@ -57,12 +58,13 @@ export function ContentRow({ rowKey, label, items, onPlay }: ContentRowProps) {
         <div
           style={{ display: 'flex', overflow: 'visible', padding: '12px 4px' }}
         >
-          {items.map((item) => (
+          {items.map((item, idx) => (
             <ContentCard
               key={item.id}
               // Prefix with rowKey so card fKeys are unique across all rows
               fKey={`${rowKey}-${item.id}`}
               item={item}
+              disabled={isItemDisabled?.(idx) ?? false}
               onPlay={() => onPlay(item)}
             />
           ))}

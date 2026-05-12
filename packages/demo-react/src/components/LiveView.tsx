@@ -21,6 +21,9 @@ import type { PlayerState } from './PlayerView';
 
 const COLUMNS = 8;
 
+// Disabled items: index 3 (single skip in row 0), indices 11-12 (double in row 1)
+const LIVE_DISABLED = new Set([3, 11, 12]);
+
 interface LiveViewProps {
   onSelect: (state: PlayerState) => void;
 }
@@ -56,11 +59,12 @@ export function LiveView({ onSelect }: LiveViewProps) {
             padding: '12px 4px',
           }}
         >
-          {LIVE_GRID.map((item) => (
+          {LIVE_GRID.map((item, idx) => (
             <ContentCard
               key={item.id}
               fKey={`live-${item.id}`}
               item={item}
+              disabled={LIVE_DISABLED.has(idx)}
               onPlay={() =>
                 onSelect({ channels: LIVE_GRID, current: item, paused: false })
               }
