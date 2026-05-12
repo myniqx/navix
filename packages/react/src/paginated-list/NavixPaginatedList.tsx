@@ -60,6 +60,7 @@ interface PaginatedListProps<T> extends BaseComponentProps {
    * no corresponding onChange callback.
    */
   activeIndex?: number;
+  disabled?: boolean;
   groupKey?: string;
   gap?: number;
   buffer?: number;
@@ -86,6 +87,7 @@ export function NavixPaginatedList<T>({
   keyForItem,
   isItemDisabled,
   activeIndex: activeIndexProp,
+  disabled,
   groupKey,
   gap = 0,
   buffer = 2,
@@ -132,7 +134,7 @@ export function NavixPaginatedList<T>({
 
   const { node, FocusProvider } = useFocusable(
     fKey,
-    { onFocus, onBlurred, onRegister, onUnregister, onEvent },
+    { onFocus, onBlurred, onRegister, onUnregister, onEvent, disabled },
     (n: FocusNode) => {
       const b = new PaginatedListBehavior(
         n,

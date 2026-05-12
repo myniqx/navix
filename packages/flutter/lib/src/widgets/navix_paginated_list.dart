@@ -202,6 +202,7 @@ class NavixPaginatedList<T> extends StatefulWidget {
   final NavixPaginatedListItemBuilder<T> renderItem;
   final NavixPaginatedListKeyForItem<T>? keyForItem;
   final bool Function(int index)? isItemDisabled;
+  final bool disabled;
 
   /// Jump to this index on mount and whenever the value changes. The widget
   /// manages its own navigation state between jumps — user arrow-key navigation
@@ -228,6 +229,7 @@ class NavixPaginatedList<T> extends StatefulWidget {
     this.keyForItem,
     this.isItemDisabled,
     this.activeIndex,
+    this.disabled = false,
     this.groupKey,
     this.orientation = NavixListOrientation.horizontal,
     this.gap = 0,
@@ -372,6 +374,7 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
         onRegister: widget.onRegister,
         onUnregister: widget.onUnregister,
         onEvent: widget.onEvent,
+        disabled: widget.disabled,
       ),
       createBehavior: (node) {
         _behavior = NavixPaginatedListBehavior(

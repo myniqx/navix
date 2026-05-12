@@ -61,6 +61,7 @@ interface PaginatedGridProps<T> extends BaseComponentProps {
    * no corresponding onChange callback.
    */
   activeIndex?: number;
+  disabled?: boolean;
   groupKey?: string;
   gap?: number;
   buffer?: number;
@@ -88,6 +89,7 @@ export function NavixPaginatedGrid<T>({
   keyForItem,
   isItemDisabled,
   activeIndex: activeIndexProp,
+  disabled,
   groupKey,
   gap = 0,
   buffer = 1,
@@ -136,7 +138,7 @@ export function NavixPaginatedGrid<T>({
 
   const { node, FocusProvider } = useFocusable(
     fKey,
-    { onFocus, onBlurred, onRegister, onUnregister, onEvent },
+    { onFocus, onBlurred, onRegister, onUnregister, onEvent, disabled },
     (n: FocusNode) => {
       const b = new PaginatedGridBehavior(
         n,
