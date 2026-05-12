@@ -30,15 +30,25 @@ export class GridBehavior implements IFocusNodeBehavior {
     }
 
     if (event.action === 'up') {
-      const target = idx - this.columns;
-      if (target < 0) return false;
-      return this.node.focusChild(this.node.children[target]!.id);
+      let target = idx - this.columns;
+      while (target >= 0) {
+        if (this.node.children[target]!.canReceiveFocus()) {
+          return this.node.focusChild(this.node.children[target]!.id);
+        }
+        target -= this.columns;
+      }
+      return false;
     }
 
     if (event.action === 'down') {
-      const target = idx + this.columns;
-      if (target >= this.node.children.length) return false;
-      return this.node.focusChild(this.node.children[target]!.id);
+      let target = idx + this.columns;
+      while (target < this.node.children.length) {
+        if (this.node.children[target]!.canReceiveFocus()) {
+          return this.node.focusChild(this.node.children[target]!.id);
+        }
+        target += this.columns;
+      }
+      return false;
     }
 
     return false;
