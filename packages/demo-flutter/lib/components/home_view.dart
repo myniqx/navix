@@ -8,6 +8,16 @@ const _visibleCount = 6;
 const _threshold = 1;
 const _blue = Color(0xFF4fc3f7);
 
+// Disabled predicates per row — in-view, just outside, and far outside window.
+final _rowDisabledFns = <bool Function(int)>[
+  // Movies (18): index 2 in view, 7-8 outside, 14-15 far outside
+  (i) => i == 2 || i == 7 || i == 8 || i == 14 || i == 15,
+  // Tv Series (15): index 1 in view, 8-9 outside
+  (i) => i == 1 || i == 8 || i == 9,
+  // Live Streams (20): index 3 in view, 10-11 outside
+  (i) => i == 3 || i == 10 || i == 11,
+];
+
 class HomeView extends StatelessWidget {
   final void Function(PlayerState) onSelect;
 
@@ -68,16 +78,22 @@ class _HomeRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isItemDisabled = rowIndex < _rowDisabledFns.length
+        ? _rowDisabledFns[rowIndex]
+        : null;
+
     return NavixPaginatedList<ContentItem>(
       fKey: 'home-row-$rowIndex',
       items: items,
       visibleCount: _visibleCount,
       threshold: _threshold,
       gap: 12,
+      isItemDisabled: isItemDisabled != null ? (i) => isItemDisabled(i) : null,
       renderItem: (item, fKey, index) => MediaCard(
         fKey: fKey,
         item: item,
         variant: cardType,
+        disabled: isItemDisabled?.call(index) ?? false,
         onClick: () => onSelect(item),
       ),
     );

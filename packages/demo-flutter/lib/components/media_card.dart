@@ -39,6 +39,7 @@ class MediaCard extends StatefulWidget {
   final ContentItem item;
   final HomeRowCardType variant;
   final VoidCallback? onClick;
+  final bool disabled;
 
   const MediaCard({
     super.key,
@@ -46,6 +47,7 @@ class MediaCard extends StatefulWidget {
     required this.item,
     required this.variant,
     this.onClick,
+    this.disabled = false,
   });
 
   @override
@@ -109,6 +111,7 @@ class _MediaCardState extends State<MediaCard> {
   }
 
   void _onRegister() {
+    if (widget.disabled) return;
     if (mounted) setState(() { _cacheState = _CacheState.caching; _cacheProgress = 0; });
     double progress = 0;
     _cacheTimer = Timer.periodic(const Duration(milliseconds: 120), (t) {
@@ -156,6 +159,7 @@ class _MediaCardState extends State<MediaCard> {
     return NavixFocusable(
       fKey: widget.fKey,
       callbacks: NavixFocusableCallbacks(
+        disabled: widget.disabled,
         onRegister: (_) => _onRegister(),
         onFocus: (_) => _onFocus(),
         onBlurred: (_) => _stopPlaying(),
@@ -209,10 +213,13 @@ class _MediaCardState extends State<MediaCard> {
           subtitleText = '';
         }
 
-        return MouseRegion(
-          onEnter: (_) => node.requestFocus(),
+        return Opacity(
+          opacity: widget.disabled ? 0.4 : 1.0,
+          child: MouseRegion(
+          onEnter: widget.disabled ? null : (_) => node.requestFocus(),
+          cursor: widget.disabled ? SystemMouseCursors.forbidden : MouseCursor.defer,
           child: GestureDetector(
-            onTap: widget.onClick,
+            onTap: widget.disabled ? null : widget.onClick,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               width: double.infinity,
@@ -332,6 +339,18 @@ class _MediaCardState extends State<MediaCard> {
                                 ),
                               ),
                             ),
+                          if (widget.disabled)
+                            const Center(
+                              child: Text(
+                                'LOCKED',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF666666),
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -370,7 +389,8 @@ class _MediaCardState extends State<MediaCard> {
               ),
             ),
           ),
-        );
+          ),  // MouseRegion
+        );    // Opacity
       },
     );
   }

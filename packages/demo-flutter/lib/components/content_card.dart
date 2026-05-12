@@ -10,12 +10,14 @@ class ContentCard extends StatefulWidget {
   final String fKey;
   final ContentItem item;
   final VoidCallback onPlay;
+  final bool disabled;
 
   const ContentCard({
     super.key,
     required this.fKey,
     required this.item,
     required this.onPlay,
+    this.disabled = false,
   });
 
   @override
@@ -35,10 +37,13 @@ class _ContentCardState extends State<ContentCard> {
   Widget build(BuildContext context) {
     return NavixExpandable(
       fKey: widget.fKey,
+      disabled: widget.disabled,
       builder: (context, isExpanded, focused, directlyFocused, expand, collapse) {
         final isActive = directlyFocused || (focused && isExpanded);
 
-        return AnimatedContainer(
+        return Opacity(
+          opacity: widget.disabled ? 0.4 : 1.0,
+          child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           width: 140,
           decoration: BoxDecoration(
@@ -117,6 +122,18 @@ class _ContentCardState extends State<ContentCard> {
                           ),
                         ),
                       ),
+                      if (widget.disabled)
+                        const Center(
+                          child: Text(
+                            'LOCKED',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF666666),
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -174,6 +191,7 @@ class _ContentCardState extends State<ContentCard> {
               ],
             ),
           ),
+          ),  // Opacity
         );
       },
     );
@@ -221,6 +239,7 @@ class ContentRow extends StatelessWidget {
   final String label;
   final List<ContentItem> items;
   final void Function(ContentItem) onPlay;
+  final bool Function(int index)? isItemDisabled;
 
   const ContentRow({
     super.key,
@@ -228,6 +247,7 @@ class ContentRow extends StatelessWidget {
     required this.label,
     required this.items,
     required this.onPlay,
+    this.isItemDisabled,
   });
 
   @override
@@ -262,6 +282,7 @@ class ContentRow extends StatelessWidget {
                         key: ValueKey(items[i].id),
                         fKey: '$rowKey-${items[i].id}',
                         item: items[i],
+                        disabled: isItemDisabled?.call(i) ?? false,
                         onPlay: () => onPlay(items[i]),
                       ),
                       if (i < items.length - 1) const SizedBox(width: 12),

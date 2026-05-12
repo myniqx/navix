@@ -53,6 +53,15 @@ class _MenuRowState extends State<MenuRow> {
                   onClick: () => widget.onSelect(item),
                 ),
               const SizedBox(width: 4),
+              if (item == 'Series') ...[
+                _MenuItem(
+                  fKey: 'menu-Premium',
+                  label: 'Premium',
+                  disabled: true,
+                  onClick: () {},
+                ),
+                const SizedBox(width: 4),
+              ],
             ],
           ],
         ),
@@ -148,22 +157,24 @@ class _MenuItem extends StatelessWidget {
   final String fKey;
   final String label;
   final VoidCallback onClick;
+  final bool disabled;
 
   const _MenuItem({
     required this.fKey,
     required this.label,
     required this.onClick,
+    this.disabled = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return NavixFocusable(
       fKey: fKey,
-      callbacks: NavixFocusableCallbacks(onFocus: null),
+      callbacks: NavixFocusableCallbacks(disabled: disabled),
       createBehavior: (node) {
         final b = DefaultNavixBehavior();
         b.onEvent = (e) {
-          if (e.action == 'enter' && e.type == NavEventType.press) {
+          if (!disabled && e.action == 'enter' && e.type == NavEventType.press) {
             onClick();
             return true;
           }
@@ -173,27 +184,37 @@ class _MenuItem extends StatelessWidget {
       },
       builder: (context, node, focused, directlyFocused) {
         return MouseRegion(
-          onEnter: (_) => node.requestFocus(),
+          onEnter: disabled ? null : (_) => node.requestFocus(),
+          cursor: disabled ? SystemMouseCursors.forbidden : SystemMouseCursors.click,
           child: GestureDetector(
-            onTap: onClick,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: directlyFocused ? _blue : Colors.transparent,
-                    width: 2,
+            onTap: disabled ? null : onClick,
+            child: Opacity(
+              opacity: disabled ? 0.5 : 1.0,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: directlyFocused ? _blue : Colors.transparent,
+                      width: 2,
+                    ),
                   ),
                 ),
-              ),
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.05 * 14,
-                  color: directlyFocused ? Colors.white : const Color(0xFF888888),
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.05 * 14,
+                    color: disabled
+                        ? const Color(0xFF444444)
+                        : directlyFocused
+                            ? Colors.white
+                            : const Color(0xFF888888),
+                    decoration: disabled ? TextDecoration.lineThrough : null,
+                    decorationColor: const Color(0xFF444444),
+                  ),
                 ),
               ),
             ),
