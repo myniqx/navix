@@ -18,6 +18,7 @@ interface UseFocusableCallbacks {
   onRegister?: (key: string) => void;
   onUnregister?: (key: string) => void;
   onEvent?: (event: NavEvent) => boolean;
+  disabled?: boolean;
 }
 
 interface UseFocusableResult {
@@ -91,6 +92,7 @@ export function useFocusable(
     if (callbacksRef.current.onEvent?.(e)) return true;
     return orig.onEvent(e);
   };
+  node.behavior.isDisabled = !!callbacksRef.current.disabled;
 
   // Register/unregister with parent
   useEffect(() => {

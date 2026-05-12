@@ -23,6 +23,7 @@ export interface NavixExpandableRenderProps {
 }
 
 interface ExpandableProps extends BaseComponentProps {
+  disabled?: boolean;
   /**
    * Render prop — receives focus state and expand/collapse controls.
    * Called on every render, including when isExpanded or focus state changes.
@@ -59,6 +60,7 @@ export function NavixExpandable({
   onRegister,
   onUnregister,
   onEvent,
+  disabled,
   children,
 }: ExpandableProps) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -66,7 +68,7 @@ export function NavixExpandable({
   const { focused, directlyFocused, focusSelf, FocusProvider, node } =
     useFocusable(
       fKey,
-      { onFocus, onBlurred, onRegister, onUnregister, onEvent },
+      { onFocus, onBlurred, onRegister, onUnregister, onEvent, disabled },
       (n: FocusNode) => new ExpandableBehavior(n, setIsExpanded),
     );
 

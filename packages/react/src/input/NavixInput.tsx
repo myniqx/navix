@@ -28,6 +28,7 @@ type NavixInputRenderFn = (props: NavixInputRenderProps) => ReactNode;
 interface NavixInputProps extends BaseComponentProps {
   value: string;
   onChange: (value: string) => void;
+  disabled?: boolean;
   style?: CSSProperties;
   focusedStyle?: CSSProperties;
   editingStyle?: CSSProperties;
@@ -53,6 +54,7 @@ export function NavixInput({
   onRegister,
   onUnregister,
   onEvent,
+  disabled,
   value,
   onChange,
   style,
@@ -73,7 +75,7 @@ export function NavixInput({
 
   const { focused, focusSelf, FocusProvider, node } = useFocusable(
     fKey,
-    { onFocus, onBlurred, onRegister, onUnregister, onEvent },
+    { onFocus, onBlurred, onRegister, onUnregister, onEvent, disabled },
     (n: FocusNode) => new InputBehavior(n, setIsEditing),
   );
 
