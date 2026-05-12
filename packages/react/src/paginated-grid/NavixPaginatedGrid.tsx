@@ -50,6 +50,7 @@ interface PaginatedGridProps<T> extends BaseComponentProps {
   items: T[];
   renderItem: (item: T, fKey: string, index: number) => ReactNode;
   keyForItem?: (item: T, index: number) => string;
+  isItemDisabled?: (index: number) => boolean;
   groupKey?: string;
   gap?: number;
   buffer?: number;
@@ -75,6 +76,7 @@ export function NavixPaginatedGrid<T>({
   items,
   renderItem,
   keyForItem,
+  isItemDisabled,
   groupKey,
   gap = 0,
   buffer = 1,
@@ -107,6 +109,9 @@ export function NavixPaginatedGrid<T>({
   const keyForItemRef = useRef(keyForItem);
   keyForItemRef.current = keyForItem;
 
+  const isItemDisabledRef = useRef(isItemDisabled);
+  isItemDisabledRef.current = isItemDisabled;
+
   const itemKeys = useMemo(() => {
     const fn = keyForItemRef.current;
     return items.map((item, i) => (fn ? fn(item, i) : `${fKey}-${i}`));
@@ -131,6 +136,7 @@ export function NavixPaginatedGrid<T>({
         threshold,
         () => {},
         (key) => itemKeysRef.current.indexOf(key),
+        (index) => isItemDisabledRef.current?.(index) ?? false,
       );
       const initialGroup = currentGroupKeyRef.current;
       const restored =

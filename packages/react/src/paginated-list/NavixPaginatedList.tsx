@@ -49,6 +49,7 @@ interface PaginatedListProps<T> extends BaseComponentProps {
   items: T[];
   renderItem: (item: T, fKey: string, index: number) => ReactNode;
   keyForItem?: (item: T, index: number) => string;
+  isItemDisabled?: (index: number) => boolean;
   groupKey?: string;
   gap?: number;
   buffer?: number;
@@ -73,6 +74,7 @@ export function NavixPaginatedList<T>({
   items,
   renderItem,
   keyForItem,
+  isItemDisabled,
   groupKey,
   gap = 0,
   buffer = 2,
@@ -94,6 +96,9 @@ export function NavixPaginatedList<T>({
 
   const keyForItemRef = useRef(keyForItem);
   keyForItemRef.current = keyForItem;
+
+  const isItemDisabledRef = useRef(isItemDisabled);
+  isItemDisabledRef.current = isItemDisabled;
 
   const itemKeys = useMemo(() => {
     const fn = keyForItemRef.current;
@@ -123,6 +128,7 @@ export function NavixPaginatedList<T>({
         threshold,
         () => {},
         (key) => itemKeysRef.current.indexOf(key),
+        (index) => isItemDisabledRef.current?.(index) ?? false,
       );
       const initialGroup = currentGroupKeyRef.current;
       const restored =
