@@ -45,6 +45,7 @@ export function useFocusable(
     onRegister?: IFocusNodeBehavior['onRegister'];
     onUnregister?: IFocusNodeBehavior['onUnregister'];
     onEvent: IFocusNodeBehavior['onEvent'];
+    canReceiveFocus?: () => boolean;
   } | null>(null);
 
   if (nodeRef.current === null) {
@@ -65,6 +66,12 @@ export function useFocusable(
       onRegister: behavior.onRegister?.bind(behavior),
       onUnregister: behavior.onUnregister?.bind(behavior),
       onEvent: behavior.onEvent.bind(behavior),
+      canReceiveFocus: behavior.canReceiveFocus?.bind(behavior),
+    };
+    // Wrap canReceiveFocus once: disabled prop check layered before behavior's own logic
+    behavior.canReceiveFocus = () => {
+      if (callbacksRef.current.disabled) return false;
+      return origCallbacksRef.current!.canReceiveFocus?.() ?? true;
     };
   }
 
@@ -92,7 +99,6 @@ export function useFocusable(
     if (callbacksRef.current.onEvent?.(e)) return true;
     return orig.onEvent(e);
   };
-  node.behavior.isDisabled = !!callbacksRef.current.disabled;
 
   // Register/unregister with parent
   useEffect(() => {

@@ -100,11 +100,7 @@ export class FocusNode {
   }
 
   canReceiveFocus(): boolean {
-    if (this.behavior?.isDisabled) return false;
-    if (this.children.length > 0) {
-      return this.children.some((c) => c.canReceiveFocus());
-    }
-    return true;
+    return this.behavior?.canReceiveFocus?.() ?? true;
   }
 
   focusNext(): boolean {

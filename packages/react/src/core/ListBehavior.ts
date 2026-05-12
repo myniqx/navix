@@ -15,6 +15,9 @@ export class ListBehavior implements IFocusNodeBehavior {
     this.next = orientation === 'horizontal' ? 'right' : 'down';
   }
 
+  canReceiveFocus = (): boolean =>
+    this.node.children.some((c) => c.canReceiveFocus());
+
   onEvent = (event: NavEvent): boolean => {
     if (event.type !== 'press') return false;
 

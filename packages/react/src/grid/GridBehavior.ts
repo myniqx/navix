@@ -11,6 +11,9 @@ export class GridBehavior implements IFocusNodeBehavior {
     this.columns = columns;
   }
 
+  canReceiveFocus = (): boolean =>
+    this.node.children.some((c) => c.canReceiveFocus());
+
   onEvent = (event: NavEvent): boolean => {
     if (event.type !== 'press') return false;
 
