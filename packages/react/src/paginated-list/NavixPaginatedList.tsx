@@ -50,6 +50,7 @@ interface PaginatedListProps<T> extends BaseComponentProps {
   renderItem: (item: T, fKey: string, index: number) => ReactNode;
   keyForItem?: (item: T, index: number) => string;
   isItemDisabled?: (index: number) => boolean;
+  activeIndex?: number;
   groupKey?: string;
   gap?: number;
   buffer?: number;
@@ -75,6 +76,7 @@ export function NavixPaginatedList<T>({
   renderItem,
   keyForItem,
   isItemDisabled,
+  activeIndex: activeIndexProp,
   groupKey,
   gap = 0,
   buffer = 2,
@@ -139,6 +141,9 @@ export function NavixPaginatedList<T>({
         b.activeIndex = restored.activeIndex;
         b.viewOffset = restored.viewOffset;
       }
+      if (activeIndexProp !== undefined) {
+        b.jumpToIndex(activeIndexProp);
+      }
       return b;
     },
   );
@@ -202,6 +207,17 @@ export function NavixPaginatedList<T>({
       behavior.focusByKey(itemKeys[newIndex]!);
     };
   }, [behavior, itemKeys]);
+
+  useEffect(() => {
+    if (activeIndexProp === undefined) return;
+    behavior.jumpToIndex(activeIndexProp);
+    setViewOffset(behavior.viewOffset);
+    const idx = behavior.activeIndex;
+    const keys = itemKeysRef.current;
+    if (idx >= 0 && idx < keys.length) {
+      behavior.focusByKey(keys[idx]!);
+    }
+  }, [activeIndexProp, behavior]);
 
   const isHorizontal = orientation === 'horizontal';
 

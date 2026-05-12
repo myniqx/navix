@@ -143,6 +143,19 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
     }
   }
 
+  jumpToIndex(index: number): void {
+    if (index < 0 || index >= this.totalCount) return;
+    let target = index;
+    if (this._isItemDisabled?.(index)) {
+      const fwd = this._findNext(index, 1, 'main');
+      const bwd = this._findNext(index, -1, 'main');
+      if (fwd === null && bwd === null) return;
+      target = fwd !== null ? fwd : bwd!;
+    }
+    this.activeIndex = target;
+    this._updateOffset();
+  }
+
   onChildRegistered = (child: FocusNode): void => {
     if (this._keyToIndex(child.key) === -1) {
       console.warn(

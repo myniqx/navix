@@ -123,6 +123,19 @@ class NavixPaginatedListBehavior extends IFocusNodeBehavior {
     }
   }
 
+  void jumpToIndex(int index) {
+    if (index < 0 || index >= totalCount) return;
+    int target = index;
+    if (_isItemDisabled?.call(index) == true) {
+      final fwd = _findNext(index, 1);
+      final bwd = _findNext(index, -1);
+      if (fwd == null && bwd == null) return;
+      target = fwd ?? bwd!;
+    }
+    activeIndex = target;
+    _updateOffset();
+  }
+
   void _onActiveChildChanged(NavixFocusNode child) {
     // Find child index by iterating keys.
     for (int i = 0; i < totalCount; i++) {
@@ -188,6 +201,7 @@ class NavixPaginatedList<T> extends StatefulWidget {
   final NavixPaginatedListItemBuilder<T> renderItem;
   final NavixPaginatedListKeyForItem<T>? keyForItem;
   final bool Function(int index)? isItemDisabled;
+  final int? activeIndex;
   final String? groupKey;
   final double gap;
   final int buffer;
@@ -206,6 +220,7 @@ class NavixPaginatedList<T> extends StatefulWidget {
     required this.renderItem,
     this.keyForItem,
     this.isItemDisabled,
+    this.activeIndex,
     this.groupKey,
     this.orientation = NavixListOrientation.horizontal,
     this.gap = 0,
@@ -277,6 +292,16 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
       _behavior!.onChange = _onBehaviorChange;
 
       if (groupChanged && widget.items.isNotEmpty) {
+        final idx = _behavior!.activeIndex;
+        if (idx >= 0 && idx < _itemKeys.length) {
+          _behavior!.focusByKey(_itemKeys[idx]);
+        }
+      }
+
+      final activeIndexChanged = widget.activeIndex != oldWidget.activeIndex;
+      if (activeIndexChanged && widget.activeIndex != null && widget.items.isNotEmpty) {
+        _behavior!.jumpToIndex(widget.activeIndex!);
+        setState(() => _viewOffset = _behavior!.viewOffset);
         final idx = _behavior!.activeIndex;
         if (idx >= 0 && idx < _itemKeys.length) {
           _behavior!.focusByKey(_itemKeys[idx]);
@@ -356,6 +381,10 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
           _behavior!.activeIndex = restored.activeIndex;
           _behavior!.viewOffset = restored.viewOffset;
           _viewOffset = restored.viewOffset;
+        }
+        if (widget.activeIndex != null) {
+          _behavior!.jumpToIndex(widget.activeIndex!);
+          _viewOffset = _behavior!.viewOffset;
         }
         _behavior!.onChange = _onBehaviorChange;
         return _behavior!;
