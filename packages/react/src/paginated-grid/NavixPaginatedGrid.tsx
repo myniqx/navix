@@ -19,9 +19,10 @@ interface SlotProps {
   item: any;
   itemKey: string;
   index: number;
+  disabled: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   renderItemRef: React.RefObject<
-    (item: any, fKey: string, index: number) => ReactNode
+    (item: any, fKey: string, index: number, disabled: boolean) => ReactNode
   >;
   slotStyle: CSSProperties;
   slotClassName?: string;
@@ -31,13 +32,14 @@ const Slot = memo(function Slot({
   item,
   itemKey,
   index,
+  disabled,
   renderItemRef,
   slotStyle,
   slotClassName,
 }: SlotProps) {
   return (
     <div style={slotStyle} className={slotClassName}>
-      {renderItemRef.current(item, itemKey, index)}
+      {renderItemRef.current(item, itemKey, index, disabled)}
     </div>
   );
 });
@@ -48,9 +50,16 @@ interface PaginatedGridProps<T> extends BaseComponentProps {
   columns: number;
   threshold: number;
   items: T[];
-  renderItem: (item: T, fKey: string, index: number) => ReactNode;
+  renderItem: (item: T, fKey: string, index: number, disabled: boolean) => ReactNode;
   keyForItem?: (item: T, index: number) => string;
   isItemDisabled?: (index: number) => boolean;
+  /**
+   * Jump to this index on mount and whenever the value changes. The component
+   * manages its own navigation state between jumps — user arrow-key navigation
+   * is unaffected. If the target index is disabled the nearest non-disabled
+   * neighbour is focused instead. This is a write-only intent prop; there is
+   * no corresponding onChange callback.
+   */
   activeIndex?: number;
   groupKey?: string;
   gap?: number;
@@ -198,11 +207,16 @@ export function NavixPaginatedGrid<T>({
     }
   }, [behavior, groupKey, items]);
 
+  // renderItemRef lets renderItem change each render without re-rendering every
+  // Slot. disabled is passed as an explicit Slot prop so memo busts correctly
+  // when disabled state changes dynamically.
   const renderItemRef = useRef(renderItem) as React.RefObject<
-    (item: any, fKey: string, index: number) => ReactNode
+    (item: any, fKey: string, index: number, disabled: boolean) => ReactNode
   >;
   renderItemRef.current = renderItem;
 
+  // Must run before the activeIndex effect below so jumpToIndex uses current
+  // totalCount/rows/columns when computing viewOffset.
   useEffect(() => {
     behavior.totalCount = items.length;
     behavior.rows = rows;
@@ -225,6 +239,8 @@ export function NavixPaginatedGrid<T>({
     };
   }, [behavior, itemKeys]);
 
+  // Runs after the dimensions effect above — behavior has current
+  // totalCount/rows/columns when jumpToIndex computes the new viewOffset.
   useEffect(() => {
     if (activeIndexProp === undefined) return;
     behavior.jumpToIndex(activeIndexProp);
@@ -369,6 +385,7 @@ export function NavixPaginatedGrid<T>({
                     item={item}
                     itemKey={itemKey}
                     index={globalIndex}
+                    disabled={isItemDisabled?.(globalIndex) ?? false}
                     renderItemRef={renderItemRef}
                     slotStyle={slotStyle}
                     slotClassName={slotClassName}

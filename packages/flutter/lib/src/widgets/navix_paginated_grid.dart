@@ -261,6 +261,7 @@ typedef NavixPaginatedGridItemBuilder<T> = Widget Function(
   T item,
   String fKey,
   int index,
+  bool disabled,
 );
 
 typedef NavixPaginatedGridKeyForItem<T> = String Function(T item, int index);
@@ -275,6 +276,12 @@ class NavixPaginatedGrid<T> extends StatefulWidget {
   final NavixPaginatedGridItemBuilder<T> renderItem;
   final NavixPaginatedGridKeyForItem<T>? keyForItem;
   final bool Function(int index)? isItemDisabled;
+
+  /// Jump to this index on mount and whenever the value changes. The widget
+  /// manages its own navigation state between jumps — user arrow-key navigation
+  /// is unaffected. If the target index is disabled the nearest non-disabled
+  /// neighbour is focused instead. This is a write-only intent prop; there is
+  /// no corresponding onChange callback.
   final int? activeIndex;
   final String? groupKey;
   final double gap;
@@ -371,6 +378,8 @@ class _NavixPaginatedGridState<T> extends State<NavixPaginatedGrid<T>> {
         _currentGroupKey = newGroup;
       }
 
+      // Dimensions must update before activeIndex so jumpToIndex uses current
+      // totalCount/rows/columns when computing viewOffset.
       _behavior!.totalCount = widget.items.length;
       _behavior!.rows = widget.rows;
       _behavior!.columns = widget.columns;
@@ -537,7 +546,12 @@ class _NavixPaginatedGridState<T> extends State<NavixPaginatedGrid<T>> {
                   key: ValueKey(_itemKeys[i]),
                   width: isHorizontal ? null : slotCrossSize,
                   height: isHorizontal ? slotCrossSize : null,
-                  child: widget.renderItem(widget.items[i], _itemKeys[i], i),
+                  child: widget.renderItem(
+                    widget.items[i],
+                    _itemKeys[i],
+                    i,
+                    widget.isItemDisabled?.call(i) ?? false,
+                  ),
                 ));
               }
 

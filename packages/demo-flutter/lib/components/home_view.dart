@@ -89,11 +89,11 @@ class _HomeRow extends StatelessWidget {
       threshold: _threshold,
       gap: 12,
       isItemDisabled: isItemDisabled != null ? (i) => isItemDisabled(i) : null,
-      renderItem: (item, fKey, index) => MediaCard(
+      renderItem: (item, fKey, index, disabled) => MediaCard(
         fKey: fKey,
         item: item,
         variant: cardType,
-        disabled: isItemDisabled?.call(index) ?? false,
+        disabled: disabled,
         onClick: () => onSelect(item),
       ),
     );
