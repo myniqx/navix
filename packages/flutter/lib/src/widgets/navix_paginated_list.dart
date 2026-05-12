@@ -23,6 +23,7 @@ class NavixPaginatedListBehavior extends IFocusNodeBehavior {
   int _threshold;
 
   String? _pendingFocusKey;
+  bool Function(int index)? _isItemDisabled;
 
   void Function(int newIndex, int newOffset)? onChange;
 
@@ -45,23 +46,59 @@ class NavixPaginatedListBehavior extends IFocusNodeBehavior {
     required int visibleCount,
     required int threshold,
     required String Function(int index) keyForIndex,
+    bool Function(int index)? isItemDisabled,
   })  : _node = node,
         _prev = orientation == NavixListOrientation.horizontal ? 'left' : 'up',
         _next =
             orientation == NavixListOrientation.horizontal ? 'right' : 'down',
         _visibleCount = visibleCount < _kMinVisibleCount ? _kMinVisibleCount : visibleCount,
         _threshold = 1,
-        _keyForIndex = keyForIndex {
+        _keyForIndex = keyForIndex,
+        _isItemDisabled = isItemDisabled {
     this.threshold = threshold;
+    activeIndex = _findFirst();
     onEvent = _handleEvent;
+    canReceiveFocus = _canReceiveFocus;
     onChildRegistered = _onChildRegistered;
     onActiveChildChanged = _onActiveChildChanged;
   }
 
+  bool _canReceiveFocus() {
+    if (totalCount == 0) return false;
+    if (_isItemDisabled == null) return true;
+    for (int i = 0; i < totalCount; i++) {
+      if (!_isItemDisabled!(i)) return true;
+    }
+    return false;
+  }
+
+  int _findFirst() {
+    if (_isItemDisabled == null) return 0;
+    for (int i = 0; i < totalCount; i++) {
+      if (!_isItemDisabled!(i)) return i;
+    }
+    return 0;
+  }
+
+  int? _findNext(int from, int dir) {
+    int i = from + dir;
+    while (i >= 0 && i < totalCount) {
+      if (_isItemDisabled?.call(i) != true) return i;
+      i += dir;
+    }
+    return null;
+  }
+
   bool _handleEvent(NavEvent event) {
     if (event.type != NavEventType.press) return false;
-    if (event.action == _prev) return _moveTo(activeIndex - 1);
-    if (event.action == _next) return _moveTo(activeIndex + 1);
+    if (event.action == _prev) {
+      final next = _findNext(activeIndex, -1);
+      return next != null ? _moveTo(next) : false;
+    }
+    if (event.action == _next) {
+      final next = _findNext(activeIndex, 1);
+      return next != null ? _moveTo(next) : false;
+    }
     return false;
   }
 
@@ -150,6 +187,7 @@ class NavixPaginatedList<T> extends StatefulWidget {
   final int threshold;
   final NavixPaginatedListItemBuilder<T> renderItem;
   final NavixPaginatedListKeyForItem<T>? keyForItem;
+  final bool Function(int index)? isItemDisabled;
   final String? groupKey;
   final double gap;
   final int buffer;
@@ -167,6 +205,7 @@ class NavixPaginatedList<T> extends StatefulWidget {
     required this.threshold,
     required this.renderItem,
     this.keyForItem,
+    this.isItemDisabled,
     this.groupKey,
     this.orientation = NavixListOrientation.horizontal,
     this.gap = 0,
@@ -308,6 +347,7 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
           visibleCount: widget.visibleCount,
           threshold: widget.threshold,
           keyForIndex: (i) => _itemKeys[i],
+          isItemDisabled: (i) => widget.isItemDisabled?.call(i) ?? false,
         );
         final initialGroup = widget.groupKey;
         final restored =

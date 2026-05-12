@@ -19,7 +19,10 @@ class _ListBehavior extends IFocusNodeBehavior {
       : _prev = orientation == _ListOrientation.horizontal ? 'left' : 'up',
         _next = orientation == _ListOrientation.horizontal ? 'right' : 'down' {
     onEvent = _handleEvent;
+    canReceiveFocus = _canReceiveFocus;
   }
+
+  bool _canReceiveFocus() => _node.children.any((c) => c.canReceiveFocus());
 
   bool _handleEvent(NavEvent event) {
     if (event.type != NavEventType.press) return false;
@@ -32,6 +35,7 @@ class _ListBehavior extends IFocusNodeBehavior {
 class NavixHorizontalList extends StatefulWidget {
   final String fKey;
   final Widget child;
+  final bool disabled;
   final void Function(String key)? onFocus;
   final void Function(String key)? onBlurred;
   final void Function(String key)? onRegister;
@@ -42,6 +46,7 @@ class NavixHorizontalList extends StatefulWidget {
     super.key,
     required this.fKey,
     required this.child,
+    this.disabled = false,
     this.onFocus,
     this.onBlurred,
     this.onRegister,
@@ -65,6 +70,7 @@ class _NavixHorizontalListState extends State<NavixHorizontalList>
         onRegister: widget.onRegister,
         onUnregister: widget.onUnregister,
         onEvent: widget.onEvent,
+        disabled: widget.disabled,
       ),
       createBehavior: (node) {
         final behavior = _ListBehavior(node, _ListOrientation.horizontal);
@@ -86,6 +92,7 @@ class _NavixHorizontalListState extends State<NavixHorizontalList>
 class NavixVerticalList extends StatefulWidget {
   final String fKey;
   final Widget child;
+  final bool disabled;
   final void Function(String key)? onFocus;
   final void Function(String key)? onBlurred;
   final void Function(String key)? onRegister;
@@ -96,6 +103,7 @@ class NavixVerticalList extends StatefulWidget {
     super.key,
     required this.fKey,
     required this.child,
+    this.disabled = false,
     this.onFocus,
     this.onBlurred,
     this.onRegister,
@@ -119,6 +127,7 @@ class _NavixVerticalListState extends State<NavixVerticalList>
         onRegister: widget.onRegister,
         onUnregister: widget.onUnregister,
         onEvent: widget.onEvent,
+        disabled: widget.disabled,
       ),
       createBehavior: (node) {
         final behavior = _ListBehavior(node, _ListOrientation.vertical);

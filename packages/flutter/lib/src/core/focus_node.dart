@@ -8,6 +8,7 @@ abstract class IFocusNodeBehavior {
   void Function()? collapse;
   void Function()? expand;
   bool get isTrapped => false;
+  bool Function()? canReceiveFocus;
   void Function(NavixFocusNode child)? onChildRegistered;
   void Function(NavixFocusNode child)? onChildUnregistered;
   void Function(NavixFocusNode child)? onActiveChildChanged;
@@ -118,24 +119,36 @@ class NavixFocusNode {
     return behavior.onEvent?.call(event) ?? false;
   }
 
+  bool canReceiveFocus() => behavior.canReceiveFocus?.call() ?? true;
+
   bool focusNext() {
     if (activeChildId == null || children.isEmpty) return false;
     final idx = children.indexWhere((c) => c.id == activeChildId);
-    if (idx == -1 || idx >= children.length - 1) return false;
-    activeChildId = children[idx + 1].id;
-    _propagateFocus();
-    _notify();
-    return true;
+    if (idx == -1) return false;
+    for (int i = idx + 1; i < children.length; i++) {
+      if (children[i].canReceiveFocus()) {
+        activeChildId = children[i].id;
+        _propagateFocus();
+        _notify();
+        return true;
+      }
+    }
+    return false;
   }
 
   bool focusPrev() {
     if (activeChildId == null || children.isEmpty) return false;
     final idx = children.indexWhere((c) => c.id == activeChildId);
     if (idx <= 0) return false;
-    activeChildId = children[idx - 1].id;
-    _propagateFocus();
-    _notify();
-    return true;
+    for (int i = idx - 1; i >= 0; i--) {
+      if (children[i].canReceiveFocus()) {
+        activeChildId = children[i].id;
+        _propagateFocus();
+        _notify();
+        return true;
+      }
+    }
+    return false;
   }
 
   // Reorders existing children without firing register/unregister callbacks.
@@ -258,6 +271,7 @@ class NavixFocusNode {
   }
 
   void requestFocus() {
+    if (!canReceiveFocus()) return;
     final trapNode = _findTrap(getRoot());
     if (trapNode != null && !_isDescendantOf(trapNode)) return;
 

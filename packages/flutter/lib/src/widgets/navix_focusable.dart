@@ -19,6 +19,7 @@ class NavixFocusableCallbacks {
   final void Function(String key)? onRegister;
   final void Function(String key)? onUnregister;
   final bool Function(NavEvent event)? onEvent;
+  final bool disabled;
 
   const NavixFocusableCallbacks({
     this.onFocus,
@@ -26,6 +27,7 @@ class NavixFocusableCallbacks {
     this.onRegister,
     this.onUnregister,
     this.onEvent,
+    this.disabled = false,
   });
 }
 
@@ -69,6 +71,7 @@ class _NavixFocusableState extends State<NavixFocusable> {
   void Function()? _origOnRegister;
   void Function()? _origOnUnregister;
   bool Function(NavEvent)? _origOnEvent;
+  bool Function()? _origCanReceiveFocus;
 
   bool _focused = false;
   bool _directlyFocused = false;
@@ -85,6 +88,13 @@ class _NavixFocusableState extends State<NavixFocusable> {
     _origOnRegister = _node.behavior.onRegister;
     _origOnUnregister = _node.behavior.onUnregister;
     _origOnEvent = _node.behavior.onEvent;
+    _origCanReceiveFocus = _node.behavior.canReceiveFocus;
+
+    // Wrap canReceiveFocus once: disabled prop check before behavior's own logic.
+    _node.behavior.canReceiveFocus = () {
+      if (widget.callbacks?.disabled == true) return false;
+      return _origCanReceiveFocus?.call() ?? true;
+    };
 
     _wireCallbacks();
     _unsubscribe = _node.subscribe(_onNodeChanged);

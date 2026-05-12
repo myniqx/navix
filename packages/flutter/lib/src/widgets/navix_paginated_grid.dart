@@ -23,6 +23,7 @@ class NavixPaginatedGridBehavior extends IFocusNodeBehavior {
   int _threshold;
 
   String? _pendingFocusKey;
+  bool Function(int index)? _isItemDisabled;
 
   void Function(int newIndex, int newOffset)? onChange;
 
@@ -65,31 +66,89 @@ class NavixPaginatedGridBehavior extends IFocusNodeBehavior {
     required int columns,
     required int threshold,
     required String Function(int index) keyForIndex,
+    bool Function(int index)? isItemDisabled,
   })  : _node = node,
         _rows = rows < _kMinGridDimension ? _kMinGridDimension : rows,
         _columns = columns < _kMinGridDimension ? _kMinGridDimension : columns,
         _threshold = 1,
-        _keyForIndex = keyForIndex {
+        _keyForIndex = keyForIndex,
+        _isItemDisabled = isItemDisabled {
     this.threshold = threshold;
+    activeIndex = _findFirst();
     onEvent = _handleEvent;
+    canReceiveFocus = _canReceiveFocus;
     onChildRegistered = _onChildRegistered;
     onActiveChildChanged = _onActiveChildChanged;
+  }
+
+  bool _canReceiveFocus() {
+    if (totalCount == 0) return false;
+    if (_isItemDisabled == null) return true;
+    for (int i = 0; i < totalCount; i++) {
+      if (!_isItemDisabled!(i)) return true;
+    }
+    return false;
+  }
+
+  int _findFirst() {
+    if (_isItemDisabled == null) return 0;
+    for (int i = 0; i < totalCount; i++) {
+      if (!_isItemDisabled!(i)) return i;
+    }
+    return 0;
+  }
+
+  int? _findNext(int from, int step, String axis) {
+    final sliceSize = effectiveOrientation == NavixGridOrientation.horizontal
+        ? _rows
+        : _columns;
+    final fromSlice = from ~/ sliceSize;
+    int i = from + step;
+    while (i >= 0 && i < totalCount) {
+      if (axis == 'cross' && i ~/ sliceSize != fromSlice) break;
+      if (_isItemDisabled?.call(i) != true) return i;
+      i += step;
+    }
+    return null;
   }
 
   bool _handleEvent(NavEvent event) {
     if (event.type != NavEventType.press) return false;
 
     if (effectiveOrientation == NavixGridOrientation.horizontal) {
-      if (event.action == 'up') return _moveTo(activeIndex - 1, 'cross');
-      if (event.action == 'down') return _moveTo(activeIndex + 1, 'cross');
-      if (event.action == 'left') return _moveTo(activeIndex - _rows, 'main');
-      if (event.action == 'right') return _moveTo(activeIndex + _rows, 'main');
+      if (event.action == 'up') {
+        final next = _findNext(activeIndex, -1, 'cross');
+        return next != null ? _moveTo(next, 'cross') : false;
+      }
+      if (event.action == 'down') {
+        final next = _findNext(activeIndex, 1, 'cross');
+        return next != null ? _moveTo(next, 'cross') : false;
+      }
+      if (event.action == 'left') {
+        final next = _findNext(activeIndex, -_rows, 'main');
+        return next != null ? _moveTo(next, 'main') : false;
+      }
+      if (event.action == 'right') {
+        final next = _findNext(activeIndex, _rows, 'main');
+        return next != null ? _moveTo(next, 'main') : false;
+      }
     } else {
-      if (event.action == 'left') return _moveTo(activeIndex - 1, 'cross');
-      if (event.action == 'right') return _moveTo(activeIndex + 1, 'cross');
-      if (event.action == 'up') return _moveTo(activeIndex - _columns, 'main');
-      if (event.action == 'down')
-        return _moveTo(activeIndex + _columns, 'main');
+      if (event.action == 'left') {
+        final next = _findNext(activeIndex, -1, 'cross');
+        return next != null ? _moveTo(next, 'cross') : false;
+      }
+      if (event.action == 'right') {
+        final next = _findNext(activeIndex, 1, 'cross');
+        return next != null ? _moveTo(next, 'cross') : false;
+      }
+      if (event.action == 'up') {
+        final next = _findNext(activeIndex, -_columns, 'main');
+        return next != null ? _moveTo(next, 'main') : false;
+      }
+      if (event.action == 'down') {
+        final next = _findNext(activeIndex, _columns, 'main');
+        return next != null ? _moveTo(next, 'main') : false;
+      }
     }
 
     return false;
@@ -202,6 +261,7 @@ class NavixPaginatedGrid<T> extends StatefulWidget {
   final int threshold;
   final NavixPaginatedGridItemBuilder<T> renderItem;
   final NavixPaginatedGridKeyForItem<T>? keyForItem;
+  final bool Function(int index)? isItemDisabled;
   final String? groupKey;
   final double gap;
   final int buffer;
@@ -220,6 +280,7 @@ class NavixPaginatedGrid<T> extends StatefulWidget {
     required this.threshold,
     required this.renderItem,
     this.keyForItem,
+    this.isItemDisabled,
     this.groupKey,
     this.orientation = NavixGridOrientation.horizontal,
     this.gap = 0,
@@ -386,6 +447,7 @@ class _NavixPaginatedGridState<T> extends State<NavixPaginatedGrid<T>> {
           columns: widget.columns,
           threshold: widget.threshold,
           keyForIndex: (i) => _itemKeys[i],
+          isItemDisabled: (i) => widget.isItemDisabled?.call(i) ?? false,
         );
         final initialGroup = widget.groupKey;
         final restored =
