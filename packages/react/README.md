@@ -48,11 +48,11 @@ React 18+ adapter. Peer dependency on `react` and `react-dom`.
 | `NavixInput`                                     | Leaf node + `InputBehavior`. Two-state: idle (navigable) and editing (focus trapped, nav events swallowed). Enter starts editing, Enter/back stops editing. Supports `style`, `focusedStyle`, `editingStyle`, `className`, `focusedClassName`, `editingClassName`. Render prop `({ value, focused, editing, inputRef, stopEditing }) => ReactNode` — omit for a default `<input>`. |
 | `NavixExpandable`                                | Node + `ExpandableBehavior`. Render prop exposes `isExpanded`, `focused`, `directlyFocused`, `expand`, `collapse`.                                                                                                                                                                                                                                                                 |
 | `NavixDropdown`                                  | Node + `ExpandableBehavior`. Render prop exposes `isExpanded`, `focused`, `directlyFocused`, `collapse`. Supports single/multi-select, custom trigger and option renderers, top/bottom position.                                                                                                                                                                                   |
-| `NavixPaginatedList`                             | Virtualized 1D list with sliding window pagination. Items are rendered only within the visible window + buffer. Accepts `outerClassName`, `innerClassName`, `slotClassName`.                                                                                                                                                                                                       |
-| `NavixPaginatedGrid`                             | Virtualized 2D grid with sliding window pagination. Supports horizontal (column-major) and vertical (row-major) orientation. Accepts `outerClassName`, `innerClassName`, `slotClassName`.                                                                                                                                                                                          |
+| `NavixPaginatedList`                             | Virtualized 1D list with sliding window pagination. Items are rendered only within the visible window + buffer. Accepts `isItemDisabled`, `activeIndex`, `disabled`, `outerClassName`, `innerClassName`, `slotClassName`.                                                                                                                                                           |
+| `NavixPaginatedGrid`                             | Virtualized 2D grid with sliding window pagination. Supports horizontal (column-major) and vertical (row-major) orientation. Accepts `isItemDisabled`, `activeIndex`, `disabled`, `outerClassName`, `innerClassName`, `slotClassName`.                                                                                                                                              |
 | `NavixMultiLayer`                                | Full-screen video player shell. Renders a `baseLayer` beneath up to four directional panels (`left`, `right`, `up`, `down`). Only one panel is active at a time. Accepts `onPrev`/`onNext` for channel switching, `zapBanner` shown for 2s after channel change, `notification` for persistent or transient overlays, and `panelTimeout` to auto-close inactive panels.            |
 | `NavixMultiLayerPanelProps`                      | Props passed to each panel render function: `fKey`, `close`, `onEvent`, and all `BaseComponentProps`.                                                                                                                                                                                                                                                                              |
-| `BaseComponentProps`                             | Shared interface all components extend: `fKey`, `onFocus`, `onBlurred`, `onRegister`, `onUnregister`.                                                                                                                                                                                                                                                                              |
+| `BaseComponentProps`                             | Shared interface all components extend: `fKey`, `disabled`, `onFocus`, `onBlurred`, `onRegister`, `onUnregister`, `onEvent`.                                                                                                                                                                                                                                                       |
 
 ---
 
@@ -127,6 +127,9 @@ new PaginatedListBehavior(
   totalCount,
   visibleCount,
   threshold,
+  onChange,          // (newIndex: number, newOffset: number) => void
+  indexForKey,       // (key: string) => number
+  isItemDisabled,    // (index: number) => boolean
 );
 new PaginatedGridBehavior(
   node,
@@ -135,6 +138,9 @@ new PaginatedGridBehavior(
   rows,
   columns,
   threshold,
+  onChange,          // (newIndex: number, newOffset: number) => void
+  indexForKey,       // (key: string) => number
+  isItemDisabled,    // (index: number) => boolean
 );
 ```
 
@@ -158,10 +164,12 @@ All React components extend `BaseComponentProps`:
 ```ts
 interface BaseComponentProps {
   fKey: string;
+  disabled?: boolean;
   onFocus?: (key: string) => void;
   onBlurred?: (key: string) => void;
   onRegister?: (key: string) => void;
   onUnregister?: (key: string) => void;
+  onEvent?: (event: NavEvent) => boolean;
 }
 ```
 
@@ -421,7 +429,11 @@ Virtualized horizontal or vertical list. Only items within the visible window + 
   threshold={1} // positions from edge before window slides
   gap={12} // gap between slots in px
   buffer={2} // extra items rendered outside visible window
-  renderItem={(item, fKey) => <MovieCard fKey={fKey} item={item} />}
+  // disabled: true skips keyboard nav for this index; item still renders
+  // isItemDisabled={(index) => movies[index]?.unavailable ?? false}
+  // activeIndex={selectedIndex} // jump on mount/change; write-only intent prop
+  // disabled={false} // prevent this entire list from receiving focus
+  renderItem={(item, fKey, index, disabled) => <MovieCard fKey={fKey} item={item} disabled={disabled} />}
   outerStyle={{ padding: '12px 4px' }}
   slotStyle={{ alignItems: 'stretch' }}
 />
@@ -441,7 +453,10 @@ Virtualized 2D grid. Pagination moves one slice at a time along the main axis.
   threshold={1}
   gap={8}
   buffer={1}
-  renderItem={(item, fKey) => <ChannelCard fKey={fKey} item={item} />}
+  // isItemDisabled={(index) => channels[index]?.locked ?? false}
+  // activeIndex={selectedIndex} // jump on mount/change; write-only intent prop
+  // disabled={false} // prevent this entire grid from receiving focus
+  renderItem={(item, fKey, index, disabled) => <ChannelCard fKey={fKey} item={item} disabled={disabled} />}
   outerStyle={{ height: 'calc(90vh - 120px)' }}
 />
 ```
