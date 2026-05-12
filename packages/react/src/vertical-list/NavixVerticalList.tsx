@@ -10,6 +10,7 @@ import { useFocusable } from '../useFocusable';
 
 interface VerticalListProps extends BaseComponentProps {
   children: ReactNode;
+  disabled?: boolean;
   className?: string;
   focusedClassName?: string;
   style?: React.CSSProperties;
@@ -23,6 +24,7 @@ export function NavixVerticalList({
   onRegister,
   onUnregister,
   onEvent,
+  disabled,
   children,
   className,
   focusedClassName,
@@ -31,7 +33,7 @@ export function NavixVerticalList({
 }: VerticalListProps) {
   const { node, focused, FocusProvider } = useFocusable(
     fKey,
-    { onFocus, onBlurred, onRegister, onUnregister, onEvent },
+    { onFocus, onBlurred, onRegister, onUnregister, onEvent, disabled },
     (n: FocusNode) => new ListBehavior(n, 'vertical'),
   );
 

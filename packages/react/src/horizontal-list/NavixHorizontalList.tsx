@@ -10,6 +10,7 @@ import { useFocusable } from '../useFocusable';
 
 interface HorizontalListProps extends BaseComponentProps {
   children: ReactNode;
+  disabled?: boolean;
   className?: string;
   focusedClassName?: string;
   style?: React.CSSProperties;
@@ -23,6 +24,7 @@ export function NavixHorizontalList({
   onRegister,
   onUnregister,
   onEvent,
+  disabled,
   children,
   className,
   focusedClassName,
@@ -31,7 +33,7 @@ export function NavixHorizontalList({
 }: HorizontalListProps) {
   const { node, focused, FocusProvider } = useFocusable(
     fKey,
-    { onFocus, onBlurred, onRegister, onUnregister, onEvent },
+    { onFocus, onBlurred, onRegister, onUnregister, onEvent, disabled },
     (n: FocusNode) => new ListBehavior(n, 'horizontal'),
   );
 

@@ -10,6 +10,7 @@ import { GridBehavior } from './GridBehavior';
 interface GridProps extends BaseComponentProps {
   columns: number;
   children: ReactNode;
+  disabled?: boolean;
   className?: string;
   focusedClassName?: string;
   style?: React.CSSProperties;
@@ -24,6 +25,7 @@ export function NavixGrid({
   onRegister,
   onUnregister,
   onEvent,
+  disabled,
   children,
   className,
   focusedClassName,
@@ -32,7 +34,7 @@ export function NavixGrid({
 }: GridProps) {
   const { focused, FocusProvider, node } = useFocusable(
     fKey,
-    { onFocus, onBlurred, onRegister, onUnregister, onEvent },
+    { onFocus, onBlurred, onRegister, onUnregister, onEvent, disabled },
     (n: FocusNode) => new GridBehavior(n, columns),
   );
 
