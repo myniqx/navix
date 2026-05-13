@@ -65,10 +65,11 @@ class MovieView extends StatelessWidget {
                 columns: _columns,
                 threshold: 1,
                 gap: _gap,
-                renderItem: (item, fKey, index) => MediaCard(
+                renderItem: (item, fKey, index, disabled) => MediaCard(
                   fKey: fKey,
                   item: item,
                   variant: HomeRowCardType.movie,
+                  disabled: disabled,
                   onClick: () => onSelect(PlayerState(
                     channels: movieChannels,
                     current: item,

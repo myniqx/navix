@@ -81,12 +81,23 @@ export function MenuRow({ onSelect }: MenuRowProps) {
                 )}
               </NavixExpandable>
             ) : (
-              <MenuItem
-                key={item}
-                fKey={`menu-${item}`}
-                label={item}
-                onClick={() => onSelect(item)}
-              />
+              [
+                <MenuItem
+                  key={item}
+                  fKey={`menu-${item}`}
+                  label={item}
+                  onClick={() => onSelect(item)}
+                />,
+                item === 'Series' && (
+                  <MenuItem
+                    key="menu-Premium"
+                    fKey="menu-Premium"
+                    label="Premium"
+                    disabled
+                    onClick={() => {}}
+                  />
+                ),
+              ]
             ),
           )}
         </div>

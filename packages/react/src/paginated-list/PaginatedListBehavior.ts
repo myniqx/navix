@@ -33,6 +33,7 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
   private _next: string;
   private _onChange: (newIndex: number, newOffset: number) => void;
   private _keyToIndex: (key: string) => number;
+  private _isItemDisabled?: (index: number) => boolean;
 
   set onChange(fn: (newIndex: number, newOffset: number) => void) {
     this._onChange = fn;
@@ -46,6 +47,7 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
     threshold: number,
     onChange: (newIndex: number, newOffset: number) => void,
     keyToIndex: (key: string) => number,
+    isItemDisabled?: (index: number) => boolean,
   ) {
     this._node = node;
     this.totalCount = totalCount;
@@ -55,12 +57,29 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
     this._next = orientation === 'horizontal' ? 'right' : 'down';
     this._onChange = onChange;
     this._keyToIndex = keyToIndex;
+    this._isItemDisabled = isItemDisabled;
+    this.activeIndex = this._findFirst();
   }
+
+  canReceiveFocus = (): boolean => {
+    if (this.totalCount === 0) return false;
+    if (!this._isItemDisabled) return true;
+    for (let i = 0; i < this.totalCount; i++) {
+      if (!this._isItemDisabled(i)) return true;
+    }
+    return false;
+  };
 
   onEvent = (event: NavEvent): boolean => {
     if (event.type !== 'press') return false;
-    if (event.action === this._prev) return this._moveTo(this.activeIndex - 1);
-    if (event.action === this._next) return this._moveTo(this.activeIndex + 1);
+    if (event.action === this._prev) {
+      const next = this._findNext(this.activeIndex, -1);
+      return next !== null ? this._moveTo(next) : false;
+    }
+    if (event.action === this._next) {
+      const next = this._findNext(this.activeIndex, 1);
+      return next !== null ? this._moveTo(next) : false;
+    }
     return false;
   };
 
@@ -71,6 +90,19 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
     } else {
       this._pendingFocusKey = key;
     }
+  }
+
+  jumpToIndex(index: number): void {
+    if (index < 0 || index >= this.totalCount) return;
+    let target = index;
+    if (this._isItemDisabled?.(index)) {
+      const fwd = this._findNext(index, 1);
+      const bwd = this._findNext(index, -1);
+      if (fwd === null && bwd === null) return;
+      target = fwd !== null ? fwd : bwd!;
+    }
+    this.activeIndex = target;
+    this._updateOffset();
   }
 
   onChildRegistered = (child: FocusNode): void => {
@@ -92,6 +124,23 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
     const idx = this._keyToIndex(child.key);
     if (idx !== -1) this.activeIndex = idx;
   };
+
+  private _findFirst(): number {
+    if (!this._isItemDisabled) return 0;
+    for (let i = 0; i < this.totalCount; i++) {
+      if (!this._isItemDisabled(i)) return i;
+    }
+    return 0;
+  }
+
+  private _findNext(from: number, dir: 1 | -1): number | null {
+    let i = from + dir;
+    while (i >= 0 && i < this.totalCount) {
+      if (!this._isItemDisabled?.(i)) return i;
+      i += dir;
+    }
+    return null;
+  }
 
   private _moveTo(newIndex: number): boolean {
     if (newIndex < 0 || newIndex >= this.totalCount) return false;

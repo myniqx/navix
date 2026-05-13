@@ -7,6 +7,9 @@ import 'player_view.dart';
 const _blue = Color(0xFF4fc3f7);
 const _columns = 8;
 
+// Disabled: index 3 (single skip row 0), indices 11-12 (double skip row 1)
+const _liveDisabled = {3, 11, 12};
+
 class LiveView extends StatelessWidget {
   final void Function(PlayerState) onSelect;
 
@@ -59,6 +62,7 @@ class LiveView extends StatelessWidget {
                                   key: ValueKey(rows[r][c].id),
                                   fKey: 'live-${rows[r][c].id}',
                                   item: rows[r][c],
+                                  disabled: _liveDisabled.contains(r * _columns + c),
                                   onPlay: () => onSelect(PlayerState(
                                     channels: liveGrid,
                                     current: rows[r][c],

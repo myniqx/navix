@@ -19,9 +19,10 @@ interface SlotProps {
   item: any;
   itemKey: string;
   index: number;
+  disabled: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   renderItemRef: React.RefObject<
-    (item: any, fKey: string, index: number) => ReactNode
+    (item: any, fKey: string, index: number, disabled: boolean) => ReactNode
   >;
   slotStyle: CSSProperties;
   slotClassName?: string;
@@ -31,13 +32,14 @@ const Slot = memo(function Slot({
   item,
   itemKey,
   index,
+  disabled,
   renderItemRef,
   slotStyle,
   slotClassName,
 }: SlotProps) {
   return (
     <div style={slotStyle} className={slotClassName}>
-      {renderItemRef.current(item, itemKey, index)}
+      {renderItemRef.current(item, itemKey, index, disabled)}
     </div>
   );
 });
@@ -47,8 +49,18 @@ interface PaginatedListProps<T> extends BaseComponentProps {
   visibleCount: number;
   threshold: number;
   items: T[];
-  renderItem: (item: T, fKey: string, index: number) => ReactNode;
+  renderItem: (item: T, fKey: string, index: number, disabled: boolean) => ReactNode;
   keyForItem?: (item: T, index: number) => string;
+  isItemDisabled?: (index: number) => boolean;
+  /**
+   * Jump to this index on mount and whenever the value changes. The component
+   * manages its own navigation state between jumps — user arrow-key navigation
+   * is unaffected. If the target index is disabled the nearest non-disabled
+   * neighbour is focused instead. This is a write-only intent prop; there is
+   * no corresponding onChange callback.
+   */
+  activeIndex?: number;
+  disabled?: boolean;
   groupKey?: string;
   gap?: number;
   buffer?: number;
@@ -73,6 +85,9 @@ export function NavixPaginatedList<T>({
   items,
   renderItem,
   keyForItem,
+  isItemDisabled,
+  activeIndex: activeIndexProp,
+  disabled,
   groupKey,
   gap = 0,
   buffer = 2,
@@ -95,6 +110,9 @@ export function NavixPaginatedList<T>({
   const keyForItemRef = useRef(keyForItem);
   keyForItemRef.current = keyForItem;
 
+  const isItemDisabledRef = useRef(isItemDisabled);
+  isItemDisabledRef.current = isItemDisabled;
+
   const itemKeys = useMemo(() => {
     const fn = keyForItemRef.current;
     return items.map((item, i) => (fn ? fn(item, i) : `${fKey}-${i}`));
@@ -106,14 +124,17 @@ export function NavixPaginatedList<T>({
   const selectionByGroupRef = useRef<Map<string, GroupSelection>>(new Map());
   const currentGroupKeyRef = useRef<string | undefined>(groupKey);
 
+  // renderItemRef lets renderItem change each render without re-rendering every
+  // Slot. disabled is passed as an explicit Slot prop so memo busts correctly
+  // when disabled state changes dynamically.
   const renderItemRef = useRef(renderItem) as React.RefObject<
-    (item: any, fKey: string, index: number) => ReactNode
+    (item: any, fKey: string, index: number, disabled: boolean) => ReactNode
   >;
   renderItemRef.current = renderItem;
 
   const { node, FocusProvider } = useFocusable(
     fKey,
-    { onFocus, onBlurred, onRegister, onUnregister, onEvent },
+    { onFocus, onBlurred, onRegister, onUnregister, onEvent, disabled },
     (n: FocusNode) => {
       const b = new PaginatedListBehavior(
         n,
@@ -123,6 +144,7 @@ export function NavixPaginatedList<T>({
         threshold,
         () => {},
         (key) => itemKeysRef.current.indexOf(key),
+        (index) => isItemDisabledRef.current?.(index) ?? false,
       );
       const initialGroup = currentGroupKeyRef.current;
       const restored =
@@ -132,6 +154,9 @@ export function NavixPaginatedList<T>({
       if (restored) {
         b.activeIndex = restored.activeIndex;
         b.viewOffset = restored.viewOffset;
+      }
+      if (activeIndexProp !== undefined) {
+        b.jumpToIndex(activeIndexProp);
       }
       return b;
     },
@@ -147,6 +172,8 @@ export function NavixPaginatedList<T>({
     }
   }
 
+  // Must run before the activeIndex effect below so jumpToIndex uses current
+  // totalCount/visibleCount when computing viewOffset.
   useEffect(() => {
     behavior.totalCount = items.length;
     behavior.visibleCount = visibleCount;
@@ -196,6 +223,19 @@ export function NavixPaginatedList<T>({
       behavior.focusByKey(itemKeys[newIndex]!);
     };
   }, [behavior, itemKeys]);
+
+  // Runs after the dimensions effect above — behavior has current
+  // totalCount/visibleCount when jumpToIndex computes the new viewOffset.
+  useEffect(() => {
+    if (activeIndexProp === undefined) return;
+    behavior.jumpToIndex(activeIndexProp);
+    setViewOffset(behavior.viewOffset);
+    const idx = behavior.activeIndex;
+    const keys = itemKeysRef.current;
+    if (idx >= 0 && idx < keys.length) {
+      behavior.focusByKey(keys[idx]!);
+    }
+  }, [activeIndexProp, behavior]);
 
   const isHorizontal = orientation === 'horizontal';
 
@@ -293,6 +333,7 @@ export function NavixPaginatedList<T>({
                 item={item}
                 itemKey={itemKey}
                 index={globalIdx}
+                disabled={isItemDisabled?.(globalIdx) ?? false}
                 renderItemRef={renderItemRef}
                 slotStyle={slotStyle}
                 slotClassName={slotClassName}

@@ -11,6 +11,7 @@ export interface IFocusNodeBehavior {
   collapse?: () => void;
   expand?: () => void;
   readonly isTrapped?: boolean;
+  canReceiveFocus?: () => boolean;
   onChildRegistered?: (child: FocusNode) => void;
   onChildUnregistered?: (child: FocusNode) => void;
   onActiveChildChanged?: (child: FocusNode) => void;

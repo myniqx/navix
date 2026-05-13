@@ -88,6 +88,7 @@ typedef NavixExpandableBuilder = Widget Function(
 class NavixExpandable extends StatefulWidget {
   final String fKey;
   final NavixExpandableBuilder builder;
+  final bool disabled;
   final void Function(String key)? onFocus;
   final void Function(String key)? onBlurred;
   final void Function(String key)? onRegister;
@@ -98,6 +99,7 @@ class NavixExpandable extends StatefulWidget {
     super.key,
     required this.fKey,
     required this.builder,
+    this.disabled = false,
     this.onFocus,
     this.onBlurred,
     this.onRegister,
@@ -127,6 +129,7 @@ class _NavixExpandableState extends State<NavixExpandable> {
         onRegister: widget.onRegister,
         onUnregister: widget.onUnregister,
         onEvent: widget.onEvent,
+        disabled: widget.disabled,
       ),
       createBehavior: (node) {
         _behavior = _ExpandableBehavior(node, _onExpandedChanged);

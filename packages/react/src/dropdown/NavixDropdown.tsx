@@ -30,6 +30,7 @@ interface DropdownProps extends BaseComponentProps {
   value?: string[];
   onChange?: (value: string[]) => void;
   multiple?: boolean;
+  disabled?: boolean;
   position?: 'top' | 'bottom';
   maxVisible?: number;
   placeholder?: string;
@@ -144,6 +145,7 @@ export function NavixDropdown({
   value = [],
   onChange,
   multiple = false,
+  disabled,
   position = 'bottom',
   maxVisible = 3,
   placeholder = 'Select...',
@@ -222,6 +224,7 @@ export function NavixDropdown({
       onBlurred={onBlurred}
       onRegister={onRegister}
       onUnregister={onUnregister}
+      disabled={disabled}
     >
       {({ isExpanded, focused, directlyFocused, collapse }) => (
         <div className={className} style={outerStyle}>

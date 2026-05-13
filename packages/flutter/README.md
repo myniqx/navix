@@ -76,6 +76,7 @@ abstract class IFocusNodeBehavior {
   void Function()? collapse;
   void Function()? expand;
   bool get isTrapped => false;
+  bool canReceiveFocus() => true;
   void Function(NavixFocusNode child)? onChildRegistered;
   void Function(NavixFocusNode child)? onChildUnregistered;
   void Function(NavixFocusNode child)? onActiveChildChanged;
@@ -227,7 +228,7 @@ NavixVerticalList(
     ],
   ),
 
-  // onFocus, onBlurred, onRegister, onUnregister also accepted
+  // disabled, onFocus, onBlurred, onRegister, onUnregister also accepted
 )
 ```
 
@@ -265,7 +266,7 @@ NavixGrid(
     ).toList(),
   ),
 
-  // onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
+  // disabled, onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
 )
 ```
 
@@ -317,7 +318,7 @@ NavixButton(
   ),
 
   // child: const Text('▶ Play'),  // alternative to builder
-  // onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
+  // disabled, onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
 )
 ```
 
@@ -367,7 +368,7 @@ NavixSwitch(
     ],
   ),
 
-  // onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
+  // disabled, onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
 )
 ```
 
@@ -435,7 +436,7 @@ NavixInput(
     );
   },
 
-  // onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
+  // disabled, onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
 )
 ```
 
@@ -497,7 +498,7 @@ NavixExpandable(
     );
   },
 
-  // onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
+  // disabled, onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
 )
 ```
 
@@ -604,7 +605,7 @@ NavixDropdown(
       ]),
     ),
 
-  // onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
+  // disabled, onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
 )
 ```
 
@@ -669,9 +670,33 @@ NavixPaginatedList<Movie>(
     Required. Item builder.
     Note: the fKey argument must be forwarded to the focusable child widget —
     it ties the rendered widget back to the key the behavior expects.
-    type: Widget Function(T item, String fKey, int index)
+    disabled: true when isItemDisabled returns true for this index.
+    type: Widget Function(T item, String fKey, int index, bool disabled)
   */
-  renderItem: (movie, fKey, index) => MovieCard(fKey: fKey, movie: movie),
+  renderItem: (movie, fKey, index, disabled) => MovieCard(fKey: fKey, movie: movie, disabled: disabled),
+
+  /*
+    Returns true if the item at the given index should be skipped during
+    keyboard navigation. Disabled items are still rendered and receive the
+    disabled flag via renderItem.
+    type: bool Function(int index)?
+  */
+  isItemDisabled: null,
+
+  /*
+    Jump to this index on mount and whenever the value changes. If the
+    target index is disabled the nearest non-disabled neighbour is focused.
+    Write-only intent prop — user arrow-key navigation is unaffected.
+    type: int?
+  */
+  activeIndex: null,
+
+  /*
+    Prevents this entire list from receiving focus.
+    Default: false.
+    type: bool
+  */
+  disabled: false,
 
   /*
     Caches activeIndex/viewOffset per group key. When the value changes,
@@ -760,9 +785,33 @@ NavixPaginatedGrid<Channel>(
   /*
     Required. Item builder.
     Note: the fKey argument must be forwarded to the focusable child widget.
-    type: Widget Function(T item, String fKey, int index)
+    disabled: true when isItemDisabled returns true for this index.
+    type: Widget Function(T item, String fKey, int index, bool disabled)
   */
-  renderItem: (channel, fKey, index) => ChannelCard(fKey: fKey, channel: channel),
+  renderItem: (channel, fKey, index, disabled) => ChannelCard(fKey: fKey, channel: channel, disabled: disabled),
+
+  /*
+    Returns true if the item at the given index should be skipped during
+    keyboard navigation. Disabled items are still rendered and receive the
+    disabled flag via renderItem.
+    type: bool Function(int index)?
+  */
+  isItemDisabled: null,
+
+  /*
+    Jump to this index on mount and whenever the value changes. If the
+    target index is disabled the nearest non-disabled neighbour is focused.
+    Write-only intent prop — user arrow-key navigation is unaffected.
+    type: int?
+  */
+  activeIndex: null,
+
+  /*
+    Prevents this entire grid from receiving focus.
+    Default: false.
+    type: bool
+  */
+  disabled: false,
 
   /*
     Caches activeIndex/viewOffset per group key.
@@ -1063,7 +1112,7 @@ NavixVerticalList(
         visibleCount: 5,
         threshold: 1,
         gap: 8,
-        renderItem: (movie, fKey, index) => MovieCard(fKey: fKey, movie: movie),
+        renderItem: (movie, fKey, index, disabled) => MovieCard(fKey: fKey, movie: movie),
       ),
     ],
   ),

@@ -54,6 +54,7 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
   private _pendingFocusKey: string | null = null;
   private _onChange: (newIndex: number, newOffset: number) => void;
   private _keyToIndex: (key: string) => number;
+  private _isItemDisabled?: (index: number) => boolean;
 
   set onChange(fn: (newIndex: number, newOffset: number) => void) {
     this._onChange = fn;
@@ -68,6 +69,7 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
     threshold: number,
     onChange: (newIndex: number, newOffset: number) => void,
     keyToIndex: (key: string) => number,
+    isItemDisabled?: (index: number) => boolean,
   ) {
     this._node = node;
     this.orientation = orientation;
@@ -77,29 +79,56 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
     this.threshold = threshold;
     this._onChange = onChange;
     this._keyToIndex = keyToIndex;
+    this._isItemDisabled = isItemDisabled;
+    this.activeIndex = this._findFirst();
   }
+
+  canReceiveFocus = (): boolean => {
+    if (this.totalCount === 0) return false;
+    if (!this._isItemDisabled) return true;
+    for (let i = 0; i < this.totalCount; i++) {
+      if (!this._isItemDisabled(i)) return true;
+    }
+    return false;
+  };
 
   onEvent = (event: NavEvent): boolean => {
     if (event.type !== 'press') return false;
 
     if (this.effectiveOrientation === 'horizontal') {
-      if (event.action === 'up')
-        return this._moveTo(this.activeIndex - 1, 'cross');
-      if (event.action === 'down')
-        return this._moveTo(this.activeIndex + 1, 'cross');
-      if (event.action === 'left')
-        return this._moveTo(this.activeIndex - this.rows, 'main');
-      if (event.action === 'right')
-        return this._moveTo(this.activeIndex + this.rows, 'main');
+      if (event.action === 'up') {
+        const next = this._findNext(this.activeIndex, -1, 'cross');
+        return next !== null ? this._moveTo(next, 'cross') : false;
+      }
+      if (event.action === 'down') {
+        const next = this._findNext(this.activeIndex, 1, 'cross');
+        return next !== null ? this._moveTo(next, 'cross') : false;
+      }
+      if (event.action === 'left') {
+        const next = this._findNext(this.activeIndex, -this.rows, 'main');
+        return next !== null ? this._moveTo(next, 'main') : false;
+      }
+      if (event.action === 'right') {
+        const next = this._findNext(this.activeIndex, this.rows, 'main');
+        return next !== null ? this._moveTo(next, 'main') : false;
+      }
     } else {
-      if (event.action === 'left')
-        return this._moveTo(this.activeIndex - 1, 'cross');
-      if (event.action === 'right')
-        return this._moveTo(this.activeIndex + 1, 'cross');
-      if (event.action === 'up')
-        return this._moveTo(this.activeIndex - this.columns, 'main');
-      if (event.action === 'down')
-        return this._moveTo(this.activeIndex + this.columns, 'main');
+      if (event.action === 'left') {
+        const next = this._findNext(this.activeIndex, -1, 'cross');
+        return next !== null ? this._moveTo(next, 'cross') : false;
+      }
+      if (event.action === 'right') {
+        const next = this._findNext(this.activeIndex, 1, 'cross');
+        return next !== null ? this._moveTo(next, 'cross') : false;
+      }
+      if (event.action === 'up') {
+        const next = this._findNext(this.activeIndex, -this.columns, 'main');
+        return next !== null ? this._moveTo(next, 'main') : false;
+      }
+      if (event.action === 'down') {
+        const next = this._findNext(this.activeIndex, this.columns, 'main');
+        return next !== null ? this._moveTo(next, 'main') : false;
+      }
     }
 
     return false;
@@ -112,6 +141,19 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
     } else {
       this._pendingFocusKey = key;
     }
+  }
+
+  jumpToIndex(index: number): void {
+    if (index < 0 || index >= this.totalCount) return;
+    let target = index;
+    if (this._isItemDisabled?.(index)) {
+      const fwd = this._findNext(index, 1, 'main');
+      const bwd = this._findNext(index, -1, 'main');
+      if (fwd === null && bwd === null) return;
+      target = fwd !== null ? fwd : bwd!;
+    }
+    this.activeIndex = target;
+    this._updateOffset();
   }
 
   onChildRegistered = (child: FocusNode): void => {
@@ -133,6 +175,26 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
     const idx = this._keyToIndex(child.key);
     if (idx !== -1) this.activeIndex = idx;
   };
+
+  private _findFirst(): number {
+    if (!this._isItemDisabled) return 0;
+    for (let i = 0; i < this.totalCount; i++) {
+      if (!this._isItemDisabled(i)) return i;
+    }
+    return 0;
+  }
+
+  private _findNext(from: number, step: number, axis: 'main' | 'cross'): number | null {
+    const sliceSize = this.effectiveOrientation === 'horizontal' ? this.rows : this.columns;
+    const fromSlice = Math.floor(from / sliceSize);
+    let i = from + step;
+    while (i >= 0 && i < this.totalCount) {
+      if (axis === 'cross' && Math.floor(i / sliceSize) !== fromSlice) break;
+      if (!this._isItemDisabled?.(i)) return i;
+      i += step;
+    }
+    return null;
+  }
 
   private _moveTo(newIndex: number, axis: 'main' | 'cross'): boolean {
     if (newIndex < 0 || newIndex >= this.totalCount) return false;

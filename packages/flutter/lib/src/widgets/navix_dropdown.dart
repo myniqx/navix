@@ -43,6 +43,7 @@ class NavixDropdown extends StatelessWidget {
   final double minPanelWidth;
   final NavixDropdownTriggerBuilder renderTrigger;
   final NavixDropdownOptionBuilder renderOption;
+  final bool disabled;
   final void Function(String key)? onFocus;
   final void Function(String key)? onBlurred;
   final void Function(String key)? onRegister;
@@ -64,6 +65,7 @@ class NavixDropdown extends StatelessWidget {
     this.slotHeight = 44,
     this.panelWidth,
     this.minPanelWidth = 160,
+    this.disabled = false,
     this.onFocus,
     this.onBlurred,
     this.onRegister,
@@ -105,6 +107,7 @@ class NavixDropdown extends StatelessWidget {
 
     return NavixExpandable(
       fKey: fKey,
+      disabled: disabled,
       onFocus: onFocus,
       onBlurred: onBlurred,
       onRegister: onRegister,
@@ -129,7 +132,7 @@ class NavixDropdown extends StatelessWidget {
             items: options,
             visibleCount: maxVisible,
             threshold: 1,
-            renderItem: (option, itemFKey, index) {
+            renderItem: (option, itemFKey, index, disabled) {
               final isSelected = value.contains(option.value);
               return _OptionButton(
                 fKey: itemFKey,

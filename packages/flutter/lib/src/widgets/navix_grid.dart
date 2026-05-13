@@ -10,7 +10,10 @@ class _GridBehavior extends IFocusNodeBehavior {
 
   _GridBehavior(this._node, this.columns) {
     onEvent = _handleEvent;
+    canReceiveFocus = _canReceiveFocus;
   }
+
+  bool _canReceiveFocus() => _node.children.any((c) => c.canReceiveFocus());
 
   bool _handleEvent(NavEvent event) {
     if (event.type != NavEventType.press) return false;
@@ -28,14 +31,24 @@ class _GridBehavior extends IFocusNodeBehavior {
       return _node.focusNext();
     }
     if (event.action == 'up') {
-      final target = idx - columns;
-      if (target < 0) return false;
-      return _node.focusChild(_node.children[target].id);
+      int target = idx - columns;
+      while (target >= 0) {
+        if (_node.children[target].canReceiveFocus()) {
+          return _node.focusChild(_node.children[target].id);
+        }
+        target -= columns;
+      }
+      return false;
     }
     if (event.action == 'down') {
-      final target = idx + columns;
-      if (target >= _node.children.length) return false;
-      return _node.focusChild(_node.children[target].id);
+      int target = idx + columns;
+      while (target < _node.children.length) {
+        if (_node.children[target].canReceiveFocus()) {
+          return _node.focusChild(_node.children[target].id);
+        }
+        target += columns;
+      }
+      return false;
     }
 
     return false;
@@ -46,6 +59,7 @@ class NavixGrid extends StatefulWidget {
   final String fKey;
   final int columns;
   final Widget child;
+  final bool disabled;
   final void Function(String key)? onFocus;
   final void Function(String key)? onBlurred;
   final void Function(String key)? onRegister;
@@ -57,6 +71,7 @@ class NavixGrid extends StatefulWidget {
     required this.fKey,
     required this.columns,
     required this.child,
+    this.disabled = false,
     this.onFocus,
     this.onBlurred,
     this.onRegister,
@@ -89,6 +104,7 @@ class _NavixGridState extends State<NavixGrid> {
         onRegister: widget.onRegister,
         onUnregister: widget.onUnregister,
         onEvent: widget.onEvent,
+        disabled: widget.disabled,
       ),
       createBehavior: (node) {
         _behavior = _GridBehavior(node, widget.columns);

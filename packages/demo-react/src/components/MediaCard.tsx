@@ -13,6 +13,7 @@ interface MediaCardProps {
   item: ContentItem;
   variant: CardVariant;
   onClick?: () => void;
+  disabled?: boolean;
 }
 
 const GENRES = [
@@ -72,7 +73,7 @@ const VARIANT_PLAY_LABEL: Record<CardVariant, string> = {
   series: 'PREVIEW',
 };
 
-export function MediaCard({ fKey, item, variant, onClick }: MediaCardProps) {
+export function MediaCard({ fKey, item, variant, onClick, disabled = false }: MediaCardProps) {
   const [cacheState, setCacheState] = useState<CacheState>('idle');
   const [playState, setPlayState] = useState<PlayState>('idle');
   const [cacheProgress, setCacheProgress] = useState(0);
@@ -136,6 +137,7 @@ export function MediaCard({ fKey, item, variant, onClick }: MediaCardProps) {
   };
 
   const { directlyFocused, focusSelf } = useFocusable(fKey, {
+    disabled,
     onEvent: (e: NavEvent) => {
       if (e.action === 'enter' && e.type === 'press') {
         onClick?.();
@@ -144,6 +146,7 @@ export function MediaCard({ fKey, item, variant, onClick }: MediaCardProps) {
       return false;
     },
     onRegister: () => {
+      if (disabled) return;
       setCache('caching');
       setCacheProgress(0);
       let progress = 0;
@@ -218,8 +221,8 @@ export function MediaCard({ fKey, item, variant, onClick }: MediaCardProps) {
 
   return (
     <div
-      onMouseEnter={focusSelf}
-      onClick={onClick}
+      onMouseEnter={disabled ? undefined : focusSelf}
+      onClick={disabled ? undefined : onClick}
       style={{
         width: '100%',
         borderRadius: 6,
@@ -235,8 +238,30 @@ export function MediaCard({ fKey, item, variant, onClick }: MediaCardProps) {
             : 'none',
         display: 'flex',
         flexDirection: 'column',
+        opacity: disabled ? 0.4 : 1,
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        position: 'relative',
       }}
     >
+      {disabled && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1,
+            fontSize: 10,
+            fontWeight: 700,
+            color: '#666',
+            letterSpacing: '0.12em',
+            pointerEvents: 'none',
+          }}
+        >
+          LOCKED
+        </div>
+      )}
       {/* Poster area */}
       <div
         style={{

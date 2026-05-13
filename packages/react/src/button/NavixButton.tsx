@@ -13,6 +13,7 @@ interface ButtonProps extends BaseComponentProps {
   onClick?: () => void;
   onLongPress?: () => void;
   onDoublePress?: () => void;
+  disabled?: boolean;
   style?: React.CSSProperties;
   focusedStyle?: React.CSSProperties;
   className?: string;
@@ -48,6 +49,7 @@ export function NavixButton({
   onClick,
   onLongPress,
   onDoublePress,
+  disabled,
   onFocus,
   onBlurred,
   onRegister,
@@ -73,7 +75,7 @@ export function NavixButton({
 
   const { node, directlyFocused, focusSelf } = useFocusable(
     fKey,
-    { onFocus, onBlurred, onRegister, onUnregister, onEvent },
+    { onFocus, onBlurred, onRegister, onUnregister, onEvent, disabled },
     (node: FocusNode) =>
       new ButtonBehavior(node, {
         onPress: () => onClickRef.current?.(),

@@ -99,16 +99,25 @@ export class FocusNode {
     return this.behavior?.onEvent(event) ?? false;
   }
 
+  canReceiveFocus(): boolean {
+    return this.behavior?.canReceiveFocus?.() ?? true;
+  }
+
   focusNext(): boolean {
     if (this.activeChildId === null || this.children.length === 0) return false;
 
     const idx = this.children.findIndex((c) => c.id === this.activeChildId);
-    if (idx === -1 || idx >= this.children.length - 1) return false;
+    if (idx === -1) return false;
 
-    this.activeChildId = this.children[idx + 1]!.id;
-    this._propagateFocus();
-    this.notify();
-    return true;
+    for (let i = idx + 1; i < this.children.length; i++) {
+      if (this.children[i]!.canReceiveFocus()) {
+        this.activeChildId = this.children[i]!.id;
+        this._propagateFocus();
+        this.notify();
+        return true;
+      }
+    }
+    return false;
   }
 
   focusPrev(): boolean {
@@ -117,10 +126,15 @@ export class FocusNode {
     const idx = this.children.findIndex((c) => c.id === this.activeChildId);
     if (idx <= 0) return false;
 
-    this.activeChildId = this.children[idx - 1]!.id;
-    this._propagateFocus();
-    this.notify();
-    return true;
+    for (let i = idx - 1; i >= 0; i--) {
+      if (this.children[i]!.canReceiveFocus()) {
+        this.activeChildId = this.children[i]!.id;
+        this._propagateFocus();
+        this.notify();
+        return true;
+      }
+    }
+    return false;
   }
 
   // Reorders existing children without firing register/unregister callbacks.
@@ -247,6 +261,8 @@ export class FocusNode {
   // nodes that are descendants of that node may receive focus. Any request
   // from outside is silently ignored.
   requestFocus(): void {
+    if (!this.canReceiveFocus()) return;
+
     const trapNode = this._findTrap(this.getRoot());
     if (trapNode !== null && !this._isDescendantOf(trapNode)) return;
 
