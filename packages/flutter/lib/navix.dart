@@ -12,3 +12,4 @@ export 'src/widgets/navix_paginated_list.dart';
 export 'src/widgets/navix_dropdown.dart';
 export 'src/widgets/navix_paginated_grid.dart';
 export 'src/widgets/navix_multi_layer.dart';
+export 'src/widgets/navix_stepper.dart';

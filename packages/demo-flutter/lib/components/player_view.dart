@@ -820,6 +820,7 @@ class _ControlsPanelState extends State<_ControlsPanel> {
             fKey: widget.props.fKey,
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 NavixHorizontalList(
                   fKey: '${widget.props.fKey}-buttons',
@@ -885,10 +886,20 @@ class _ControlsPanelState extends State<_ControlsPanel> {
                 const SizedBox(height: 12),
 
                 // Progress bar
-                NavixButton(
+                NavixStepper(
                   fKey: '${widget.props.fKey}-progress',
-                  onClick: () {},
-                  builder: (context, focused) {
+                  orientation: NavixStepperOrientation.horizontal,
+                  long: true,
+                  onIncrease: (type) => setState(() =>
+                    _progress = (_progress + (type == StepType.long ? 15 : 5)).clamp(0, 100)),
+                  onDecrease: (type) => setState(() =>
+                    _progress = (_progress - (type == StepType.long ? 15 : 5)).clamp(0, 100)),
+                  builder: (context, focused, status) {
+                    final barColor = status == StepperStatus.increase
+                        ? const Color(0xFF81D4FA)
+                        : status == StepperStatus.decrease
+                            ? const Color(0xFFEF9A9A)
+                            : _blue;
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4),
                       child: Column(
@@ -898,55 +909,38 @@ class _ControlsPanelState extends State<_ControlsPanel> {
                             children: [
                               const Text(
                                 'Progress',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: Color(0xFF666666),
-                                ),
+                                style: TextStyle(fontSize: 11, color: Color(0xFF666666)),
                               ),
                               Text(
                                 '${_progress.round()}%',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: focused
-                                      ? _blue
-                                      : const Color(0xFF666666),
+                                  color: focused ? _blue : const Color(0xFF666666),
                                 ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 6),
-                          GestureDetector(
-                            onTapDown: (details) {
-                              final box =
-                                  context.findRenderObject() as RenderBox?;
-                              if (box == null) return;
-                              setState(() {
-                                _progress =
-                                    (details.localPosition.dx /
-                                            box.size.width *
-                                            100)
-                                        .clamp(0, 100);
-                              });
-                            },
-                            child: Container(
-                              height: 4,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(2),
-                                border: Border.all(
-                                  color: focused
-                                      ? _blue.withValues(alpha: 0.27)
-                                      : Colors.transparent,
-                                ),
+                          Container(
+                            width: double.infinity,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(2),
+                              border: Border.all(
+                                color: focused
+                                    ? _blue.withValues(alpha: 0.27)
+                                    : Colors.transparent,
                               ),
-                              child: FractionallySizedBox(
-                                widthFactor: _progress / 100,
-                                alignment: Alignment.centerLeft,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: _blue,
-                                    borderRadius: BorderRadius.circular(2),
-                                  ),
+                            ),
+                            child: FractionallySizedBox(
+                              widthFactor: _progress / 100,
+                              alignment: Alignment.centerLeft,
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 150),
+                                decoration: BoxDecoration(
+                                  color: barColor,
+                                  borderRadius: BorderRadius.circular(2),
                                 ),
                               ),
                             ),
@@ -960,10 +954,19 @@ class _ControlsPanelState extends State<_ControlsPanel> {
                 const SizedBox(height: 8),
 
                 // Volume bar
-                NavixButton(
+                NavixStepper(
                   fKey: '${widget.props.fKey}-volume',
-                  onClick: () {},
-                  builder: (context, focused) {
+                  orientation: NavixStepperOrientation.horizontal,
+                  onIncrease: (_) => setState(() =>
+                    _volume = (_volume + 5).clamp(0, 100)),
+                  onDecrease: (_) => setState(() =>
+                    _volume = (_volume - 5).clamp(0, 100)),
+                  builder: (context, focused, status) {
+                    final barColor = status == StepperStatus.increase
+                        ? const Color(0xFFA5D6A7)
+                        : status == StepperStatus.decrease
+                            ? const Color(0xFFEF9A9A)
+                            : _green;
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4),
                       child: Column(
@@ -973,55 +976,38 @@ class _ControlsPanelState extends State<_ControlsPanel> {
                             children: [
                               const Text(
                                 '🔊 Volume',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: Color(0xFF666666),
-                                ),
+                                style: TextStyle(fontSize: 11, color: Color(0xFF666666)),
                               ),
                               Text(
                                 '${_volume.round()}%',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: focused
-                                      ? _blue
-                                      : const Color(0xFF666666),
+                                  color: focused ? _blue : const Color(0xFF666666),
                                 ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 6),
-                          GestureDetector(
-                            onTapDown: (details) {
-                              final box =
-                                  context.findRenderObject() as RenderBox?;
-                              if (box == null) return;
-                              setState(() {
-                                _volume =
-                                    (details.localPosition.dx /
-                                            box.size.width *
-                                            100)
-                                        .clamp(0, 100);
-                              });
-                            },
-                            child: Container(
-                              height: 4,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(2),
-                                border: Border.all(
-                                  color: focused
-                                      ? _blue.withValues(alpha: 0.27)
-                                      : Colors.transparent,
-                                ),
+                          Container(
+                            width: double.infinity,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(2),
+                              border: Border.all(
+                                color: focused
+                                    ? _green.withValues(alpha: 0.27)
+                                    : Colors.transparent,
                               ),
-                              child: FractionallySizedBox(
-                                widthFactor: _volume / 100,
-                                alignment: Alignment.centerLeft,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: _green,
-                                    borderRadius: BorderRadius.circular(2),
-                                  ),
+                            ),
+                            child: FractionallySizedBox(
+                              widthFactor: _volume / 100,
+                              alignment: Alignment.centerLeft,
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 150),
+                                decoration: BoxDecoration(
+                                  color: barColor,
+                                  borderRadius: BorderRadius.circular(2),
                                 ),
                               ),
                             ),

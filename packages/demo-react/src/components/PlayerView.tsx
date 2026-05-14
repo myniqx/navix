@@ -3,6 +3,8 @@ import {
   NavixVerticalList,
   NavixHorizontalList,
   NavixButton,
+  NavixStepper,
+  type StepperStatus,
 } from '@navix/react';
 import type { NavixMultiLayerPanelProps } from '@navix/react';
 import { useState } from 'react';
@@ -725,9 +727,16 @@ function ControlsPanel({
           ))}
         </NavixHorizontalList>
 
-        <NavixButton fKey={`${fKey}-progress`} onClick={() => {}}>
-          {({ focused }) => (
-            <div style={{ padding: '4px 0 8px' }}>
+        <NavixStepper
+          fKey={`${fKey}-progress`}
+          orientation="horizontal"
+          long
+          onIncrease={(type) => setProgress((p) => Math.min(100, p + (type === 'long' ? 15 : 5)))}
+          onDecrease={(type) => setProgress((p) => Math.max(0, p - (type === 'long' ? 15 : 5)))}
+          style={{ display: 'block', padding: '4px 0 8px' }}
+        >
+          {({ focused, status }) => (
+            <div>
               <div
                 style={{
                   display: 'flex',
@@ -736,9 +745,7 @@ function ControlsPanel({
                 }}
               >
                 <span style={{ fontSize: 11, color: '#666' }}>Progress</span>
-                <span
-                  style={{ fontSize: 11, color: focused ? '#4fc3f7' : '#666' }}
-                >
+                <span style={{ fontSize: 11, color: focused ? '#4fc3f7' : '#666' }}>
                   {progress}%
                 </span>
               </div>
@@ -747,34 +754,40 @@ function ControlsPanel({
                   height: 4,
                   borderRadius: 2,
                   background: 'rgba(255,255,255,0.1)',
-                  border: focused
-                    ? '1px solid #4fc3f744'
-                    : '1px solid transparent',
+                  border: focused ? '1px solid #4fc3f744' : '1px solid transparent',
                   cursor: 'pointer',
                 }}
                 onClick={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect();
-                  setProgress(
-                    Math.round(((e.clientX - rect.left) / rect.width) * 100),
-                  );
+                  setProgress(Math.round(((e.clientX - rect.left) / rect.width) * 100));
                 }}
               >
                 <div
                   style={{
                     width: `${progress}%`,
                     height: '100%',
-                    background: '#4fc3f7',
                     borderRadius: 2,
+                    background:
+                      status === 'increase' ? '#81d4fa'
+                      : status === 'decrease' ? '#ef9a9a'
+                      : '#4fc3f7',
+                    transition: 'background 0.15s ease',
                   }}
                 />
               </div>
             </div>
           )}
-        </NavixButton>
+        </NavixStepper>
 
-        <NavixButton fKey={`${fKey}-volume`} onClick={() => {}}>
-          {({ focused }) => (
-            <div style={{ padding: '4px 0' }}>
+        <NavixStepper
+          fKey={`${fKey}-volume`}
+          orientation="horizontal"
+          onIncrease={() => setVolume((v) => Math.min(100, v + 5))}
+          onDecrease={() => setVolume((v) => Math.max(0, v - 5))}
+          style={{ display: 'block', padding: '4px 0' }}
+        >
+          {({ focused, status }) => (
+            <div>
               <div
                 style={{
                   display: 'flex',
@@ -783,9 +796,7 @@ function ControlsPanel({
                 }}
               >
                 <span style={{ fontSize: 11, color: '#666' }}>🔊 Volume</span>
-                <span
-                  style={{ fontSize: 11, color: focused ? '#4fc3f7' : '#666' }}
-                >
+                <span style={{ fontSize: 11, color: focused ? '#4fc3f7' : '#666' }}>
                   {volume}%
                 </span>
               </div>
@@ -794,30 +805,30 @@ function ControlsPanel({
                   height: 4,
                   borderRadius: 2,
                   background: 'rgba(255,255,255,0.1)',
-                  border: focused
-                    ? '1px solid #4fc3f744'
-                    : '1px solid transparent',
+                  border: focused ? '1px solid #4caf7d44' : '1px solid transparent',
                   cursor: 'pointer',
                 }}
                 onClick={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect();
-                  setVolume(
-                    Math.round(((e.clientX - rect.left) / rect.width) * 100),
-                  );
+                  setVolume(Math.round(((e.clientX - rect.left) / rect.width) * 100));
                 }}
               >
                 <div
                   style={{
                     width: `${volume}%`,
                     height: '100%',
-                    background: '#4caf7d',
                     borderRadius: 2,
+                    background:
+                      status === 'increase' ? '#a5d6a7'
+                      : status === 'decrease' ? '#ef9a9a'
+                      : '#4caf7d',
+                    transition: 'background 0.15s ease',
                   }}
                 />
               </div>
             </div>
           )}
-        </NavixButton>
+        </NavixStepper>
 
         <NavixButton fKey={`${fKey}-close`} onClick={close}>
           {({ focused }) => (
