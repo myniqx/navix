@@ -10,6 +10,7 @@ import {
 } from 'react';
 
 import type { FocusNode } from '../core/FocusNode';
+import { useNavixStore } from '../KVContext';
 import type { BaseComponentProps } from '../types';
 import { useFocusable } from '../useFocusable';
 import { PaginatedGridBehavior } from './PaginatedGridBehavior';
@@ -54,13 +55,13 @@ interface PaginatedGridProps<T> extends BaseComponentProps {
   keyForItem?: (item: T, index: number) => string;
   isItemDisabled?: (index: number) => boolean;
   /**
-   * Jump to this index on mount and whenever the value changes. The component
+   * Jump to this item on mount and whenever the value changes. The component
    * manages its own navigation state between jumps — user arrow-key navigation
-   * is unaffected. If the target index is disabled the nearest non-disabled
+   * is unaffected. If the target item is disabled the nearest non-disabled
    * neighbour is focused instead. This is a write-only intent prop; there is
    * no corresponding onChange callback.
    */
-  activeIndex?: number;
+  activeKey?: string;
   disabled?: boolean;
   groupKey?: string;
   gap?: number;
@@ -73,11 +74,6 @@ interface PaginatedGridProps<T> extends BaseComponentProps {
   slotClassName?: string;
 }
 
-interface GroupSelection {
-  activeIndex: number;
-  viewOffset: number;
-}
-
 export function NavixPaginatedGrid<T>({
   fKey,
   orientation = 'horizontal',
@@ -88,7 +84,7 @@ export function NavixPaginatedGrid<T>({
   renderItem,
   keyForItem,
   isItemDisabled,
-  activeIndex: activeIndexProp,
+  activeKey,
   disabled,
   groupKey,
   gap = 0,
@@ -133,7 +129,7 @@ export function NavixPaginatedGrid<T>({
   const itemKeysRef = useRef(itemKeys);
   itemKeysRef.current = itemKeys;
 
-  const selectionByGroupRef = useRef<Map<string, GroupSelection>>(new Map());
+  const store = useNavixStore();
   const currentGroupKeyRef = useRef<string | undefined>(groupKey);
 
   const { node, FocusProvider } = useFocusable(
@@ -147,21 +143,19 @@ export function NavixPaginatedGrid<T>({
         rows,
         columns,
         threshold,
-        () => {},
+        () => { },
         (key) => itemKeysRef.current.indexOf(key),
         (index) => isItemDisabledRef.current?.(index) ?? false,
       );
       const initialGroup = currentGroupKeyRef.current;
-      const restored =
-        initialGroup !== undefined
-          ? selectionByGroupRef.current.get(initialGroup)
-          : undefined;
+      const restored = initialGroup !== undefined ? store.get(initialGroup) : undefined;
       if (restored) {
-        b.activeIndex = restored.activeIndex;
-        b.viewOffset = restored.viewOffset;
+        b.activeIndex = (restored.activeIndex as number) ?? 0;
+        b.viewOffset = (restored.viewOffset as number) ?? 0;
       }
-      if (activeIndexProp !== undefined) {
-        b.jumpToIndex(activeIndexProp);
+      if (activeKey !== undefined) {
+        const idx = itemKeysRef.current.indexOf(activeKey);
+        if (idx !== -1) b.jumpToIndex(idx);
       }
       return b;
     },
@@ -185,18 +179,15 @@ export function NavixPaginatedGrid<T>({
     if (prevGroup === groupKey) return;
 
     if (prevGroup !== undefined && items.length > 0) {
-      selectionByGroupRef.current.set(prevGroup, {
+      store.update(prevGroup, {
         activeIndex: behavior.activeIndex,
         viewOffset: behavior.viewOffset,
       });
     }
 
-    const restored =
-      groupKey !== undefined
-        ? selectionByGroupRef.current.get(groupKey)
-        : undefined;
-    behavior.activeIndex = restored?.activeIndex ?? 0;
-    behavior.viewOffset = restored?.viewOffset ?? 0;
+    const restored = groupKey !== undefined ? store.get(groupKey) : undefined;
+    behavior.activeIndex = (restored?.activeIndex as number) ?? 0;
+    behavior.viewOffset = (restored?.viewOffset as number) ?? 0;
     setViewOffset(behavior.viewOffset);
     currentGroupKeyRef.current = groupKey;
 
@@ -207,7 +198,7 @@ export function NavixPaginatedGrid<T>({
         behavior.focusByKey(keys[idx]!);
       }
     }
-  }, [behavior, groupKey, items]);
+  }, [behavior, groupKey, items, store]);
 
   // renderItemRef lets renderItem change each render without re-rendering every
   // Slot. disabled is passed as an explicit Slot prop so memo busts correctly
@@ -232,27 +223,25 @@ export function NavixPaginatedGrid<T>({
       setViewOffset(newOffset);
       const group = currentGroupKeyRef.current;
       if (group !== undefined) {
-        selectionByGroupRef.current.set(group, {
-          activeIndex: newIndex,
-          viewOffset: newOffset,
-        });
+        store.update(group, { activeIndex: newIndex, viewOffset: newOffset });
       }
       behavior.focusByKey(itemKeys[newIndex]!);
     };
-  }, [behavior, itemKeys]);
+  }, [behavior, itemKeys, store]);
 
   // Runs after the dimensions effect above — behavior has current
   // totalCount/rows/columns when jumpToIndex computes the new viewOffset.
   useEffect(() => {
-    if (activeIndexProp === undefined) return;
-    behavior.jumpToIndex(activeIndexProp);
+    if (activeKey === undefined) return;
+    const idx = itemKeysRef.current.indexOf(activeKey);
+    if (idx === -1) return;
+    behavior.jumpToIndex(idx);
     setViewOffset(behavior.viewOffset);
-    const idx = behavior.activeIndex;
     const keys = itemKeysRef.current;
     if (idx >= 0 && idx < keys.length) {
       behavior.focusByKey(keys[idx]!);
     }
-  }, [activeIndexProp, behavior]);
+  }, [activeKey, behavior]);
 
   const measureRef = useCallback(
     (el: HTMLDivElement | null) => {

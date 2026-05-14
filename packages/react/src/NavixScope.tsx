@@ -4,6 +4,7 @@ import type { FocusNode } from './core/FocusNode';
 import { FocusTree } from './core/FocusTree';
 import type { InputConfig } from './core/types';
 import { FocusContext } from './FocusContext';
+import { KVContext, type KVStore } from './KVContext';
 import { setMergeClassName } from './mergeClassName';
 
 interface FocusRootProps {
@@ -21,6 +22,17 @@ export function NavixScope({
   const [root, setRoot] = useState<FocusNode>(() => {
     treeRef.current = new FocusTree(inputConfig);
     return treeRef.current.root;
+  });
+
+  const kvMapRef = useRef<Map<string, Record<string, unknown>>>(new Map());
+  const kvStore = useRef<KVStore>({
+    get: (key) => kvMapRef.current.get(key),
+    set: (key, value) => { kvMapRef.current.set(key, value); },
+    update: (key, partial) => {
+      const prev = kvMapRef.current.get(key) ?? {};
+      kvMapRef.current.set(key, { ...prev, ...partial });
+    },
+    delete: (key) => { kvMapRef.current.delete(key); },
   });
 
   useEffect(() => {
@@ -56,5 +68,9 @@ export function NavixScope({
     };
   }, []);
 
-  return <FocusContext.Provider value={root}>{children}</FocusContext.Provider>;
+  return (
+    <KVContext.Provider value={kvStore.current}>
+      <FocusContext.Provider value={root}>{children}</FocusContext.Provider>
+    </KVContext.Provider>
+  );
 }
