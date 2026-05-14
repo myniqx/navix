@@ -212,6 +212,21 @@ class NavixFocusManager {
   }
 }
 
+class NavixKVStore {
+  final Map<String, Map<String, dynamic>> _map = {};
+
+  Map<String, dynamic>? get(String key) => _map[key];
+
+  void set(String key, Map<String, dynamic> value) => _map[key] = value;
+
+  void update(String key, Map<String, dynamic> partial) {
+    final prev = _map[key] ?? {};
+    _map[key] = {...prev, ...partial};
+  }
+
+  void delete(String key) => _map.remove(key);
+}
+
 class NavixScope extends StatefulWidget {
   final Widget child;
   final InputConfig? inputConfig;
@@ -233,12 +248,20 @@ class NavixScope extends StatefulWidget {
     return context.dependOnInheritedWidgetOfExactType<_NavixInherited>()?.root;
   }
 
+  static NavixKVStore storeOf(BuildContext context) {
+    final inherited =
+        context.dependOnInheritedWidgetOfExactType<_NavixKVInherited>();
+    assert(inherited != null, 'NavixScope not found in widget tree');
+    return inherited!.store;
+  }
+
   @override
   State<NavixScope> createState() => _NavixScopeState();
 }
 
 class _NavixScopeState extends State<NavixScope> {
   late NavixFocusManager _manager;
+  final NavixKVStore _kvStore = NavixKVStore();
 
   @override
   void initState() {
@@ -255,9 +278,12 @@ class _NavixScopeState extends State<NavixScope> {
 
   @override
   Widget build(BuildContext context) {
-    return _NavixInherited(
-      root: _manager.root,
-      child: widget.child,
+    return _NavixKVInherited(
+      store: _kvStore,
+      child: _NavixInherited(
+        root: _manager.root,
+        child: widget.child,
+      ),
     );
   }
 }
@@ -272,4 +298,16 @@ class _NavixInherited extends InheritedWidget {
 
   @override
   bool updateShouldNotify(_NavixInherited old) => old.root != root;
+}
+
+class _NavixKVInherited extends InheritedWidget {
+  final NavixKVStore store;
+
+  const _NavixKVInherited({
+    required this.store,
+    required super.child,
+  });
+
+  @override
+  bool updateShouldNotify(_NavixKVInherited old) => false;
 }

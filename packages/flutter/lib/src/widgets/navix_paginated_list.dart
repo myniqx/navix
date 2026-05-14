@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 
 import '../core/nav_event.dart';
 import '../core/focus_node.dart';
+import '../core/focus_manager.dart';
 import 'navix_focusable.dart';
 
 const int _kMinVisibleCount = 2;
@@ -204,12 +205,12 @@ class NavixPaginatedList<T> extends StatefulWidget {
   final bool Function(int index)? isItemDisabled;
   final bool disabled;
 
-  /// Jump to this index on mount and whenever the value changes. The widget
+  /// Jump to this item on mount and whenever the value changes. The widget
   /// manages its own navigation state between jumps — user arrow-key navigation
-  /// is unaffected. If the target index is disabled the nearest non-disabled
+  /// is unaffected. If the target item is disabled the nearest non-disabled
   /// neighbour is focused instead. This is a write-only intent prop; there is
   /// no corresponding onChange callback.
-  final int? activeIndex;
+  final String? activeKey;
   final String? groupKey;
   final double gap;
   final int buffer;
@@ -228,7 +229,7 @@ class NavixPaginatedList<T> extends StatefulWidget {
     required this.renderItem,
     this.keyForItem,
     this.isItemDisabled,
-    this.activeIndex,
+    this.activeKey,
     this.disabled = false,
     this.groupKey,
     this.orientation = NavixListOrientation.horizontal,
@@ -250,8 +251,6 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
   NavixPaginatedListBehavior? _behavior;
 
   late List<String> _itemKeys;
-
-  final Map<String, _GroupSelection> _selectionByGroup = {};
   String? _currentGroupKey;
 
   String _defaultKeyForItem(T item, int index) => '${widget.fKey}-$index';
@@ -278,23 +277,25 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
     final groupChanged = widget.groupKey != _currentGroupKey;
 
     if (_behavior != null) {
+      final store = NavixScope.storeOf(context);
+
       if (groupChanged) {
         final prevGroup = _currentGroupKey;
         if (prevGroup != null && oldWidget.items.isNotEmpty) {
-          _selectionByGroup[prevGroup] = _GroupSelection(
-            activeIndex: _behavior!.activeIndex,
-            viewOffset: _behavior!.viewOffset,
-          );
+          store.update(prevGroup, {
+            'activeIndex': _behavior!.activeIndex,
+            'viewOffset': _behavior!.viewOffset,
+          });
         }
 
         final newGroup = widget.groupKey;
-        final restored = newGroup != null ? _selectionByGroup[newGroup] : null;
-        _behavior!.activeIndex = restored?.activeIndex ?? 0;
-        _behavior!.viewOffset = restored?.viewOffset ?? 0;
+        final restored = newGroup != null ? store.get(newGroup) : null;
+        _behavior!.activeIndex = (restored?['activeIndex'] as int?) ?? 0;
+        _behavior!.viewOffset = (restored?['viewOffset'] as int?) ?? 0;
         _currentGroupKey = newGroup;
       }
 
-      // Dimensions must update before activeIndex so jumpToIndex uses current
+      // Dimensions must update before activeKey so jumpToIndex uses current
       // totalCount/visibleCount when computing viewOffset.
       _behavior!.totalCount = widget.items.length;
       _behavior!.visibleCount = widget.visibleCount;
@@ -309,13 +310,13 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
         }
       }
 
-      final activeIndexChanged = widget.activeIndex != oldWidget.activeIndex;
-      if (activeIndexChanged && widget.activeIndex != null && widget.items.isNotEmpty) {
-        _behavior!.jumpToIndex(widget.activeIndex!);
-        setState(() => _viewOffset = _behavior!.viewOffset);
-        final idx = _behavior!.activeIndex;
-        if (idx >= 0 && idx < _itemKeys.length) {
-          _behavior!.focusByKey(_itemKeys[idx]);
+      final activeKeyChanged = widget.activeKey != oldWidget.activeKey;
+      if (activeKeyChanged && widget.activeKey != null && widget.items.isNotEmpty) {
+        final idx = _itemKeys.indexOf(widget.activeKey!);
+        if (idx != -1) {
+          _behavior!.jumpToIndex(idx);
+          setState(() => _viewOffset = _behavior!.viewOffset);
+          _behavior!.focusByKey(_itemKeys[_behavior!.activeIndex]);
         }
       }
     }
@@ -333,10 +334,8 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
     setState(() => _viewOffset = newOffset);
     final group = _currentGroupKey;
     if (group != null) {
-      _selectionByGroup[group] = _GroupSelection(
-        activeIndex: newIndex,
-        viewOffset: newOffset,
-      );
+      NavixScope.storeOf(context)
+          .update(group, {'activeIndex': newIndex, 'viewOffset': newOffset});
     }
     _behavior?.focusByKey(_itemKeys[newIndex]);
   }
@@ -387,16 +386,19 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
           isItemDisabled: (i) => widget.isItemDisabled?.call(i) ?? false,
         );
         final initialGroup = widget.groupKey;
-        final restored =
-            initialGroup != null ? _selectionByGroup[initialGroup] : null;
+        final store = NavixScope.storeOf(context);
+        final restored = initialGroup != null ? store.get(initialGroup) : null;
         if (restored != null) {
-          _behavior!.activeIndex = restored.activeIndex;
-          _behavior!.viewOffset = restored.viewOffset;
-          _viewOffset = restored.viewOffset;
-        }
-        if (widget.activeIndex != null) {
-          _behavior!.jumpToIndex(widget.activeIndex!);
+          _behavior!.activeIndex = (restored['activeIndex'] as int?) ?? 0;
+          _behavior!.viewOffset = (restored['viewOffset'] as int?) ?? 0;
           _viewOffset = _behavior!.viewOffset;
+        }
+        if (widget.activeKey != null) {
+          final idx = _itemKeys.indexOf(widget.activeKey!);
+          if (idx != -1) {
+            _behavior!.jumpToIndex(idx);
+            _viewOffset = _behavior!.viewOffset;
+          }
         }
         _behavior!.onChange = _onBehaviorChange;
         return _behavior!;
@@ -542,8 +544,3 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
   }
 }
 
-class _GroupSelection {
-  final int activeIndex;
-  final int viewOffset;
-  const _GroupSelection({required this.activeIndex, required this.viewOffset});
-}
