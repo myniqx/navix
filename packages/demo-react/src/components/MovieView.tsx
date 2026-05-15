@@ -45,6 +45,7 @@ export function MovieView({ onSelect }: MovieViewProps) {
         columns={COLUMNS}
         threshold={THRESHOLD}
         items={MOVIE_CHANNELS}
+        showScrollbar={true}
         gap={8}
         outerStyle={{ padding: '12px 4px', height: 'calc(90vh - 120px)' }}
         slotStyle={{ alignItems: 'stretch' }}

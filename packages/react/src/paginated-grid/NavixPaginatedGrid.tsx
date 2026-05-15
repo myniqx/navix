@@ -13,6 +13,7 @@ import type { FocusNode } from '../core/FocusNode';
 import { useNavixStore } from '../KVContext';
 import type { BaseComponentProps } from '../types';
 import { useFocusable } from '../useFocusable';
+import { DefaultScrollbar, ScrollbarRenderProps } from '../common/DefaultScrollbar';
 import { PaginatedGridBehavior } from './PaginatedGridBehavior';
 import type { PaginatedGridOrientation } from './PaginatedGridBehavior';
 
@@ -54,18 +55,13 @@ interface PaginatedGridProps<T> extends BaseComponentProps {
   renderItem: (item: T, fKey: string, index: number, disabled: boolean) => ReactNode;
   keyForItem?: (item: T, index: number) => string;
   isItemDisabled?: (index: number) => boolean;
-  /**
-   * Jump to this item on mount and whenever the value changes. The component
-   * manages its own navigation state between jumps — user arrow-key navigation
-   * is unaffected. If the target item is disabled the nearest non-disabled
-   * neighbour is focused instead. This is a write-only intent prop; there is
-   * no corresponding onChange callback.
-   */
   activeKey?: string;
   disabled?: boolean;
   groupKey?: string;
   gap?: number;
   buffer?: number;
+  showScrollbar?: boolean;
+  renderScrollbar?: (props: ScrollbarRenderProps) => ReactNode;
   outerStyle?: CSSProperties;
   outerClassName?: string;
   innerStyle?: CSSProperties;
@@ -89,6 +85,8 @@ export function NavixPaginatedGrid<T>({
   groupKey,
   gap = 0,
   buffer = 1,
+  showScrollbar = false,
+  renderScrollbar,
   onFocus,
   onBlurred,
   onRegister,
@@ -102,6 +100,7 @@ export function NavixPaginatedGrid<T>({
   slotClassName,
 }: PaginatedGridProps<T>) {
   const [viewOffset, setViewOffset] = useState(0);
+  const [scrollMode, setScrollMode] = useState(false);
   const [containerMainSize, setContainerMainSize] = useState(0);
   const [containerCrossSize, setContainerCrossSize] = useState(0);
   const outerRef = useRef<HTMLDivElement | null>(null);
@@ -229,6 +228,10 @@ export function NavixPaginatedGrid<T>({
     };
   }, [behavior, itemKeys, store]);
 
+  useEffect(() => {
+    behavior.onScrollModeChange = (value: boolean) => setScrollMode(value);
+  }, [behavior]);
+
   // Runs after the dimensions effect above — behavior has current
   // totalCount/rows/columns when jumpToIndex computes the new viewOffset.
   useEffect(() => {
@@ -287,6 +290,7 @@ export function NavixPaginatedGrid<T>({
 
   // Determine which slices to render
   const totalSlices = Math.ceil(items.length / sliceSize);
+  const finalShowScrollbar = (showScrollbar || !!renderScrollbar) && totalSlices > visibleSlices;
   const renderStartSlice = Math.max(0, viewOffset - buffer);
   const renderEndSlice = Math.min(
     totalSlices,
@@ -306,9 +310,33 @@ export function NavixPaginatedGrid<T>({
     slices.push({ items: sliceItems });
   }
 
+  const pageCount = behavior.maxOffset + 1;
+  const currentPage = viewOffset;
+
+  const handlePageChange = useCallback((page: number) => {
+    behavior.setPage(page);
+  }, [behavior]);
+
+  const scrollbarProps: ScrollbarRenderProps = {
+    scrollMode,
+    page: currentPage,
+    pageCount,
+    orientation: isHorizontal ? 'horizontal' : 'vertical',
+    onPageChange: handlePageChange,
+  };
+
+  const wrapperStyle = useMemo<CSSProperties | undefined>(
+    () => finalShowScrollbar
+      ? { display: 'flex', flexDirection: isHorizontal ? 'column' : 'row', width: '100%', height: outerStyleProp?.height, maxHeight: outerStyleProp?.maxHeight }
+      : undefined,
+    [outerStyleProp, finalShowScrollbar, isHorizontal],
+  );
+
   const outerStyle = useMemo<CSSProperties>(
-    () => ({ ...outerStyleProp, overflow: 'hidden', width: '100%' }),
-    [outerStyleProp],
+    () => finalShowScrollbar
+      ? { ...outerStyleProp, overflow: 'hidden', flex: 1, minWidth: 0, minHeight: 0, height: undefined, maxHeight: undefined }
+      : { ...outerStyleProp, overflow: 'hidden' },
+    [outerStyleProp, finalShowScrollbar],
   );
 
   const mainContainerStyle = useMemo<CSSProperties>(
@@ -344,7 +372,7 @@ export function NavixPaginatedGrid<T>({
     [isHorizontal, gap, sliceMainSize],
   );
 
-  const slotStyle = useMemo<CSSProperties>(
+const slotStyle = useMemo<CSSProperties>(
     () => ({
       ...slotStyleProp,
       display: 'flex',
@@ -356,37 +384,50 @@ export function NavixPaginatedGrid<T>({
     [slotStyleProp, isHorizontal, slotCrossSize],
   );
 
+  const gridDiv = (
+    <div
+      ref={measureRef}
+      data-navix-node-id={node.id}
+      style={outerStyle}
+      className={outerClassName}
+    >
+      <div style={mainContainerStyle} className={innerClassName}>
+        {paddingBefore > 0 && <div style={spacerStyle} />}
+        {slices.map((slice, sliceIdx) => (
+          <div key={renderStartSlice + sliceIdx} style={sliceStyle}>
+            {slice.items.map(({ item, globalIndex }) => {
+              const itemKey = itemKeys[globalIndex]!;
+              return (
+                <Slot
+                  key={itemKey}
+                  item={item}
+                  itemKey={itemKey}
+                  index={globalIndex}
+                  disabled={isItemDisabled?.(globalIndex) ?? false}
+                  renderItemRef={renderItemRef}
+                  slotStyle={slotStyle}
+                  slotClassName={slotClassName}
+                />
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <FocusProvider>
-      <div
-        ref={measureRef}
-        data-navix-node-id={node.id}
-        style={outerStyle}
-        className={outerClassName}
-      >
-        <div style={mainContainerStyle} className={innerClassName}>
-          {paddingBefore > 0 && <div style={spacerStyle} />}
-          {slices.map((slice, sliceIdx) => (
-            <div key={renderStartSlice + sliceIdx} style={sliceStyle}>
-              {slice.items.map(({ item, globalIndex }) => {
-                const itemKey = itemKeys[globalIndex]!;
-                return (
-                  <Slot
-                    key={itemKey}
-                    item={item}
-                    itemKey={itemKey}
-                    index={globalIndex}
-                    disabled={isItemDisabled?.(globalIndex) ?? false}
-                    renderItemRef={renderItemRef}
-                    slotStyle={slotStyle}
-                    slotClassName={slotClassName}
-                  />
-                );
-              })}
-            </div>
-          ))}
+      {finalShowScrollbar ? (
+        <div style={wrapperStyle}>
+          {gridDiv}
+          {renderScrollbar
+            ? renderScrollbar(scrollbarProps)
+            : <DefaultScrollbar {...scrollbarProps} />}
         </div>
-      </div>
+      ) : (
+        gridDiv
+      )}
     </FocusProvider>
   );
 }

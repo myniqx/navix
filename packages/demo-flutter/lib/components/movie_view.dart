@@ -62,6 +62,7 @@ class MovieView extends StatelessWidget {
                 items: movieChannels,
                 orientation: NavixGridOrientation.autoHorizontal,
                 rows: _rows,
+                showScrollbar: true,
                 columns: _columns,
                 threshold: 1,
                 gap: _gap,
@@ -70,11 +71,13 @@ class MovieView extends StatelessWidget {
                   item: item,
                   variant: HomeRowCardType.movie,
                   disabled: disabled,
-                  onClick: () => onSelect(PlayerState(
-                    channels: movieChannels,
-                    current: item,
-                    paused: false,
-                  )),
+                  onClick: () => onSelect(
+                    PlayerState(
+                      channels: movieChannels,
+                      current: item,
+                      paused: false,
+                    ),
+                  ),
                 ),
               ),
             ),

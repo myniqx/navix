@@ -50,14 +50,48 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
     this._threshold = Math.max(1, Math.min(value, visibleSlices - 2));
   }
 
+  scrollMode: boolean = false;
+
   private _node: FocusNode;
   private _pendingFocusKey: string | null = null;
   private _onChange: (newIndex: number, newOffset: number) => void;
+  private _onScrollModeChange: ((scrollMode: boolean) => void) | null = null;
   private _keyToIndex: (key: string) => number;
   private _isItemDisabled?: (index: number) => boolean;
 
   set onChange(fn: (newIndex: number, newOffset: number) => void) {
     this._onChange = fn;
+  }
+
+  set onScrollModeChange(fn: (scrollMode: boolean) => void) {
+    this._onScrollModeChange = fn;
+  }
+
+  get maxOffset(): number {
+    const sliceSize = this.effectiveOrientation === 'horizontal' ? this._rows : this._columns;
+    const visibleSlices = this.effectiveOrientation === 'horizontal' ? this._columns : this._rows;
+    const totalSlices = Math.ceil(this.totalCount / sliceSize);
+    return Math.max(0, totalSlices - visibleSlices);
+  }
+
+  setPage(page: number): void {
+    const newOffset = Math.max(0, Math.min(page, this.maxOffset));
+    if (newOffset === this.viewOffset) return;
+
+    const sliceSize = this.effectiveOrientation === 'horizontal' ? this._rows : this._columns;
+    const currentSlice = Math.floor(this.activeIndex / sliceSize);
+    const sliceInView = currentSlice - this.viewOffset;
+    const newSlice = Math.max(0, Math.min(newOffset + sliceInView, Math.ceil(this.totalCount / sliceSize) - 1));
+    const newActiveIndex = Math.min(newSlice * sliceSize, this.totalCount - 1);
+
+    this.viewOffset = newOffset;
+    this.activeIndex = newActiveIndex;
+    this._onChange(newActiveIndex, newOffset);
+  }
+
+  private _setScrollMode(value: boolean): void {
+    this.scrollMode = value;
+    this._onScrollModeChange?.(value);
   }
 
   constructor(
@@ -95,14 +129,30 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
   onEvent = (event: NavEvent): boolean => {
     if (event.type !== 'press') return false;
 
-    if (this.effectiveOrientation === 'horizontal') {
+    const isH = this.effectiveOrientation === 'horizontal';
+    const prevMain = isH ? 'left' : 'up';
+    const nextMain = isH ? 'right' : 'down';
+    const scrollEnter = isH ? 'down' : 'right';
+    const scrollExit = isH ? 'up' : 'left';
+
+    if (this.scrollMode) {
+      if (event.action === prevMain) return this._scrollPage(-1);
+      if (event.action === nextMain) return this._scrollPage(1);
+      if (event.action === scrollExit) { this._setScrollMode(false); return true; }
+      if (event.action === scrollEnter) { this._setScrollMode(false); return false; }
+      return false;
+    }
+
+    if (isH) {
       if (event.action === 'up') {
         const next = this._findNext(this.activeIndex, -1, 'cross');
         return next !== null ? this._moveTo(next, 'cross') : false;
       }
       if (event.action === 'down') {
         const next = this._findNext(this.activeIndex, 1, 'cross');
-        return next !== null ? this._moveTo(next, 'cross') : false;
+        if (next !== null) return this._moveTo(next, 'cross');
+        this._setScrollMode(true);
+        return true;
       }
       if (event.action === 'left') {
         const next = this._findNext(this.activeIndex, -this.rows, 'main');
@@ -119,7 +169,9 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
       }
       if (event.action === 'right') {
         const next = this._findNext(this.activeIndex, 1, 'cross');
-        return next !== null ? this._moveTo(next, 'cross') : false;
+        if (next !== null) return this._moveTo(next, 'cross');
+        this._setScrollMode(true);
+        return true;
       }
       if (event.action === 'up') {
         const next = this._findNext(this.activeIndex, -this.columns, 'main');
@@ -133,6 +185,12 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
 
     return false;
   };
+
+  private _scrollPage(dir: 1 | -1): boolean {
+    const visibleSlices = this.effectiveOrientation === 'horizontal' ? this._columns : this._rows;
+    this.setPage(this.viewOffset + dir * visibleSlices);
+    return true;
+  }
 
   focusByKey(key: string): void {
     const child = this._node.children.find((c) => c.key === key);

@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import '../core/nav_event.dart';
 import '../core/focus_node.dart';
 import '../core/focus_manager.dart';
+import '../common/default_scrollbar.dart';
 import 'navix_focusable.dart';
 
 const int _kMinGridDimension = 2;
@@ -25,7 +26,9 @@ class NavixPaginatedGridBehavior extends IFocusNodeBehavior {
   String? _pendingFocusKey;
   bool Function(int index)? _isItemDisabled;
 
+  bool scrollMode = false;
   void Function(int newIndex, int newOffset)? onChange;
+  void Function(bool scrollMode)? onScrollModeChange;
 
   // Resolves 'autoHorizontal' to 'horizontal' or 'vertical' based on whether
   // all items fit into a single page. When items don't fill the grid,
@@ -112,17 +115,67 @@ class NavixPaginatedGridBehavior extends IFocusNodeBehavior {
     return null;
   }
 
+  int get maxOffset {
+    final sliceSize = effectiveOrientation == NavixGridOrientation.horizontal ? _rows : _columns;
+    final visibleSlices = effectiveOrientation == NavixGridOrientation.horizontal ? _columns : _rows;
+    final totalSlices = (totalCount / sliceSize).ceil();
+    return (totalSlices - visibleSlices).clamp(0, double.maxFinite.toInt());
+  }
+
+  void setPage(int page) {
+    final newOffset = page.clamp(0, maxOffset);
+    if (newOffset == viewOffset) return;
+
+    final sliceSize = effectiveOrientation == NavixGridOrientation.horizontal ? _rows : _columns;
+    final currentSlice = activeIndex ~/ sliceSize;
+    final sliceInView = currentSlice - viewOffset;
+    final totalSlices = (totalCount / sliceSize).ceil();
+    final newSlice = (newOffset + sliceInView).clamp(0, totalSlices - 1);
+    final newActiveIndex = (newSlice * sliceSize).clamp(0, totalCount - 1);
+
+    viewOffset = newOffset;
+    activeIndex = newActiveIndex;
+    onChange?.call(newActiveIndex, newOffset);
+  }
+
+  void _setScrollMode(bool value) {
+    scrollMode = value;
+    onScrollModeChange?.call(value);
+  }
+
+  bool _scrollPage(int dir) {
+    final visibleSlices = effectiveOrientation == NavixGridOrientation.horizontal ? _columns : _rows;
+    setPage(viewOffset + dir * visibleSlices);
+    return true;
+  }
+
   bool _handleEvent(NavEvent event) {
     if (event.type != NavEventType.press) return false;
 
-    if (effectiveOrientation == NavixGridOrientation.horizontal) {
+    final isH = effectiveOrientation == NavixGridOrientation.horizontal;
+    final prevMain = isH ? 'left' : 'up';
+    final nextMain = isH ? 'right' : 'down';
+    final scrollEnter = isH ? 'down' : 'right';
+    final scrollExit = isH ? 'up' : 'left';
+
+    if (scrollMode) {
+      if (event.action == prevMain) return _scrollPage(-1);
+      if (event.action == nextMain) return _scrollPage(1);
+      if (event.action == scrollExit) { _setScrollMode(false); return true; }
+      if (event.action == scrollEnter) { _setScrollMode(false); return false; }
+      return false;
+    }
+
+    if (isH) {
       if (event.action == 'up') {
         final next = _findNext(activeIndex, -1, 'cross');
         return next != null ? _moveTo(next, 'cross') : false;
       }
       if (event.action == 'down') {
         final next = _findNext(activeIndex, 1, 'cross');
-        return next != null ? _moveTo(next, 'cross') : false;
+        if (next != null) return _moveTo(next, 'cross');
+        _setScrollMode(true);
+        return true;
       }
       if (event.action == 'left') {
         final next = _findNext(activeIndex, -_rows, 'main');
@@ -139,7 +192,9 @@ class NavixPaginatedGridBehavior extends IFocusNodeBehavior {
       }
       if (event.action == 'right') {
         final next = _findNext(activeIndex, 1, 'cross');
-        return next != null ? _moveTo(next, 'cross') : false;
+        if (next != null) return _moveTo(next, 'cross');
+        _setScrollMode(true);
+        return true;
       }
       if (event.action == 'up') {
         final next = _findNext(activeIndex, -_columns, 'main');
@@ -287,6 +342,8 @@ class NavixPaginatedGrid<T> extends StatefulWidget {
   final String? groupKey;
   final double gap;
   final int buffer;
+  final bool showScrollbar;
+  final Widget Function(ScrollbarRenderProps props)? scrollbarBuilder;
   final void Function(String key)? onFocus;
   final void Function(String key)? onBlurred;
   final void Function(String key)? onRegister;
@@ -309,6 +366,8 @@ class NavixPaginatedGrid<T> extends StatefulWidget {
     this.orientation = NavixGridOrientation.horizontal,
     this.gap = 0,
     this.buffer = 1,
+    this.showScrollbar = false,
+    this.scrollbarBuilder,
     this.onFocus,
     this.onBlurred,
     this.onRegister,
@@ -322,6 +381,7 @@ class NavixPaginatedGrid<T> extends StatefulWidget {
 
 class _NavixPaginatedGridState<T> extends State<NavixPaginatedGrid<T>> {
   int _viewOffset = 0;
+  bool _scrollMode = false;
   NavixPaginatedGridBehavior? _behavior;
 
   late List<String> _itemKeys;
@@ -387,6 +447,7 @@ class _NavixPaginatedGridState<T> extends State<NavixPaginatedGrid<T>> {
       _behavior!.threshold = widget.threshold;
       _clampBehaviorState();
       _behavior!.onChange = _onBehaviorChange;
+      _behavior!.onScrollModeChange = (v) => setState(() => _scrollMode = v);
 
       if (groupChanged && widget.items.isNotEmpty) {
         final idx = _behavior!.activeIndex;
@@ -498,6 +559,7 @@ class _NavixPaginatedGridState<T> extends State<NavixPaginatedGrid<T>> {
           }
         }
         _behavior!.onChange = _onBehaviorChange;
+        _behavior!.onScrollModeChange = (v) => setState(() => _scrollMode = v);
         return _behavior!;
       },
       builder: (context, node, focused, directlyFocused) {
@@ -515,6 +577,11 @@ class _NavixPaginatedGridState<T> extends State<NavixPaginatedGrid<T>> {
               return const SizedBox.shrink();
             }
 
+            final totalSlices = (widget.items.length / sliceSize).ceil();
+            final finalShowScrollbar =
+                (widget.showScrollbar || widget.scrollbarBuilder != null) &&
+                    totalSlices > visibleSlices;
+
             final mainGaps = (visibleSlices - 1) * widget.gap;
             final sliceMainSize = mainSize > 0
                 ? ((mainSize - mainGaps) / visibleSlices).floorToDouble()
@@ -522,96 +589,125 @@ class _NavixPaginatedGridState<T> extends State<NavixPaginatedGrid<T>> {
             final mainStep = sliceMainSize + widget.gap;
             final translate = -_viewOffset * mainStep;
 
-            final crossGaps = (sliceSize - 1) * widget.gap;
-            final slotCrossSize = crossSize > 0
-                ? ((crossSize - crossGaps) / sliceSize).floorToDouble()
-                : 0.0;
+            Widget buildGrid(double effectiveCrossSize) {
+              final crossGaps = (sliceSize - 1) * widget.gap;
+              final slotCrossSize = effectiveCrossSize > 0
+                  ? ((effectiveCrossSize - crossGaps) / sliceSize).floorToDouble()
+                  : 0.0;
 
-            final totalSlices = (widget.items.length / sliceSize).ceil();
-            final renderStartSlice =
-                (_viewOffset - widget.buffer).clamp(0, totalSlices);
-            final renderEndSlice =
-                (_viewOffset + visibleSlices + widget.buffer)
-                    .clamp(0, totalSlices);
-            final paddingBefore = renderStartSlice * mainStep;
+              final renderStartSlice =
+                  (_viewOffset - widget.buffer).clamp(0, totalSlices);
+              final renderEndSlice =
+                  (_viewOffset + visibleSlices + widget.buffer)
+                      .clamp(0, totalSlices);
+              final paddingBefore = renderStartSlice * mainStep;
 
-            // Build slices
-            final sliceWidgets = <Widget>[];
+              final sliceWidgets = <Widget>[];
+              for (int s = renderStartSlice; s < renderEndSlice; s++) {
+                final startIdx = s * sliceSize;
+                final endIdx = (startIdx + sliceSize).clamp(0, widget.items.length);
 
-            for (int s = renderStartSlice; s < renderEndSlice; s++) {
-              final startIdx = s * sliceSize;
-              final endIdx = (startIdx + sliceSize).clamp(0, widget.items.length);
+                final slotWidgets = <Widget>[];
+                for (int i = startIdx; i < endIdx; i++) {
+                  slotWidgets.add(SizedBox(
+                    key: ValueKey(_itemKeys[i]),
+                    width: isHorizontal ? null : slotCrossSize,
+                    height: isHorizontal ? slotCrossSize : null,
+                    child: widget.renderItem(
+                      widget.items[i],
+                      _itemKeys[i],
+                      i,
+                      widget.isItemDisabled?.call(i) ?? false,
+                    ),
+                  ));
+                }
 
-              final slotWidgets = <Widget>[];
-              for (int i = startIdx; i < endIdx; i++) {
-                slotWidgets.add(SizedBox(
-                  key: ValueKey(_itemKeys[i]),
-                  width: isHorizontal ? null : slotCrossSize,
-                  height: isHorizontal ? slotCrossSize : null,
-                  child: widget.renderItem(
-                    widget.items[i],
-                    _itemKeys[i],
-                    i,
-                    widget.isItemDisabled?.call(i) ?? false,
-                  ),
+                sliceWidgets.add(SizedBox(
+                  key: ValueKey('${widget.fKey}-slice-$s'),
+                  width: isHorizontal ? sliceMainSize : null,
+                  height: isHorizontal ? null : sliceMainSize,
+                  child: isHorizontal
+                      ? Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: _intersperse(slotWidgets, widget.gap, false),
+                        )
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: _intersperse(slotWidgets, widget.gap, true),
+                        ),
                 ));
               }
 
-              final sliceWidget = SizedBox(
-                key: ValueKey('${widget.fKey}-slice-$s'),
-                width: isHorizontal ? sliceMainSize : null,
-                height: isHorizontal ? null : sliceMainSize,
-                child: isHorizontal
-                    ? Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: _intersperse(slotWidgets, widget.gap, false),
-                      )
-                    : Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: _intersperse(slotWidgets, widget.gap, true),
-                      ),
-              );
-              sliceWidgets.add(sliceWidget);
-            }
+              final spacedSlices = _intersperse(sliceWidgets, widget.gap, isHorizontal);
+              final children = <Widget>[
+                if (paddingBefore > 0)
+                  SizedBox(
+                    width: isHorizontal ? paddingBefore : null,
+                    height: isHorizontal ? null : paddingBefore,
+                  ),
+                ...spacedSlices,
+              ];
 
-            final spacedSlices = _intersperse(sliceWidgets, widget.gap, isHorizontal);
-            final children = <Widget>[
-              if (paddingBefore > 0)
-                SizedBox(
-                  width: isHorizontal ? paddingBefore : null,
-                  height: isHorizontal ? null : paddingBefore,
-                ),
-              ...spacedSlices,
-            ];
+              final inner = isHorizontal
+                  ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: children)
+                  : Column(crossAxisAlignment: CrossAxisAlignment.start, children: children);
 
-            final inner = isHorizontal
-                ? Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: children,
-                  )
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: children,
-                  );
-
-            return SizedBox(
-              width: isHorizontal ? mainSize : crossSize,
-              height: isHorizontal ? crossSize : mainSize,
-              child: ClipRect(
-                child: UnconstrainedBox(
-                  alignment: Alignment.topLeft,
-                  constrainedAxis:
-                      isHorizontal ? Axis.vertical : Axis.horizontal,
-                  clipBehavior: Clip.hardEdge,
-                  child: Transform.translate(
-                    offset: isHorizontal
-                        ? Offset(translate, 0)
-                        : Offset(0, translate),
-                    child: inner,
+              return SizedBox(
+                width: isHorizontal ? mainSize : effectiveCrossSize,
+                height: isHorizontal ? effectiveCrossSize : mainSize,
+                child: ClipRect(
+                  child: UnconstrainedBox(
+                    alignment: Alignment.topLeft,
+                    constrainedAxis: isHorizontal ? Axis.vertical : Axis.horizontal,
+                    clipBehavior: Clip.hardEdge,
+                    child: Transform.translate(
+                      offset: isHorizontal ? Offset(translate, 0) : Offset(0, translate),
+                      child: inner,
+                    ),
                   ),
                 ),
-              ),
+              );
+            }
+
+            if (!finalShowScrollbar) return buildGrid(crossSize);
+
+            final scrollbarProps = ScrollbarRenderProps(
+              scrollMode: _scrollMode,
+              page: _viewOffset,
+              pageCount: (_behavior?.maxOffset ?? 0) + 1,
+              orientation: isHorizontal
+                  ? NavixScrollbarOrientation.horizontal
+                  : NavixScrollbarOrientation.vertical,
+              onPageChange: (page) => _behavior?.setPage(page),
             );
+
+            final scrollbarWidget = widget.scrollbarBuilder != null
+                ? widget.scrollbarBuilder!(scrollbarProps)
+                : DefaultScrollbar(props: scrollbarProps);
+
+            return isHorizontal
+                ? Column(
+                    mainAxisSize: MainAxisSize.max,
+                    children: [
+                      Expanded(
+                        child: LayoutBuilder(
+                          builder: (context, c) => buildGrid(c.maxHeight),
+                        ),
+                      ),
+                      scrollbarWidget,
+                    ],
+                  )
+                : Row(
+                    mainAxisSize: MainAxisSize.max,
+                    children: [
+                      Expanded(
+                        child: LayoutBuilder(
+                          builder: (context, c) => buildGrid(c.maxWidth),
+                        ),
+                      ),
+                      scrollbarWidget,
+                    ],
+                  );
           },
         );
       },
