@@ -8,8 +8,14 @@ const _red = Color(0xFFe53935);
 const _rows = 4;
 const _columns = 6;
 const _gap = 8.0;
-const _cardMinHeight = 196.0;
-const _gridPaddingY = 24.0;
+
+// Reserved pixels above and below the grid within this view:
+//   top padding (24) + title row (~17) + spacer (14) + grid vertical
+//   padding (12 + 12) + bottom safety (8). Kept conservative so the grid
+//   always fits inside the menu+view viewport without triggering scroll.
+const _reservedY = 24.0 + 17.0 + 14.0 + 24.0 + 8.0;
+// Same vertical block goes through MenuRow above (approx 56px).
+const _menuY = 56.0;
 
 class MovieView extends StatelessWidget {
   final void Function(PlayerState) onSelect;
@@ -19,11 +25,8 @@ class MovieView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final viewportHeight = MediaQuery.sizeOf(context).height;
-    final minGridHeight =
-        _rows * _cardMinHeight + (_rows - 1) * _gap + _gridPaddingY;
-    final gridHeight = (viewportHeight * 0.9 - 120) > minGridHeight
-        ? (viewportHeight * 0.9 - 120)
-        : minGridHeight;
+    final gridHeight =
+        (viewportHeight - _menuY - _reservedY).clamp(120.0, double.infinity);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(32, 24, 32, 0),

@@ -225,6 +225,8 @@ export function MediaCard({ fKey, item, variant, onClick, disabled = false }: Me
       onClick={disabled ? undefined : onClick}
       style={{
         width: '100%',
+        height: '100%',
+        minHeight: 0,
         borderRadius: 6,
         background: bg,
         border: `1px solid ${borderColor}`,
