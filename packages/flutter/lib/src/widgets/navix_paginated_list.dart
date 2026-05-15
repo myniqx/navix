@@ -3,79 +3,14 @@ import 'package:flutter/widgets.dart';
 import '../core/nav_event.dart';
 import '../core/focus_node.dart';
 import '../core/focus_manager.dart';
+import '../common/default_scrollbar.dart';
 import 'navix_focusable.dart';
+
+export '../common/default_scrollbar.dart' show ScrollbarRenderProps;
 
 const int _kMinVisibleCount = 2;
 
 enum NavixListOrientation { horizontal, vertical }
-
-class ScrollbarRenderProps {
-  final bool scrollMode;
-  final int value;
-  final int min;
-  final int max;
-  final NavixListOrientation orientation;
-
-  const ScrollbarRenderProps({
-    required this.scrollMode,
-    required this.value,
-    required this.min,
-    required this.max,
-    required this.orientation,
-  });
-}
-
-class _DefaultScrollbar extends StatelessWidget {
-  final ScrollbarRenderProps props;
-
-  const _DefaultScrollbar({required this.props});
-
-  @override
-  Widget build(BuildContext context) {
-    final isHorizontal = props.orientation == NavixListOrientation.horizontal;
-    const thumbSize = 16.0;
-    final ratio = props.max > props.min
-        ? (props.value - props.min) / (props.max - props.min)
-        : 0.0;
-    final thumbColor =
-        props.scrollMode ? const Color(0xFF4FC3F7) : const Color(0xFF888888);
-
-    return LayoutBuilder(builder: (context, constraints) {
-      final trackSize =
-          isHorizontal ? constraints.maxWidth : constraints.maxHeight;
-      final thumbOffset = ratio * (trackSize - thumbSize);
-
-      return Container(
-        width: isHorizontal ? double.infinity : 8,
-        height: isHorizontal ? 8 : double.infinity,
-        decoration: BoxDecoration(
-          color: const Color(0xFF333333),
-          borderRadius: BorderRadius.circular(2),
-        ),
-        child: Stack(
-          children: [
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 100),
-              left: isHorizontal ? thumbOffset : 0,
-              right: isHorizontal ? null : 0,
-              top: isHorizontal ? 0 : thumbOffset,
-              bottom: isHorizontal ? 0 : null,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                width: isHorizontal ? thumbSize : double.infinity,
-                height: isHorizontal ? double.infinity : thumbSize,
-                decoration: BoxDecoration(
-                  color: thumbColor,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    });
-  }
-}
 
 class NavixPaginatedListBehavior extends IFocusNodeBehavior {
   final NavixFocusNode _node;
@@ -199,18 +134,21 @@ class NavixPaginatedListBehavior extends IFocusNodeBehavior {
     onScrollModeChange?.call(value);
   }
 
-  bool _scrollPage(int dir) {
-    final maxOffset = totalCount - visibleCount > 0 ? totalCount - visibleCount : 0;
-    final newOffset = (viewOffset + dir * visibleCount).clamp(0, maxOffset);
-    if (newOffset == viewOffset) return true;
+  int get maxOffset => (totalCount - visibleCount).clamp(0, totalCount);
 
-    final oldActiveIndex = activeIndex;
-    final oldViewOffset = viewOffset;
-    final newActiveIndex = (newOffset + (oldActiveIndex - oldViewOffset)).clamp(0, totalCount - 1);
+  void setPage(int page) {
+    final newOffset = page.clamp(0, maxOffset);
+    if (newOffset == viewOffset) return;
+
+    final newActiveIndex = (newOffset + (activeIndex - viewOffset)).clamp(0, totalCount - 1);
 
     viewOffset = newOffset;
     activeIndex = newActiveIndex;
     onChange?.call(activeIndex, viewOffset);
+  }
+
+  bool _scrollPage(int dir) {
+    setPage(viewOffset + dir * visibleCount);
     return true;
   }
 
@@ -523,16 +461,18 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
       builder: (context, node, focused, directlyFocused) {
         final scrollbarProps = ScrollbarRenderProps(
           scrollMode: _scrollMode,
-          value: _viewOffset,
-          min: 0,
-          max: scrollbarMax,
-          orientation: widget.orientation,
+          page: _viewOffset,
+          pageCount: (_behavior?.maxOffset ?? 0) + 1,
+          orientation: widget.orientation == NavixListOrientation.horizontal
+              ? NavixScrollbarOrientation.horizontal
+              : NavixScrollbarOrientation.vertical,
+          onPageChange: (p) => _behavior?.setPage(p),
         );
 
         final scrollbarWidget = finalShowScrollbar
             ? (widget.renderScrollbar != null
                 ? widget.renderScrollbar!(scrollbarProps)
-                : _DefaultScrollbar(props: scrollbarProps))
+                : DefaultScrollbar(props: scrollbarProps))
             : null;
 
         if (isHorizontal) {

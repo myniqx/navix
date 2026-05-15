@@ -13,57 +13,10 @@ import type { FocusNode } from '../core/FocusNode';
 import { useNavixStore } from '../KVContext';
 import type { BaseComponentProps } from '../types';
 import { useFocusable } from '../useFocusable';
+import { DefaultScrollbar, ScrollbarRenderProps } from '../common/DefaultScrollbar';
 import { PaginatedListBehavior } from './PaginatedListBehavior';
 import type { PaginatedListOrientation } from './PaginatedListBehavior';
 
-export type ScrollbarRenderProps = {
-  scrollMode: boolean;
-  value: number;
-  min: number;
-  max: number;
-  orientation: PaginatedListOrientation;
-};
-
-function DefaultScrollbar({ scrollMode, value, min, max, orientation }: ScrollbarRenderProps) {
-  const ratio = max > min ? (value - min) / (max - min) : 0;
-  const isHorizontal = orientation === 'horizontal';
-  const thumbSize = 16;
-  return (
-    <div
-      style={{
-        position: 'relative',
-        flexShrink: 0,
-        borderRadius: 2,
-        backgroundColor: '#333',
-        ...(isHorizontal
-          ? { width: '100%', height: 8 }
-          : { width: 8, height: '100%' }),
-      }}
-    >
-      <div
-        style={{
-          position: 'absolute',
-          borderRadius: 2,
-          backgroundColor: scrollMode ? '#4fc3f7' : '#888',
-          transition: 'background-color 0.15s ease, top 0.1s ease, left 0.1s ease',
-          ...(isHorizontal
-            ? {
-              top: 0,
-              bottom: 0,
-              width: thumbSize,
-              left: `calc(${ratio * 100}% - ${ratio * thumbSize}px)`,
-            }
-            : {
-              left: 0,
-              right: 0,
-              height: thumbSize,
-              top: `calc(${ratio * 100}% - ${ratio * thumbSize}px)`,
-            }),
-        }}
-      />
-    </div>
-  );
-}
 
 interface SlotProps {
   item: any;
@@ -321,8 +274,7 @@ export function NavixPaginatedList<T>({
   const renderEnd = Math.min(items.length, viewOffset + visibleCount + buffer);
   const paddingBefore = renderStart * slotStep;
 
-  const scrollbarMax = Math.max(0, items.length - visibleCount);
-  const finalShowScrollbar = (showScrollbar || !!renderScrollbar) && scrollbarMax > 0;
+  const finalShowScrollbar = (showScrollbar || !!renderScrollbar) && items.length > visibleCount;
 
   const wrapperStyle = useMemo<CSSProperties>(
     () => ({
@@ -374,12 +326,19 @@ export function NavixPaginatedList<T>({
     [slotStyleProp, isHorizontal, slotWidth],
   );
 
+  const handlePageChange = useCallback((page: number) => {
+    behavior.setPage(page);
+  }, [behavior]);
+
+  const pageCount = behavior.maxOffset + 1;
+  const currentPage = viewOffset;
+
   const scrollbarProps: ScrollbarRenderProps = {
     scrollMode,
-    value: viewOffset,
-    min: 0,
-    max: scrollbarMax,
+    page: currentPage,
+    pageCount,
     orientation,
+    onPageChange: handlePageChange,
   };
 
   const listDiv = (

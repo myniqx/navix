@@ -48,11 +48,13 @@ class HomeView extends StatelessWidget {
                   items: homeRows[i].items,
                   rowIndex: i,
                   cardType: homeRows[i].cardType,
-                  onSelect: (item) => onSelect(PlayerState(
-                    channels: homeRows[i].items,
-                    current: item,
-                    paused: false,
-                  )),
+                  onSelect: (item) => onSelect(
+                    PlayerState(
+                      channels: homeRows[i].items,
+                      current: item,
+                      paused: false,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -82,12 +84,15 @@ class _HomeRow extends StatelessWidget {
         ? _rowDisabledFns[rowIndex]
         : null;
 
-    return NavixPaginatedList<ContentItem>(
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+      child: NavixPaginatedList<ContentItem>(
       fKey: 'home-row-$rowIndex',
       items: items,
       visibleCount: _visibleCount,
       threshold: _threshold,
       gap: 12,
+      showScrollbar: cardType == HomeRowCardType.series,
       isItemDisabled: isItemDisabled != null ? (i) => isItemDisabled(i) : null,
       renderItem: (item, fKey, index, disabled) => MediaCard(
         fKey: fKey,
@@ -96,6 +101,7 @@ class _HomeRow extends StatelessWidget {
         disabled: disabled,
         onClick: () => onSelect(item),
       ),
+    ),
     );
   }
 }

@@ -164,24 +164,26 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
     this._onScrollModeChange?.(value);
   }
 
-  private _scrollPage(dir: 1 | -1): boolean {
-    const maxOffset = Math.max(0, this.totalCount - this.visibleCount);
-    const newOffset = Math.min(
-      Math.max(this.viewOffset + dir * this.visibleCount, 0),
-      maxOffset,
-    );
-    if (newOffset === this.viewOffset) return true;
+  get maxOffset(): number {
+    return Math.max(0, this.totalCount - this.visibleCount);
+  }
 
-    const oldActiveIndex = this.activeIndex;
-    const oldViewOffset = this.viewOffset;
+  setPage(page: number): void {
+    const newOffset = Math.max(0, Math.min(page, this.maxOffset));
+    if (newOffset === this.viewOffset) return;
+
     const newActiveIndex = Math.min(
-      Math.max(newOffset + (oldActiveIndex - oldViewOffset), 0),
+      Math.max(newOffset + (this.activeIndex - this.viewOffset), 0),
       this.totalCount - 1,
     );
 
     this.viewOffset = newOffset;
     this.activeIndex = newActiveIndex;
     this._onChange(newActiveIndex, newOffset);
+  }
+
+  private _scrollPage(dir: 1 | -1): boolean {
+    this.setPage(this.viewOffset + dir * this.visibleCount);
     return true;
   }
 
