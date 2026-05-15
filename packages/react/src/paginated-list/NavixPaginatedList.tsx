@@ -2,6 +2,7 @@ import {
   useState,
   useRef,
   useEffect,
+  useLayoutEffect,
   useCallback,
   useMemo,
   memo,
@@ -11,9 +12,10 @@ import {
 
 import type { FocusNode } from '../core/FocusNode';
 import { useNavixStore } from '../KVContext';
+import { useSlotOverflowWarning } from '../common/useSlotOverflowWarning';
 import type { BaseComponentProps } from '../types';
 import { useFocusable } from '../useFocusable';
-import { DefaultScrollbar, ScrollbarRenderProps } from '../common/DefaultScrollbar';
+import { NavixScroll, type ScrollbarRenderProps } from '../scroll/NavixScroll';
 import { PaginatedListBehavior } from './PaginatedListBehavior';
 import type { PaginatedListOrientation } from './PaginatedListBehavior';
 
@@ -40,8 +42,10 @@ const Slot = memo(function Slot({
   slotStyle,
   slotClassName,
 }: SlotProps) {
+  const slotRef = useRef<HTMLDivElement | null>(null);
+  useSlotOverflowWarning(slotRef, 'NavixPaginatedList', itemKey);
   return (
-    <div style={slotStyle} className={slotClassName}>
+    <div ref={slotRef} style={slotStyle} className={slotClassName}>
       {renderItemRef.current(item, itemKey, index, disabled)}
     </div>
   );
@@ -106,9 +110,10 @@ export function NavixPaginatedList<T>({
   slotClassName,
 }: PaginatedListProps<T>) {
   const [viewOffset, setViewOffset] = useState(0);
-  const [scrollMode, setScrollMode] = useState(false);
   const [containerSize, setContainerSize] = useState(0);
   const outerRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollbarKey = `${fKey}__scrollbar__`;
 
   const keyForItemRef = useRef(keyForItem);
   keyForItemRef.current = keyForItem;
@@ -148,6 +153,7 @@ export function NavixPaginatedList<T>({
         () => { },
         (key) => itemKeysRef.current.indexOf(key),
         (index) => isItemDisabledRef.current?.(index) ?? false,
+        scrollbarKey,
       );
       const initialGroup = currentGroupKeyRef.current;
       const restored = initialGroup !== undefined ? store.get(initialGroup) : undefined;
@@ -209,19 +215,17 @@ export function NavixPaginatedList<T>({
   }, [behavior, groupKey, items, store]);
 
   useEffect(() => {
-    behavior.onChange = (newIndex: number, newOffset: number) => {
+    behavior.onChange = (newIndex: number, newOffset: number, refocusItem: boolean) => {
       setViewOffset(newOffset);
       const group = currentGroupKeyRef.current;
       if (group !== undefined) {
         store.update(group, { activeIndex: newIndex, viewOffset: newOffset });
       }
-      behavior.focusByKey(itemKeys[newIndex]!);
+      if (refocusItem) {
+        behavior.focusByKey(itemKeys[newIndex]!);
+      }
     };
   }, [behavior, itemKeys, store]);
-
-  useEffect(() => {
-    behavior.onScrollModeChange = (value: boolean) => setScrollMode(value);
-  }, [behavior]);
 
   // Runs after the dimensions effect above — behavior has current
   // totalCount/visibleCount when jumpToIndex computes the new viewOffset.
@@ -239,17 +243,10 @@ export function NavixPaginatedList<T>({
 
   const isHorizontal = orientation === 'horizontal';
 
-  const measureRef = useCallback(
-    (el: HTMLDivElement | null) => {
-      outerRef.current = el;
-      if (el) {
-        setContainerSize(isHorizontal ? el.offsetWidth : el.offsetHeight);
-      }
-    },
-    [isHorizontal],
-  );
-
-  useEffect(() => {
+  // Measure the list's *content* box (padding excluded). ResizeObserver's
+  // contentRect already excludes padding/border, so a single observer in
+  // useLayoutEffect gives us a correct, paint-synchronous measurement.
+  useLayoutEffect(() => {
     const el = outerRef.current;
     if (!el) return;
 
@@ -333,17 +330,22 @@ export function NavixPaginatedList<T>({
   const pageCount = behavior.maxOffset + 1;
   const currentPage = viewOffset;
 
-  const scrollbarProps: ScrollbarRenderProps = {
-    scrollMode,
-    page: currentPage,
-    pageCount,
-    orientation,
-    onPageChange: handlePageChange,
-  };
+  const scrollbarEl = finalShowScrollbar ? (
+    <NavixScroll
+      fKey={scrollbarKey}
+      orientation={orientation}
+      page={currentPage}
+      pageCount={pageCount}
+      arrowStep={visibleCount}
+      pageStep={visibleCount}
+      onPageChange={handlePageChange}
+      renderScrollbar={renderScrollbar}
+    />
+  ) : null;
 
   const listDiv = (
     <div
-      ref={measureRef}
+      ref={outerRef}
       data-navix-node-id={node.id}
       style={outerStyle}
       className={outerClassName}
@@ -372,12 +374,10 @@ export function NavixPaginatedList<T>({
 
   return (
     <FocusProvider>
-      {finalShowScrollbar ? (
+      {scrollbarEl ? (
         <div style={wrapperStyle}>
           {listDiv}
-          {renderScrollbar
-            ? renderScrollbar(scrollbarProps)
-            : <DefaultScrollbar {...scrollbarProps} />}
+          {scrollbarEl}
         </div>
       ) : (
         listDiv

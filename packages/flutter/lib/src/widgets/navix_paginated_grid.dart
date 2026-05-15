@@ -3,8 +3,10 @@ import 'package:flutter/widgets.dart';
 import '../core/nav_event.dart';
 import '../core/focus_node.dart';
 import '../core/focus_manager.dart';
-import '../common/default_scrollbar.dart';
 import 'navix_focusable.dart';
+import 'navix_scroll.dart';
+
+export 'navix_scroll.dart' show ScrollbarRenderProps, NavixScrollOrientation;
 
 const int _kMinGridDimension = 2;
 
@@ -12,6 +14,7 @@ enum NavixGridOrientation { horizontal, vertical, autoHorizontal }
 
 class NavixPaginatedGridBehavior extends IFocusNodeBehavior {
   final NavixFocusNode _node;
+  final String? _scrollbarKey;
   final String Function(int index) _keyForIndex;
 
   NavixGridOrientation orientation;
@@ -26,13 +29,8 @@ class NavixPaginatedGridBehavior extends IFocusNodeBehavior {
   String? _pendingFocusKey;
   bool Function(int index)? _isItemDisabled;
 
-  bool scrollMode = false;
-  void Function(int newIndex, int newOffset)? onChange;
-  void Function(bool scrollMode)? onScrollModeChange;
+  void Function(int newIndex, int newOffset, bool refocusItem)? onChange;
 
-  // Resolves 'autoHorizontal' to 'horizontal' or 'vertical' based on whether
-  // all items fit into a single page. When items don't fill the grid,
-  // vertical (row-major) layout looks better.
   NavixGridOrientation get effectiveOrientation {
     if (orientation == NavixGridOrientation.autoHorizontal) {
       return totalCount < _rows * _columns
@@ -70,7 +68,9 @@ class NavixPaginatedGridBehavior extends IFocusNodeBehavior {
     required int threshold,
     required String Function(int index) keyForIndex,
     bool Function(int index)? isItemDisabled,
+    String? scrollbarKey,
   })  : _node = node,
+        _scrollbarKey = scrollbarKey,
         _rows = rows < _kMinGridDimension ? _kMinGridDimension : rows,
         _columns = columns < _kMinGridDimension ? _kMinGridDimension : columns,
         _threshold = 1,
@@ -135,34 +135,26 @@ class NavixPaginatedGridBehavior extends IFocusNodeBehavior {
 
     viewOffset = newOffset;
     activeIndex = newActiveIndex;
-    onChange?.call(newActiveIndex, newOffset);
+    onChange?.call(newActiveIndex, newOffset, false);
   }
 
-  void _setScrollMode(bool value) {
-    scrollMode = value;
-    onScrollModeChange?.call(value);
-  }
-
-  bool _scrollPage(int dir) {
-    final visibleSlices = effectiveOrientation == NavixGridOrientation.horizontal ? _columns : _rows;
-    setPage(viewOffset + dir * visibleSlices);
-    return true;
+  bool _isScrollbarActive() {
+    if (_scrollbarKey == null) return false;
+    final active = _node.getActiveChild();
+    return active != null && active.key == _scrollbarKey;
   }
 
   bool _handleEvent(NavEvent event) {
     if (event.type != NavEventType.press) return false;
 
     final isH = effectiveOrientation == NavixGridOrientation.horizontal;
-    final prevMain = isH ? 'left' : 'up';
-    final nextMain = isH ? 'right' : 'down';
-    final scrollEnter = isH ? 'down' : 'right';
     final scrollExit = isH ? 'up' : 'left';
 
-    if (scrollMode) {
-      if (event.action == prevMain) return _scrollPage(-1);
-      if (event.action == nextMain) return _scrollPage(1);
-      if (event.action == scrollExit) { _setScrollMode(false); return true; }
-      if (event.action == scrollEnter) { _setScrollMode(false); return false; }
+    if (_isScrollbarActive()) {
+      if (event.action == scrollExit) {
+        _focusActiveItem();
+        return true;
+      }
       return false;
     }
 
@@ -174,8 +166,7 @@ class NavixPaginatedGridBehavior extends IFocusNodeBehavior {
       if (event.action == 'down') {
         final next = _findNext(activeIndex, 1, 'cross');
         if (next != null) return _moveTo(next, 'cross');
-        _setScrollMode(true);
-        return true;
+        return _focusScrollbar();
       }
       if (event.action == 'left') {
         final next = _findNext(activeIndex, -_rows, 'main');
@@ -193,8 +184,7 @@ class NavixPaginatedGridBehavior extends IFocusNodeBehavior {
       if (event.action == 'right') {
         final next = _findNext(activeIndex, 1, 'cross');
         if (next != null) return _moveTo(next, 'cross');
-        _setScrollMode(true);
-        return true;
+        return _focusScrollbar();
       }
       if (event.action == 'up') {
         final next = _findNext(activeIndex, -_columns, 'main');
@@ -209,7 +199,37 @@ class NavixPaginatedGridBehavior extends IFocusNodeBehavior {
     return false;
   }
 
+  bool _focusScrollbar() {
+    final key = _scrollbarKey;
+    if (key == null) return false;
+    final scrollbar = _node.children.cast<NavixFocusNode?>().firstWhere(
+          (c) => c!.key == key,
+          orElse: () => null,
+        );
+    if (scrollbar == null) return false;
+    scrollbar.requestFocus();
+    return true;
+  }
+
+  void _focusActiveItem() {
+    for (final child in _node.children) {
+      if (child.key == _scrollbarKey) continue;
+      for (int i = 0; i < totalCount; i++) {
+        if (_keyForIndex(i) == child.key && i == activeIndex) {
+          _node.focusChild(child.id);
+          return;
+        }
+      }
+    }
+  }
+
   void _onChildRegistered(NavixFocusNode child) {
+    if (_scrollbarKey != null && child.key == _scrollbarKey) {
+      final others = _node.children.where((c) => !identical(c, child)).toList();
+      _node.reorderChildren([child, ...others]);
+      return;
+    }
+
     bool keyMatchesAnyItem = false;
     for (int i = 0; i < totalCount; i++) {
       if (_keyForIndex(i) == child.key) {
@@ -244,6 +264,7 @@ class NavixPaginatedGridBehavior extends IFocusNodeBehavior {
   }
 
   void _onActiveChildChanged(NavixFocusNode child) {
+    if (_scrollbarKey != null && child.key == _scrollbarKey) return;
     for (int i = 0; i < totalCount; i++) {
       if (_keyForIndex(i) == child.key) {
         activeIndex = i;
@@ -279,7 +300,7 @@ class NavixPaginatedGridBehavior extends IFocusNodeBehavior {
 
     activeIndex = newIndex;
     _updateOffset();
-    onChange?.call(activeIndex, viewOffset);
+    onChange?.call(activeIndex, viewOffset, true);
     return true;
   }
 
@@ -343,7 +364,7 @@ class NavixPaginatedGrid<T> extends StatefulWidget {
   final double gap;
   final int buffer;
   final bool showScrollbar;
-  final Widget Function(ScrollbarRenderProps props)? scrollbarBuilder;
+  final NavixScrollbarBuilder? scrollbarBuilder;
   final void Function(String key)? onFocus;
   final void Function(String key)? onBlurred;
   final void Function(String key)? onRegister;
@@ -381,11 +402,12 @@ class NavixPaginatedGrid<T> extends StatefulWidget {
 
 class _NavixPaginatedGridState<T> extends State<NavixPaginatedGrid<T>> {
   int _viewOffset = 0;
-  bool _scrollMode = false;
   NavixPaginatedGridBehavior? _behavior;
 
   late List<String> _itemKeys;
   String? _currentGroupKey;
+
+  String get _scrollbarKey => '${widget.fKey}__scrollbar__';
 
   String _defaultKeyForItem(T item, int index) => '${widget.fKey}-$index';
 
@@ -438,8 +460,6 @@ class _NavixPaginatedGridState<T> extends State<NavixPaginatedGrid<T>> {
         _currentGroupKey = newGroup;
       }
 
-      // Dimensions must update before activeKey so jumpToIndex uses current
-      // totalCount/rows/columns when computing viewOffset.
       _behavior!.totalCount = widget.items.length;
       _behavior!.rows = widget.rows;
       _behavior!.columns = widget.columns;
@@ -447,7 +467,6 @@ class _NavixPaginatedGridState<T> extends State<NavixPaginatedGrid<T>> {
       _behavior!.threshold = widget.threshold;
       _clampBehaviorState();
       _behavior!.onChange = _onBehaviorChange;
-      _behavior!.onScrollModeChange = (v) => setState(() => _scrollMode = v);
 
       if (groupChanged && widget.items.isNotEmpty) {
         final idx = _behavior!.activeIndex;
@@ -475,7 +494,7 @@ class _NavixPaginatedGridState<T> extends State<NavixPaginatedGrid<T>> {
     );
   }
 
-  void _onBehaviorChange(int newIndex, int newOffset) {
+  void _onBehaviorChange(int newIndex, int newOffset, bool refocusItem) {
     if (newIndex < 0 || newIndex >= _itemKeys.length) return;
     setState(() => _viewOffset = newOffset);
     final group = _currentGroupKey;
@@ -483,7 +502,9 @@ class _NavixPaginatedGridState<T> extends State<NavixPaginatedGrid<T>> {
       NavixScope.storeOf(context)
           .update(group, {'activeIndex': newIndex, 'viewOffset': newOffset});
     }
-    _behavior?.focusByKey(_itemKeys[newIndex]);
+    if (refocusItem) {
+      _behavior?.focusByKey(_itemKeys[newIndex]);
+    }
   }
 
   void _clampBehaviorState() {
@@ -542,6 +563,7 @@ class _NavixPaginatedGridState<T> extends State<NavixPaginatedGrid<T>> {
           threshold: widget.threshold,
           keyForIndex: (i) => _itemKeys[i],
           isItemDisabled: (i) => widget.isItemDisabled?.call(i) ?? false,
+          scrollbarKey: _scrollbarKey,
         );
         final initialGroup = widget.groupKey;
         final store = NavixScope.storeOf(context);
@@ -559,7 +581,6 @@ class _NavixPaginatedGridState<T> extends State<NavixPaginatedGrid<T>> {
           }
         }
         _behavior!.onChange = _onBehaviorChange;
-        _behavior!.onScrollModeChange = (v) => setState(() => _scrollMode = v);
         return _behavior!;
       },
       builder: (context, node, focused, directlyFocused) {
@@ -671,19 +692,20 @@ class _NavixPaginatedGridState<T> extends State<NavixPaginatedGrid<T>> {
 
             if (!finalShowScrollbar) return buildGrid(crossSize);
 
-            final scrollbarProps = ScrollbarRenderProps(
-              scrollMode: _scrollMode,
+            final scrollbarOrientation = isHorizontal
+                ? NavixScrollOrientation.horizontal
+                : NavixScrollOrientation.vertical;
+
+            final scrollbarWidget = NavixScroll(
+              fKey: _scrollbarKey,
+              orientation: scrollbarOrientation,
               page: _viewOffset,
               pageCount: (_behavior?.maxOffset ?? 0) + 1,
-              orientation: isHorizontal
-                  ? NavixScrollbarOrientation.horizontal
-                  : NavixScrollbarOrientation.vertical,
-              onPageChange: (page) => _behavior?.setPage(page),
+              arrowStep: visibleSlices,
+              pageStep: visibleSlices,
+              onPageChange: (p) => _behavior?.setPage(p),
+              renderScrollbar: widget.scrollbarBuilder,
             );
-
-            final scrollbarWidget = widget.scrollbarBuilder != null
-                ? widget.scrollbarBuilder!(scrollbarProps)
-                : DefaultScrollbar(props: scrollbarProps);
 
             return isHorizontal
                 ? Column(
@@ -730,4 +752,3 @@ class _NavixPaginatedGridState<T> extends State<NavixPaginatedGrid<T>> {
     return result;
   }
 }
-

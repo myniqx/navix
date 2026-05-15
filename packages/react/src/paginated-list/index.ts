@@ -1,2 +1,2 @@
 export { NavixPaginatedList } from './NavixPaginatedList';
-export type { ScrollbarRenderProps } from '../common/DefaultScrollbar';
+export type { ScrollbarRenderProps } from '../scroll/NavixScroll';

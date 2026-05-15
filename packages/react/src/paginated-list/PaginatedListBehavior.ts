@@ -9,7 +9,6 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
   totalCount: number;
   activeIndex: number = 0;
   viewOffset: number = 0;
-  scrollMode: boolean = false;
 
   private _visibleCount: number = MIN_VISIBLE_COUNT;
   private _threshold: number = 1;
@@ -34,17 +33,13 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
   private _next: string;
   private _scrollEnter: string;
   private _scrollExit: string;
-  private _onChange: (newIndex: number, newOffset: number) => void;
-  private _onScrollModeChange: ((scrollMode: boolean) => void) | null = null;
+  private _scrollbarKey: string | null;
+  private _onChange: (newIndex: number, newOffset: number, refocusItem: boolean) => void;
   private _keyToIndex: (key: string) => number;
   private _isItemDisabled?: (index: number) => boolean;
 
-  set onChange(fn: (newIndex: number, newOffset: number) => void) {
+  set onChange(fn: (newIndex: number, newOffset: number, refocusItem: boolean) => void) {
     this._onChange = fn;
-  }
-
-  set onScrollModeChange(fn: (scrollMode: boolean) => void) {
-    this._onScrollModeChange = fn;
   }
 
   constructor(
@@ -53,9 +48,10 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
     totalCount: number,
     visibleCount: number,
     threshold: number,
-    onChange: (newIndex: number, newOffset: number) => void,
+    onChange: (newIndex: number, newOffset: number, refocusItem: boolean) => void,
     keyToIndex: (key: string) => number,
     isItemDisabled?: (index: number) => boolean,
+    scrollbarKey: string | null = null,
   ) {
     this._node = node;
     this.totalCount = totalCount;
@@ -65,6 +61,7 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
     this._next = orientation === 'horizontal' ? 'right' : 'down';
     this._scrollEnter = orientation === 'horizontal' ? 'down' : 'right';
     this._scrollExit = orientation === 'horizontal' ? 'up' : 'left';
+    this._scrollbarKey = scrollbarKey;
     this._onChange = onChange;
     this._keyToIndex = keyToIndex;
     this._isItemDisabled = isItemDisabled;
@@ -80,27 +77,27 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
     return false;
   };
 
+  private _isScrollbarActive(): boolean {
+    if (this._scrollbarKey === null) return false;
+    const active = this._node.getActiveChild();
+    return active !== null && active.key === this._scrollbarKey;
+  }
+
   onEvent = (event: NavEvent): boolean => {
     if (event.type !== 'press') return false;
 
-    if (this.scrollMode) {
-      if (event.action === this._prev) {
-        return this._scrollPage(-1);
-      }
-      if (event.action === this._next) {
-        return this._scrollPage(1);
-      }
+    // Scrollbar child is active — only handle scrollExit here. Other events
+    // are consumed by the scrollbar itself; if the scrollbar returned false
+    // for scrollExit, return focus to the active item.
+    if (this._isScrollbarActive()) {
       if (event.action === this._scrollExit) {
-        this._setScrollMode(false);
+        this._focusActiveItem();
         return true;
-      }
-      if (event.action === this._scrollEnter) {
-        this._setScrollMode(false);
-        return false;
       }
       return false;
     }
 
+    // Active item is focused — same prev/next item nav as before.
     if (event.action === this._prev) {
       const next = this._findNext(this.activeIndex, -1);
       return next !== null ? this._moveTo(next) : false;
@@ -110,8 +107,7 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
       return next !== null ? this._moveTo(next) : false;
     }
     if (event.action === this._scrollEnter) {
-      this._setScrollMode(true);
-      return true;
+      return this._focusScrollbar();
     }
 
     return false;
@@ -140,6 +136,14 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
   }
 
   onChildRegistered = (child: FocusNode): void => {
+    if (this._scrollbarKey !== null && child.key === this._scrollbarKey) {
+      // Keep scrollbar pinned at index 0 of the children list so it remains
+      // reachable via a known position and never alters item index math.
+      const others = this._node.children.filter((c) => c !== child);
+      this._node.reorderChildren([child, ...others]);
+      return;
+    }
+
     if (this._keyToIndex(child.key) === -1) {
       console.warn(
         `[NavixPaginatedList:${this._node.key}] Registered child key "${child.key}" does not match any key produced by keyForItem. ` +
@@ -155,13 +159,30 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
   };
 
   onActiveChildChanged = (child: FocusNode): void => {
+    if (this._scrollbarKey !== null && child.key === this._scrollbarKey) return;
     const idx = this._keyToIndex(child.key);
     if (idx !== -1) this.activeIndex = idx;
   };
 
-  private _setScrollMode(value: boolean): void {
-    this.scrollMode = value;
-    this._onScrollModeChange?.(value);
+  private _focusScrollbar(): boolean {
+    if (this._scrollbarKey === null) return false;
+    const scrollbar = this._node.children.find((c) => c.key === this._scrollbarKey);
+    if (!scrollbar) return false;
+    scrollbar.requestFocus();
+    return true;
+  }
+
+  private _focusActiveItem(): void {
+    // Find item child at activeIndex by looking up its key, then focus it.
+    const items = this._node.children.filter(
+      (c) => c.key !== this._scrollbarKey,
+    );
+    for (const item of items) {
+      if (this._keyToIndex(item.key) === this.activeIndex) {
+        this._node.focusChild(item.id);
+        return;
+      }
+    }
   }
 
   get maxOffset(): number {
@@ -179,12 +200,9 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
 
     this.viewOffset = newOffset;
     this.activeIndex = newActiveIndex;
-    this._onChange(newActiveIndex, newOffset);
-  }
-
-  private _scrollPage(dir: 1 | -1): boolean {
-    this.setPage(this.viewOffset + dir * this.visibleCount);
-    return true;
+    // Scrollbar-driven page change: do not pull focus back to the item, the
+    // scrollbar (or the caller) keeps focus.
+    this._onChange(newActiveIndex, newOffset, false);
   }
 
   private _findFirst(): number {
@@ -209,7 +227,7 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
 
     this.activeIndex = newIndex;
     this._updateOffset();
-    this._onChange(this.activeIndex, this.viewOffset);
+    this._onChange(this.activeIndex, this.viewOffset, true);
     return true;
   }
 

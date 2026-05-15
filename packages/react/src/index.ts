@@ -38,3 +38,6 @@ export { NavixPaginatedList } from './paginated-list';
 export { NavixPaginatedGrid } from './paginated-grid';
 export { NavixStepper } from './stepper/NavixStepper';
 export type { StepperOrientation, StepType, StepperStatus, StepperRenderFn } from './stepper/NavixStepper';
+
+export { NavixScroll } from './scroll';
+export type { ScrollOrientation } from './scroll';

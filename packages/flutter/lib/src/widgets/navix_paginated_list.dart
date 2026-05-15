@@ -3,10 +3,10 @@ import 'package:flutter/widgets.dart';
 import '../core/nav_event.dart';
 import '../core/focus_node.dart';
 import '../core/focus_manager.dart';
-import '../common/default_scrollbar.dart';
 import 'navix_focusable.dart';
+import 'navix_scroll.dart';
 
-export '../common/default_scrollbar.dart' show ScrollbarRenderProps;
+export 'navix_scroll.dart' show ScrollbarRenderProps, NavixScrollOrientation;
 
 const int _kMinVisibleCount = 2;
 
@@ -18,12 +18,12 @@ class NavixPaginatedListBehavior extends IFocusNodeBehavior {
   final String _next;
   final String _scrollEnter;
   final String _scrollExit;
+  final String? _scrollbarKey;
   final String Function(int index) _keyForIndex;
 
   int totalCount;
   int activeIndex = 0;
   int viewOffset = 0;
-  bool scrollMode = false;
 
   int _visibleCount;
   int _threshold;
@@ -31,8 +31,7 @@ class NavixPaginatedListBehavior extends IFocusNodeBehavior {
   String? _pendingFocusKey;
   bool Function(int index)? _isItemDisabled;
 
-  void Function(int newIndex, int newOffset)? onChange;
-  void Function(bool scrollMode)? onScrollModeChange;
+  void Function(int newIndex, int newOffset, bool refocusItem)? onChange;
 
   int get visibleCount => _visibleCount;
   set visibleCount(int value) => _visibleCount = value < _kMinVisibleCount ? _kMinVisibleCount : value;
@@ -54,11 +53,13 @@ class NavixPaginatedListBehavior extends IFocusNodeBehavior {
     required int threshold,
     required String Function(int index) keyForIndex,
     bool Function(int index)? isItemDisabled,
+    String? scrollbarKey,
   })  : _node = node,
         _prev = orientation == NavixListOrientation.horizontal ? 'left' : 'up',
         _next = orientation == NavixListOrientation.horizontal ? 'right' : 'down',
         _scrollEnter = orientation == NavixListOrientation.horizontal ? 'down' : 'right',
         _scrollExit = orientation == NavixListOrientation.horizontal ? 'up' : 'left',
+        _scrollbarKey = scrollbarKey,
         _visibleCount = visibleCount < _kMinVisibleCount ? _kMinVisibleCount : visibleCount,
         _threshold = 1,
         _keyForIndex = keyForIndex,
@@ -97,19 +98,19 @@ class NavixPaginatedListBehavior extends IFocusNodeBehavior {
     return null;
   }
 
+  bool _isScrollbarActive() {
+    if (_scrollbarKey == null) return false;
+    final active = _node.getActiveChild();
+    return active != null && active.key == _scrollbarKey;
+  }
+
   bool _handleEvent(NavEvent event) {
     if (event.type != NavEventType.press) return false;
 
-    if (scrollMode) {
-      if (event.action == _prev) return _scrollPage(-1);
-      if (event.action == _next) return _scrollPage(1);
+    if (_isScrollbarActive()) {
       if (event.action == _scrollExit) {
-        _setScrollMode(false);
+        _focusActiveItem();
         return true;
-      }
-      if (event.action == _scrollEnter) {
-        _setScrollMode(false);
-        return false;
       }
       return false;
     }
@@ -123,15 +124,33 @@ class NavixPaginatedListBehavior extends IFocusNodeBehavior {
       return next != null ? _moveTo(next) : false;
     }
     if (event.action == _scrollEnter) {
-      _setScrollMode(true);
-      return true;
+      return _focusScrollbar();
     }
     return false;
   }
 
-  void _setScrollMode(bool value) {
-    scrollMode = value;
-    onScrollModeChange?.call(value);
+  bool _focusScrollbar() {
+    final key = _scrollbarKey;
+    if (key == null) return false;
+    final scrollbar = _node.children.cast<NavixFocusNode?>().firstWhere(
+          (c) => c!.key == key,
+          orElse: () => null,
+        );
+    if (scrollbar == null) return false;
+    scrollbar.requestFocus();
+    return true;
+  }
+
+  void _focusActiveItem() {
+    for (final child in _node.children) {
+      if (child.key == _scrollbarKey) continue;
+      for (int i = 0; i < totalCount; i++) {
+        if (_keyForIndex(i) == child.key && i == activeIndex) {
+          _node.focusChild(child.id);
+          return;
+        }
+      }
+    }
   }
 
   int get maxOffset => (totalCount - visibleCount).clamp(0, totalCount);
@@ -144,15 +163,18 @@ class NavixPaginatedListBehavior extends IFocusNodeBehavior {
 
     viewOffset = newOffset;
     activeIndex = newActiveIndex;
-    onChange?.call(activeIndex, viewOffset);
-  }
-
-  bool _scrollPage(int dir) {
-    setPage(viewOffset + dir * visibleCount);
-    return true;
+    // Scrollbar-driven: focus stays on the scrollbar, do not refocus item.
+    onChange?.call(activeIndex, viewOffset, false);
   }
 
   void _onChildRegistered(NavixFocusNode child) {
+    if (_scrollbarKey != null && child.key == _scrollbarKey) {
+      // Pin scrollbar at index 0 of children so item index math is unaffected.
+      final others = _node.children.where((c) => !identical(c, child)).toList();
+      _node.reorderChildren([child, ...others]);
+      return;
+    }
+
     bool keyMatchesAnyItem = false;
     for (int i = 0; i < totalCount; i++) {
       if (_keyForIndex(i) == child.key) {
@@ -187,6 +209,7 @@ class NavixPaginatedListBehavior extends IFocusNodeBehavior {
   }
 
   void _onActiveChildChanged(NavixFocusNode child) {
+    if (_scrollbarKey != null && child.key == _scrollbarKey) return;
     for (int i = 0; i < totalCount; i++) {
       if (_keyForIndex(i) == child.key) {
         activeIndex = i;
@@ -211,7 +234,7 @@ class NavixPaginatedListBehavior extends IFocusNodeBehavior {
     if (newIndex < 0 || newIndex >= totalCount) return false;
     activeIndex = newIndex;
     _updateOffset();
-    onChange?.call(activeIndex, viewOffset);
+    onChange?.call(activeIndex, viewOffset, true);
     return true;
   }
 
@@ -241,8 +264,6 @@ typedef NavixPaginatedListItemBuilder<T> = Widget Function(
 );
 
 typedef NavixPaginatedListKeyForItem<T> = String Function(T item, int index);
-
-typedef NavixScrollbarBuilder = Widget Function(ScrollbarRenderProps props);
 
 class NavixPaginatedList<T> extends StatefulWidget {
   final String fKey;
@@ -296,11 +317,12 @@ class NavixPaginatedList<T> extends StatefulWidget {
 
 class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
   int _viewOffset = 0;
-  bool _scrollMode = false;
   NavixPaginatedListBehavior? _behavior;
 
   late List<String> _itemKeys;
   String? _currentGroupKey;
+
+  String get _scrollbarKey => '${widget.fKey}__scrollbar__';
 
   String _defaultKeyForItem(T item, int index) => '${widget.fKey}-$index';
 
@@ -349,7 +371,6 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
       _behavior!.threshold = widget.threshold;
       _clampBehaviorState();
       _behavior!.onChange = _onBehaviorChange;
-      _behavior!.onScrollModeChange = _onScrollModeChange;
 
       if (groupChanged && widget.items.isNotEmpty) {
         final idx = _behavior!.activeIndex;
@@ -377,7 +398,7 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
     );
   }
 
-  void _onBehaviorChange(int newIndex, int newOffset) {
+  void _onBehaviorChange(int newIndex, int newOffset, bool refocusItem) {
     if (newIndex < 0 || newIndex >= _itemKeys.length) return;
     setState(() => _viewOffset = newOffset);
     final group = _currentGroupKey;
@@ -385,11 +406,9 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
       NavixScope.storeOf(context)
           .update(group, {'activeIndex': newIndex, 'viewOffset': newOffset});
     }
-    _behavior?.focusByKey(_itemKeys[newIndex]);
-  }
-
-  void _onScrollModeChange(bool value) {
-    setState(() => _scrollMode = value);
+    if (refocusItem) {
+      _behavior?.focusByKey(_itemKeys[newIndex]);
+    }
   }
 
   void _clampBehaviorState() {
@@ -438,6 +457,7 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
           threshold: widget.threshold,
           keyForIndex: (i) => _itemKeys[i],
           isItemDisabled: (i) => widget.isItemDisabled?.call(i) ?? false,
+          scrollbarKey: _scrollbarKey,
         );
         final initialGroup = widget.groupKey;
         final store = NavixScope.storeOf(context);
@@ -455,24 +475,24 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
           }
         }
         _behavior!.onChange = _onBehaviorChange;
-        _behavior!.onScrollModeChange = _onScrollModeChange;
         return _behavior!;
       },
       builder: (context, node, focused, directlyFocused) {
-        final scrollbarProps = ScrollbarRenderProps(
-          scrollMode: _scrollMode,
-          page: _viewOffset,
-          pageCount: (_behavior?.maxOffset ?? 0) + 1,
-          orientation: widget.orientation == NavixListOrientation.horizontal
-              ? NavixScrollbarOrientation.horizontal
-              : NavixScrollbarOrientation.vertical,
-          onPageChange: (p) => _behavior?.setPage(p),
-        );
+        final scrollbarOrientation = isHorizontal
+            ? NavixScrollOrientation.horizontal
+            : NavixScrollOrientation.vertical;
 
         final scrollbarWidget = finalShowScrollbar
-            ? (widget.renderScrollbar != null
-                ? widget.renderScrollbar!(scrollbarProps)
-                : DefaultScrollbar(props: scrollbarProps))
+            ? NavixScroll(
+                fKey: _scrollbarKey,
+                orientation: scrollbarOrientation,
+                page: _viewOffset,
+                pageCount: (_behavior?.maxOffset ?? 0) + 1,
+                arrowStep: widget.visibleCount,
+                pageStep: widget.visibleCount,
+                onPageChange: (p) => _behavior?.setPage(p),
+                renderScrollbar: widget.renderScrollbar,
+              )
             : null;
 
         if (isHorizontal) {

@@ -50,21 +50,15 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
     this._threshold = Math.max(1, Math.min(value, visibleSlices - 2));
   }
 
-  scrollMode: boolean = false;
-
   private _node: FocusNode;
   private _pendingFocusKey: string | null = null;
-  private _onChange: (newIndex: number, newOffset: number) => void;
-  private _onScrollModeChange: ((scrollMode: boolean) => void) | null = null;
+  private _scrollbarKey: string | null;
+  private _onChange: (newIndex: number, newOffset: number, refocusItem: boolean) => void;
   private _keyToIndex: (key: string) => number;
   private _isItemDisabled?: (index: number) => boolean;
 
-  set onChange(fn: (newIndex: number, newOffset: number) => void) {
+  set onChange(fn: (newIndex: number, newOffset: number, refocusItem: boolean) => void) {
     this._onChange = fn;
-  }
-
-  set onScrollModeChange(fn: (scrollMode: boolean) => void) {
-    this._onScrollModeChange = fn;
   }
 
   get maxOffset(): number {
@@ -86,12 +80,8 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
 
     this.viewOffset = newOffset;
     this.activeIndex = newActiveIndex;
-    this._onChange(newActiveIndex, newOffset);
-  }
-
-  private _setScrollMode(value: boolean): void {
-    this.scrollMode = value;
-    this._onScrollModeChange?.(value);
+    // Scrollbar-driven: do not pull focus back to item.
+    this._onChange(newActiveIndex, newOffset, false);
   }
 
   constructor(
@@ -101,9 +91,10 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
     rows: number,
     columns: number,
     threshold: number,
-    onChange: (newIndex: number, newOffset: number) => void,
+    onChange: (newIndex: number, newOffset: number, refocusItem: boolean) => void,
     keyToIndex: (key: string) => number,
     isItemDisabled?: (index: number) => boolean,
+    scrollbarKey: string | null = null,
   ) {
     this._node = node;
     this.orientation = orientation;
@@ -111,6 +102,7 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
     this.rows = rows;
     this.columns = columns;
     this.threshold = threshold;
+    this._scrollbarKey = scrollbarKey;
     this._onChange = onChange;
     this._keyToIndex = keyToIndex;
     this._isItemDisabled = isItemDisabled;
@@ -126,20 +118,23 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
     return false;
   };
 
+  private _isScrollbarActive(): boolean {
+    if (this._scrollbarKey === null) return false;
+    const active = this._node.getActiveChild();
+    return active !== null && active.key === this._scrollbarKey;
+  }
+
   onEvent = (event: NavEvent): boolean => {
     if (event.type !== 'press') return false;
 
     const isH = this.effectiveOrientation === 'horizontal';
-    const prevMain = isH ? 'left' : 'up';
-    const nextMain = isH ? 'right' : 'down';
-    const scrollEnter = isH ? 'down' : 'right';
     const scrollExit = isH ? 'up' : 'left';
 
-    if (this.scrollMode) {
-      if (event.action === prevMain) return this._scrollPage(-1);
-      if (event.action === nextMain) return this._scrollPage(1);
-      if (event.action === scrollExit) { this._setScrollMode(false); return true; }
-      if (event.action === scrollEnter) { this._setScrollMode(false); return false; }
+    if (this._isScrollbarActive()) {
+      if (event.action === scrollExit) {
+        this._focusActiveItem();
+        return true;
+      }
       return false;
     }
 
@@ -151,8 +146,7 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
       if (event.action === 'down') {
         const next = this._findNext(this.activeIndex, 1, 'cross');
         if (next !== null) return this._moveTo(next, 'cross');
-        this._setScrollMode(true);
-        return true;
+        return this._focusScrollbar();
       }
       if (event.action === 'left') {
         const next = this._findNext(this.activeIndex, -this.rows, 'main');
@@ -170,8 +164,7 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
       if (event.action === 'right') {
         const next = this._findNext(this.activeIndex, 1, 'cross');
         if (next !== null) return this._moveTo(next, 'cross');
-        this._setScrollMode(true);
-        return true;
+        return this._focusScrollbar();
       }
       if (event.action === 'up') {
         const next = this._findNext(this.activeIndex, -this.columns, 'main');
@@ -186,10 +179,24 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
     return false;
   };
 
-  private _scrollPage(dir: 1 | -1): boolean {
-    const visibleSlices = this.effectiveOrientation === 'horizontal' ? this._columns : this._rows;
-    this.setPage(this.viewOffset + dir * visibleSlices);
+  private _focusScrollbar(): boolean {
+    if (this._scrollbarKey === null) return false;
+    const scrollbar = this._node.children.find((c) => c.key === this._scrollbarKey);
+    if (!scrollbar) return false;
+    scrollbar.requestFocus();
     return true;
+  }
+
+  private _focusActiveItem(): void {
+    const items = this._node.children.filter(
+      (c) => c.key !== this._scrollbarKey,
+    );
+    for (const item of items) {
+      if (this._keyToIndex(item.key) === this.activeIndex) {
+        this._node.focusChild(item.id);
+        return;
+      }
+    }
   }
 
   focusByKey(key: string): void {
@@ -215,6 +222,12 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
   }
 
   onChildRegistered = (child: FocusNode): void => {
+    if (this._scrollbarKey !== null && child.key === this._scrollbarKey) {
+      const others = this._node.children.filter((c) => c !== child);
+      this._node.reorderChildren([child, ...others]);
+      return;
+    }
+
     if (this._keyToIndex(child.key) === -1) {
       console.warn(
         `[NavixPaginatedGrid:${this._node.key}] Registered child key "${child.key}" does not match any key produced by keyForItem. ` +
@@ -230,6 +243,7 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
   };
 
   onActiveChildChanged = (child: FocusNode): void => {
+    if (this._scrollbarKey !== null && child.key === this._scrollbarKey) return;
     const idx = this._keyToIndex(child.key);
     if (idx !== -1) this.activeIndex = idx;
   };
@@ -267,7 +281,7 @@ export class PaginatedGridBehavior implements IFocusNodeBehavior {
 
     this.activeIndex = newIndex;
     this._updateOffset();
-    this._onChange(this.activeIndex, this.viewOffset);
+    this._onChange(this.activeIndex, this.viewOffset, true);
     return true;
   }
 
