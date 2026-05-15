@@ -5,8 +5,7 @@ export type StepperOrientation = 'horizontal' | 'vertical';
 export type StepType = 'single' | 'long' | 'double';
 
 interface StepperHandlers {
-  onIncrease?: (type: StepType) => void;
-  onDecrease?: (type: StepType) => void;
+  onChange?: (delta: number, type: StepType) => void;
   long: boolean;
   double: boolean;
   orientation: StepperOrientation;
@@ -40,11 +39,8 @@ export class StepperBehavior implements IFocusNodeBehavior {
           ? 'double'
           : 'single';
 
-    if (event.action === next) {
-      this.handlers.onIncrease?.(type);
-    } else {
-      this.handlers.onDecrease?.(type);
-    }
+    const delta = event.action === next ? 1 : -1;
+    this.handlers.onChange?.(delta, type);
 
     return true;
   };

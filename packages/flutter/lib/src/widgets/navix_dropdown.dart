@@ -132,6 +132,7 @@ class NavixDropdown extends StatelessWidget {
             items: options,
             visibleCount: maxVisible,
             threshold: 1,
+            showScrollbar: true,
             renderItem: (option, itemFKey, index, disabled) {
               final isSelected = value.contains(option.value);
               return _OptionButton(

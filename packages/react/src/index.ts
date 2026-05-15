@@ -37,4 +37,4 @@ export type {
 export { NavixPaginatedList } from './paginated-list';
 export { NavixPaginatedGrid } from './paginated-grid';
 export { NavixStepper } from './stepper/NavixStepper';
-export type { StepperOrientation, StepType, StepperStatus } from './stepper/NavixStepper';
+export type { StepperOrientation, StepType, StepperStatus, StepperRenderFn } from './stepper/NavixStepper';

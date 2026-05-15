@@ -9,15 +9,86 @@ const int _kMinVisibleCount = 2;
 
 enum NavixListOrientation { horizontal, vertical }
 
+class ScrollbarRenderProps {
+  final bool scrollMode;
+  final int value;
+  final int min;
+  final int max;
+  final NavixListOrientation orientation;
+
+  const ScrollbarRenderProps({
+    required this.scrollMode,
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.orientation,
+  });
+}
+
+class _DefaultScrollbar extends StatelessWidget {
+  final ScrollbarRenderProps props;
+
+  const _DefaultScrollbar({required this.props});
+
+  @override
+  Widget build(BuildContext context) {
+    final isHorizontal = props.orientation == NavixListOrientation.horizontal;
+    const thumbSize = 16.0;
+    final ratio = props.max > props.min
+        ? (props.value - props.min) / (props.max - props.min)
+        : 0.0;
+    final thumbColor =
+        props.scrollMode ? const Color(0xFF4FC3F7) : const Color(0xFF888888);
+
+    return LayoutBuilder(builder: (context, constraints) {
+      final trackSize =
+          isHorizontal ? constraints.maxWidth : constraints.maxHeight;
+      final thumbOffset = ratio * (trackSize - thumbSize);
+
+      return Container(
+        width: isHorizontal ? double.infinity : 8,
+        height: isHorizontal ? 8 : double.infinity,
+        decoration: BoxDecoration(
+          color: const Color(0xFF333333),
+          borderRadius: BorderRadius.circular(2),
+        ),
+        child: Stack(
+          children: [
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 100),
+              left: isHorizontal ? thumbOffset : 0,
+              right: isHorizontal ? null : 0,
+              top: isHorizontal ? 0 : thumbOffset,
+              bottom: isHorizontal ? 0 : null,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                width: isHorizontal ? thumbSize : double.infinity,
+                height: isHorizontal ? double.infinity : thumbSize,
+                decoration: BoxDecoration(
+                  color: thumbColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+}
+
 class NavixPaginatedListBehavior extends IFocusNodeBehavior {
   final NavixFocusNode _node;
   final String _prev;
   final String _next;
+  final String _scrollEnter;
+  final String _scrollExit;
   final String Function(int index) _keyForIndex;
 
   int totalCount;
   int activeIndex = 0;
   int viewOffset = 0;
+  bool scrollMode = false;
 
   int _visibleCount;
   int _threshold;
@@ -26,6 +97,7 @@ class NavixPaginatedListBehavior extends IFocusNodeBehavior {
   bool Function(int index)? _isItemDisabled;
 
   void Function(int newIndex, int newOffset)? onChange;
+  void Function(bool scrollMode)? onScrollModeChange;
 
   int get visibleCount => _visibleCount;
   set visibleCount(int value) => _visibleCount = value < _kMinVisibleCount ? _kMinVisibleCount : value;
@@ -49,8 +121,9 @@ class NavixPaginatedListBehavior extends IFocusNodeBehavior {
     bool Function(int index)? isItemDisabled,
   })  : _node = node,
         _prev = orientation == NavixListOrientation.horizontal ? 'left' : 'up',
-        _next =
-            orientation == NavixListOrientation.horizontal ? 'right' : 'down',
+        _next = orientation == NavixListOrientation.horizontal ? 'right' : 'down',
+        _scrollEnter = orientation == NavixListOrientation.horizontal ? 'down' : 'right',
+        _scrollExit = orientation == NavixListOrientation.horizontal ? 'up' : 'left',
         _visibleCount = visibleCount < _kMinVisibleCount ? _kMinVisibleCount : visibleCount,
         _threshold = 1,
         _keyForIndex = keyForIndex,
@@ -91,6 +164,21 @@ class NavixPaginatedListBehavior extends IFocusNodeBehavior {
 
   bool _handleEvent(NavEvent event) {
     if (event.type != NavEventType.press) return false;
+
+    if (scrollMode) {
+      if (event.action == _prev) return _scrollPage(-1);
+      if (event.action == _next) return _scrollPage(1);
+      if (event.action == _scrollExit) {
+        _setScrollMode(false);
+        return true;
+      }
+      if (event.action == _scrollEnter) {
+        _setScrollMode(false);
+        return false;
+      }
+      return false;
+    }
+
     if (event.action == _prev) {
       final next = _findNext(activeIndex, -1);
       return next != null ? _moveTo(next) : false;
@@ -99,7 +187,31 @@ class NavixPaginatedListBehavior extends IFocusNodeBehavior {
       final next = _findNext(activeIndex, 1);
       return next != null ? _moveTo(next) : false;
     }
+    if (event.action == _scrollEnter) {
+      _setScrollMode(true);
+      return true;
+    }
     return false;
+  }
+
+  void _setScrollMode(bool value) {
+    scrollMode = value;
+    onScrollModeChange?.call(value);
+  }
+
+  bool _scrollPage(int dir) {
+    final maxOffset = totalCount - visibleCount > 0 ? totalCount - visibleCount : 0;
+    final newOffset = (viewOffset + dir * visibleCount).clamp(0, maxOffset);
+    if (newOffset == viewOffset) return true;
+
+    final oldActiveIndex = activeIndex;
+    final oldViewOffset = viewOffset;
+    final newActiveIndex = (newOffset + (oldActiveIndex - oldViewOffset)).clamp(0, totalCount - 1);
+
+    viewOffset = newOffset;
+    activeIndex = newActiveIndex;
+    onChange?.call(activeIndex, viewOffset);
+    return true;
   }
 
   void _onChildRegistered(NavixFocusNode child) {
@@ -137,7 +249,6 @@ class NavixPaginatedListBehavior extends IFocusNodeBehavior {
   }
 
   void _onActiveChildChanged(NavixFocusNode child) {
-    // Find child index by iterating keys.
     for (int i = 0; i < totalCount; i++) {
       if (_keyForIndex(i) == child.key) {
         activeIndex = i;
@@ -193,6 +304,8 @@ typedef NavixPaginatedListItemBuilder<T> = Widget Function(
 
 typedef NavixPaginatedListKeyForItem<T> = String Function(T item, int index);
 
+typedef NavixScrollbarBuilder = Widget Function(ScrollbarRenderProps props);
+
 class NavixPaginatedList<T> extends StatefulWidget {
   final String fKey;
   final NavixListOrientation orientation;
@@ -203,16 +316,12 @@ class NavixPaginatedList<T> extends StatefulWidget {
   final NavixPaginatedListKeyForItem<T>? keyForItem;
   final bool Function(int index)? isItemDisabled;
   final bool disabled;
-
-  /// Jump to this item on mount and whenever the value changes. The widget
-  /// manages its own navigation state between jumps — user arrow-key navigation
-  /// is unaffected. If the target item is disabled the nearest non-disabled
-  /// neighbour is focused instead. This is a write-only intent prop; there is
-  /// no corresponding onChange callback.
   final String? activeKey;
   final String? groupKey;
   final double gap;
   final int buffer;
+  final bool showScrollbar;
+  final NavixScrollbarBuilder? renderScrollbar;
   final void Function(String key)? onFocus;
   final void Function(String key)? onBlurred;
   final void Function(String key)? onRegister;
@@ -234,6 +343,8 @@ class NavixPaginatedList<T> extends StatefulWidget {
     this.orientation = NavixListOrientation.horizontal,
     this.gap = 0,
     this.buffer = 2,
+    this.showScrollbar = false,
+    this.renderScrollbar,
     this.onFocus,
     this.onBlurred,
     this.onRegister,
@@ -247,6 +358,7 @@ class NavixPaginatedList<T> extends StatefulWidget {
 
 class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
   int _viewOffset = 0;
+  bool _scrollMode = false;
   NavixPaginatedListBehavior? _behavior;
 
   late List<String> _itemKeys;
@@ -294,13 +406,12 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
         _currentGroupKey = newGroup;
       }
 
-      // Dimensions must update before activeKey so jumpToIndex uses current
-      // totalCount/visibleCount when computing viewOffset.
       _behavior!.totalCount = widget.items.length;
       _behavior!.visibleCount = widget.visibleCount;
       _behavior!.threshold = widget.threshold;
       _clampBehaviorState();
       _behavior!.onChange = _onBehaviorChange;
+      _behavior!.onScrollModeChange = _onScrollModeChange;
 
       if (groupChanged && widget.items.isNotEmpty) {
         final idx = _behavior!.activeIndex;
@@ -339,6 +450,10 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
     _behavior?.focusByKey(_itemKeys[newIndex]);
   }
 
+  void _onScrollModeChange(bool value) {
+    setState(() => _scrollMode = value);
+  }
+
   void _clampBehaviorState() {
     final behavior = _behavior;
     if (behavior == null) return;
@@ -363,6 +478,8 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
   @override
   Widget build(BuildContext context) {
     final isHorizontal = widget.orientation == NavixListOrientation.horizontal;
+    final scrollbarMax = (widget.items.length - widget.visibleCount).clamp(0, widget.items.length);
+    final finalShowScrollbar = (widget.showScrollbar || widget.renderScrollbar != null) && scrollbarMax > 0;
 
     return NavixFocusable(
       fKey: widget.fKey,
@@ -400,9 +517,24 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
           }
         }
         _behavior!.onChange = _onBehaviorChange;
+        _behavior!.onScrollModeChange = _onScrollModeChange;
         return _behavior!;
       },
       builder: (context, node, focused, directlyFocused) {
+        final scrollbarProps = ScrollbarRenderProps(
+          scrollMode: _scrollMode,
+          value: _viewOffset,
+          min: 0,
+          max: scrollbarMax,
+          orientation: widget.orientation,
+        );
+
+        final scrollbarWidget = finalShowScrollbar
+            ? (widget.renderScrollbar != null
+                ? widget.renderScrollbar!(scrollbarProps)
+                : _DefaultScrollbar(props: scrollbarProps))
+            : null;
+
         if (isHorizontal) {
           return LayoutBuilder(
             builder: (context, constraints) {
@@ -439,7 +571,7 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
                   ),
               ];
 
-              return SizedBox(
+              final listWidget = SizedBox(
                 width: containerWidth,
                 child: ClipRect(
                   child: UnconstrainedBox(
@@ -460,6 +592,20 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
                   ),
                 ),
               );
+
+              if (scrollbarWidget == null) return listWidget;
+
+              return SizedBox(
+                width: containerWidth,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    listWidget,
+                    scrollbarWidget,
+                  ],
+                ),
+              );
             },
           );
         } else {
@@ -470,9 +616,12 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
                 return const SizedBox.shrink();
               }
 
+              final scrollbarThickness = finalShowScrollbar ? 8.0 : 0.0;
+              final availableHeight = containerHeight;
+
               final totalGap = (widget.visibleCount - 1) * widget.gap;
               final slotSize =
-                  ((containerHeight - totalGap) / widget.visibleCount)
+                  ((availableHeight - totalGap) / widget.visibleCount)
                       .floorToDouble();
               final step = slotSize + widget.gap;
               final translate = -_viewOffset * step;
@@ -498,7 +647,7 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
                   ),
               ];
 
-              return SizedBox(
+              final listWidget = SizedBox(
                 height: containerHeight,
                 child: ClipRect(
                   child: UnconstrainedBox(
@@ -517,6 +666,19 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
                       ),
                     ),
                   ),
+                ),
+              );
+
+              if (scrollbarWidget == null) return listWidget;
+
+              return SizedBox(
+                height: containerHeight,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(child: listWidget),
+                    SizedBox(width: scrollbarThickness, child: scrollbarWidget),
+                  ],
                 ),
               );
             },
@@ -542,4 +704,3 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
     return result;
   }
 }
-

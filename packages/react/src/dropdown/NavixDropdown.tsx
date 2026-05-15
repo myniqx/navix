@@ -253,6 +253,7 @@ export function NavixDropdown({
                 threshold={1}
                 items={options}
                 outerStyle={outerListStyle}
+                showScrollbar={true}
                 renderItem={(option, itemFKey, index) => {
                   const isSelected = value.includes(option.value);
                   return (

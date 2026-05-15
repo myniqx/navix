@@ -16,6 +16,55 @@ import { useFocusable } from '../useFocusable';
 import { PaginatedListBehavior } from './PaginatedListBehavior';
 import type { PaginatedListOrientation } from './PaginatedListBehavior';
 
+export type ScrollbarRenderProps = {
+  scrollMode: boolean;
+  value: number;
+  min: number;
+  max: number;
+  orientation: PaginatedListOrientation;
+};
+
+function DefaultScrollbar({ scrollMode, value, min, max, orientation }: ScrollbarRenderProps) {
+  const ratio = max > min ? (value - min) / (max - min) : 0;
+  const isHorizontal = orientation === 'horizontal';
+  const thumbSize = 16;
+  return (
+    <div
+      style={{
+        position: 'relative',
+        flexShrink: 0,
+        borderRadius: 2,
+        backgroundColor: '#333',
+        ...(isHorizontal
+          ? { width: '100%', height: 8 }
+          : { width: 8, height: '100%' }),
+      }}
+    >
+      <div
+        style={{
+          position: 'absolute',
+          borderRadius: 2,
+          backgroundColor: scrollMode ? '#4fc3f7' : '#888',
+          transition: 'background-color 0.15s ease, top 0.1s ease, left 0.1s ease',
+          ...(isHorizontal
+            ? {
+              top: 0,
+              bottom: 0,
+              width: thumbSize,
+              left: `calc(${ratio * 100}% - ${ratio * thumbSize}px)`,
+            }
+            : {
+              left: 0,
+              right: 0,
+              height: thumbSize,
+              top: `calc(${ratio * 100}% - ${ratio * thumbSize}px)`,
+            }),
+        }}
+      />
+    </div>
+  );
+}
+
 interface SlotProps {
   item: any;
   itemKey: string;
@@ -65,6 +114,8 @@ interface PaginatedListProps<T> extends BaseComponentProps {
   groupKey?: string;
   gap?: number;
   buffer?: number;
+  showScrollbar?: boolean;
+  renderScrollbar?: (props: ScrollbarRenderProps) => ReactNode;
   outerStyle?: CSSProperties;
   outerClassName?: string;
   innerStyle?: CSSProperties;
@@ -87,6 +138,8 @@ export function NavixPaginatedList<T>({
   groupKey,
   gap = 0,
   buffer = 2,
+  showScrollbar = false,
+  renderScrollbar,
   onFocus,
   onBlurred,
   onRegister,
@@ -100,6 +153,7 @@ export function NavixPaginatedList<T>({
   slotClassName,
 }: PaginatedListProps<T>) {
   const [viewOffset, setViewOffset] = useState(0);
+  const [scrollMode, setScrollMode] = useState(false);
   const [containerSize, setContainerSize] = useState(0);
   const outerRef = useRef<HTMLDivElement | null>(null);
 
@@ -138,7 +192,7 @@ export function NavixPaginatedList<T>({
         items.length,
         visibleCount,
         threshold,
-        () => {},
+        () => { },
         (key) => itemKeysRef.current.indexOf(key),
         (index) => isItemDisabledRef.current?.(index) ?? false,
       );
@@ -212,6 +266,10 @@ export function NavixPaginatedList<T>({
     };
   }, [behavior, itemKeys, store]);
 
+  useEffect(() => {
+    behavior.onScrollModeChange = (value: boolean) => setScrollMode(value);
+  }, [behavior]);
+
   // Runs after the dimensions effect above — behavior has current
   // totalCount/visibleCount when jumpToIndex computes the new viewOffset.
   useEffect(() => {
@@ -256,17 +314,30 @@ export function NavixPaginatedList<T>({
   const totalGap = (visibleCount - 1) * gap;
   const slotWidth =
     containerSize > 0 ? (containerSize - totalGap) / visibleCount : 0;
-  const step = slotWidth + gap;
-  const translate = -viewOffset * step;
+  const slotStep = slotWidth + gap;
+  const translate = -viewOffset * slotStep;
 
   const renderStart = Math.max(0, viewOffset - buffer);
   const renderEnd = Math.min(items.length, viewOffset + visibleCount + buffer);
-  const paddingBefore = renderStart * step;
+  const paddingBefore = renderStart * slotStep;
 
-  // Internal styles — user props merged first, functional overrides applied on top
+  const scrollbarMax = Math.max(0, items.length - visibleCount);
+  const finalShowScrollbar = (showScrollbar || !!renderScrollbar) && scrollbarMax > 0;
+
+  const wrapperStyle = useMemo<CSSProperties>(
+    () => ({
+      display: 'flex',
+      flexDirection: isHorizontal ? 'column' : 'row',
+      ...(isHorizontal ? { width: '100%' } : { height: '100%' }),
+    }),
+    [isHorizontal],
+  );
+
   const outerStyle = useMemo<CSSProperties>(
-    () => ({ ...outerStyleProp, overflow: 'hidden', width: '100%' }),
-    [outerStyleProp],
+    () => finalShowScrollbar
+      ? { ...outerStyleProp, overflow: 'hidden', flex: 1, minWidth: 0, minHeight: 0 }
+      : { ...outerStyleProp, overflow: 'hidden', ...(isHorizontal ? { width: '100%' } : { height: '100%' }) },
+    [outerStyleProp, finalShowScrollbar, isHorizontal],
   );
 
   const innerStyle = useMemo<CSSProperties>(
@@ -303,34 +374,55 @@ export function NavixPaginatedList<T>({
     [slotStyleProp, isHorizontal, slotWidth],
   );
 
+  const scrollbarProps: ScrollbarRenderProps = {
+    scrollMode,
+    value: viewOffset,
+    min: 0,
+    max: scrollbarMax,
+    orientation,
+  };
+
+  const listDiv = (
+    <div
+      ref={measureRef}
+      data-navix-node-id={node.id}
+      style={outerStyle}
+      className={outerClassName}
+    >
+      <div style={innerStyle} className={innerClassName}>
+        {paddingBefore > 0 && <div style={spacerStyle} />}
+        {items.slice(renderStart, renderEnd).map((item, localIdx) => {
+          const globalIdx = renderStart + localIdx;
+          const itemKey = itemKeys[globalIdx]!;
+          return (
+            <Slot
+              key={itemKey}
+              item={item}
+              itemKey={itemKey}
+              index={globalIdx}
+              disabled={isItemDisabled?.(globalIdx) ?? false}
+              renderItemRef={renderItemRef}
+              slotStyle={slotStyle}
+              slotClassName={slotClassName}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+
   return (
     <FocusProvider>
-      <div
-        ref={measureRef}
-        data-navix-node-id={node.id}
-        style={outerStyle}
-        className={outerClassName}
-      >
-        <div style={innerStyle} className={innerClassName}>
-          {paddingBefore > 0 && <div style={spacerStyle} />}
-          {items.slice(renderStart, renderEnd).map((item, localIdx) => {
-            const globalIdx = renderStart + localIdx;
-            const itemKey = itemKeys[globalIdx]!;
-            return (
-              <Slot
-                key={itemKey}
-                item={item}
-                itemKey={itemKey}
-                index={globalIdx}
-                disabled={isItemDisabled?.(globalIdx) ?? false}
-                renderItemRef={renderItemRef}
-                slotStyle={slotStyle}
-                slotClassName={slotClassName}
-              />
-            );
-          })}
+      {finalShowScrollbar ? (
+        <div style={wrapperStyle}>
+          {listDiv}
+          {renderScrollbar
+            ? renderScrollbar(scrollbarProps)
+            : <DefaultScrollbar {...scrollbarProps} />}
         </div>
-      </div>
+      ) : (
+        listDiv
+      )}
     </FocusProvider>
   );
 }

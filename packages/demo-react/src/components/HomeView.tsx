@@ -75,6 +75,7 @@ function HomeRow({
       visibleCount={VISIBLE_COUNT}
       threshold={THRESHOLD}
       items={items}
+      showScrollbar={variant === 'series'}
       gap={12}
       isItemDisabled={isItemDisabled}
       outerStyle={{ padding: '16px 4px' }}

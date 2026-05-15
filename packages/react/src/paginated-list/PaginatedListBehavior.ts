@@ -9,6 +9,7 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
   totalCount: number;
   activeIndex: number = 0;
   viewOffset: number = 0;
+  scrollMode: boolean = false;
 
   private _visibleCount: number = MIN_VISIBLE_COUNT;
   private _threshold: number = 1;
@@ -31,12 +32,19 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
   private _pendingFocusKey: string | null = null;
   private _prev: string;
   private _next: string;
+  private _scrollEnter: string;
+  private _scrollExit: string;
   private _onChange: (newIndex: number, newOffset: number) => void;
+  private _onScrollModeChange: ((scrollMode: boolean) => void) | null = null;
   private _keyToIndex: (key: string) => number;
   private _isItemDisabled?: (index: number) => boolean;
 
   set onChange(fn: (newIndex: number, newOffset: number) => void) {
     this._onChange = fn;
+  }
+
+  set onScrollModeChange(fn: (scrollMode: boolean) => void) {
+    this._onScrollModeChange = fn;
   }
 
   constructor(
@@ -55,6 +63,8 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
     this.threshold = threshold;
     this._prev = orientation === 'horizontal' ? 'left' : 'up';
     this._next = orientation === 'horizontal' ? 'right' : 'down';
+    this._scrollEnter = orientation === 'horizontal' ? 'down' : 'right';
+    this._scrollExit = orientation === 'horizontal' ? 'up' : 'left';
     this._onChange = onChange;
     this._keyToIndex = keyToIndex;
     this._isItemDisabled = isItemDisabled;
@@ -72,6 +82,25 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
 
   onEvent = (event: NavEvent): boolean => {
     if (event.type !== 'press') return false;
+
+    if (this.scrollMode) {
+      if (event.action === this._prev) {
+        return this._scrollPage(-1);
+      }
+      if (event.action === this._next) {
+        return this._scrollPage(1);
+      }
+      if (event.action === this._scrollExit) {
+        this._setScrollMode(false);
+        return true;
+      }
+      if (event.action === this._scrollEnter) {
+        this._setScrollMode(false);
+        return false;
+      }
+      return false;
+    }
+
     if (event.action === this._prev) {
       const next = this._findNext(this.activeIndex, -1);
       return next !== null ? this._moveTo(next) : false;
@@ -80,6 +109,11 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
       const next = this._findNext(this.activeIndex, 1);
       return next !== null ? this._moveTo(next) : false;
     }
+    if (event.action === this._scrollEnter) {
+      this._setScrollMode(true);
+      return true;
+    }
+
     return false;
   };
 
@@ -124,6 +158,32 @@ export class PaginatedListBehavior implements IFocusNodeBehavior {
     const idx = this._keyToIndex(child.key);
     if (idx !== -1) this.activeIndex = idx;
   };
+
+  private _setScrollMode(value: boolean): void {
+    this.scrollMode = value;
+    this._onScrollModeChange?.(value);
+  }
+
+  private _scrollPage(dir: 1 | -1): boolean {
+    const maxOffset = Math.max(0, this.totalCount - this.visibleCount);
+    const newOffset = Math.min(
+      Math.max(this.viewOffset + dir * this.visibleCount, 0),
+      maxOffset,
+    );
+    if (newOffset === this.viewOffset) return true;
+
+    const oldActiveIndex = this.activeIndex;
+    const oldViewOffset = this.viewOffset;
+    const newActiveIndex = Math.min(
+      Math.max(newOffset + (oldActiveIndex - oldViewOffset), 0),
+      this.totalCount - 1,
+    );
+
+    this.viewOffset = newOffset;
+    this.activeIndex = newActiveIndex;
+    this._onChange(newActiveIndex, newOffset);
+    return true;
+  }
 
   private _findFirst(): number {
     if (!this._isItemDisabled) return 0;

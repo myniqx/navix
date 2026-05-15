@@ -889,12 +889,12 @@ class _ControlsPanelState extends State<_ControlsPanel> {
                 NavixStepper(
                   fKey: '${widget.props.fKey}-progress',
                   orientation: NavixStepperOrientation.horizontal,
-                  long: true,
-                  onIncrease: (type) => setState(() =>
-                    _progress = (_progress + (type == StepType.long ? 15 : 5)).clamp(0, 100)),
-                  onDecrease: (type) => setState(() =>
-                    _progress = (_progress - (type == StepType.long ? 15 : 5)).clamp(0, 100)),
-                  builder: (context, focused, status) {
+                  value: _progress,
+                  min: 0,
+                  max: 100,
+                  step: 5,
+                  onChange: (v) => setState(() => _progress = v),
+                  builder: (context, focused, status, value, min, max, step) {
                     final barColor = status == StepperStatus.increase
                         ? const Color(0xFF81D4FA)
                         : status == StepperStatus.decrease
@@ -957,11 +957,12 @@ class _ControlsPanelState extends State<_ControlsPanel> {
                 NavixStepper(
                   fKey: '${widget.props.fKey}-volume',
                   orientation: NavixStepperOrientation.horizontal,
-                  onIncrease: (_) => setState(() =>
-                    _volume = (_volume + 5).clamp(0, 100)),
-                  onDecrease: (_) => setState(() =>
-                    _volume = (_volume - 5).clamp(0, 100)),
-                  builder: (context, focused, status) {
+                  value: _volume,
+                  min: 0,
+                  max: 100,
+                  step: 5,
+                  onChange: (v) => setState(() => _volume = v),
+                  builder: (context, focused, status, value, min, max, step) {
                     final barColor = status == StepperStatus.increase
                         ? const Color(0xFFA5D6A7)
                         : status == StepperStatus.decrease

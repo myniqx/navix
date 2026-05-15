@@ -730,12 +730,13 @@ function ControlsPanel({
         <NavixStepper
           fKey={`${fKey}-progress`}
           orientation="horizontal"
-          long
-          onIncrease={(type) => setProgress((p) => Math.min(100, p + (type === 'long' ? 15 : 5)))}
-          onDecrease={(type) => setProgress((p) => Math.max(0, p - (type === 'long' ? 15 : 5)))}
+          value={progress}
+          min={0}
+          max={100}
+          step={5}
+          onChange={setProgress}
           style={{ display: 'block', padding: '4px 0 8px' }}
-        >
-          {({ focused, status }) => (
+          render={({ focused, status }) => (
             <div>
               <div
                 style={{
@@ -777,16 +778,18 @@ function ControlsPanel({
               </div>
             </div>
           )}
-        </NavixStepper>
+        />
 
         <NavixStepper
           fKey={`${fKey}-volume`}
           orientation="horizontal"
-          onIncrease={() => setVolume((v) => Math.min(100, v + 5))}
-          onDecrease={() => setVolume((v) => Math.max(0, v - 5))}
+          value={volume}
+          min={0}
+          max={100}
+          step={5}
+          onChange={setVolume}
           style={{ display: 'block', padding: '4px 0' }}
-        >
-          {({ focused, status }) => (
+          render={({ focused, status }) => (
             <div>
               <div
                 style={{
@@ -828,7 +831,7 @@ function ControlsPanel({
               </div>
             </div>
           )}
-        </NavixStepper>
+        />
 
         <NavixButton fKey={`${fKey}-close`} onClick={close}>
           {({ focused }) => (
