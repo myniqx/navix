@@ -29,6 +29,7 @@ Flutter's default directional navigation relies heavily on the geometric positio
 │  NavixSwitch      NavixExpandable       │
 │  NavixInput       NavixDropdown         │
 │  NavixPaginatedList  NavixPaginatedGrid │
+│  NavixScroll      NavixStepper          │
 │  NavixMultiLayer                        │
 └─────────────────────────────────────────┘
 ```
@@ -684,12 +685,13 @@ NavixPaginatedList<Movie>(
   isItemDisabled: null,
 
   /*
-    Jump to this index on mount and whenever the value changes. If the
-    target index is disabled the nearest non-disabled neighbour is focused.
-    Write-only intent prop — user arrow-key navigation is unaffected.
-    type: int?
+    Jump to the item with this key on mount and whenever the value
+    changes. If the target item is disabled the nearest non-disabled
+    neighbour is focused. Write-only intent prop — user arrow-key
+    navigation is unaffected.
+    type: String?
   */
-  activeIndex: null,
+  activeKey: null,
 
   /*
     Prevents this entire list from receiving focus.
@@ -705,6 +707,23 @@ NavixPaginatedList<Movie>(
     type: String?
   */
   groupKey: null,
+
+  /*
+    Mounts a NavixScroll as a focusable child below the list (or to its
+    side for vertical orientation). Arrowing into the scrollbar transfers
+    focus to it; arrowing back returns focus to the previously active
+    item. Default: false.
+    type: bool
+  */
+  showScrollbar: false,
+
+  /*
+    Override the default scrollbar visual. Receives ScrollbarRenderProps
+    (scrollMode/page/pageCount/orientation/onPageChange). Setting this
+    also enables the scrollbar implicitly.
+    type: Widget Function(ScrollbarRenderProps)?
+  */
+  renderScrollbar: null,
 
   // onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
 )
@@ -799,12 +818,13 @@ NavixPaginatedGrid<Channel>(
   isItemDisabled: null,
 
   /*
-    Jump to this index on mount and whenever the value changes. If the
-    target index is disabled the nearest non-disabled neighbour is focused.
-    Write-only intent prop — user arrow-key navigation is unaffected.
-    type: int?
+    Jump to the item with this key on mount and whenever the value
+    changes. If the target item is disabled the nearest non-disabled
+    neighbour is focused. Write-only intent prop — user arrow-key
+    navigation is unaffected.
+    type: String?
   */
-  activeIndex: null,
+  activeKey: null,
 
   /*
     Prevents this entire grid from receiving focus.
@@ -818,6 +838,21 @@ NavixPaginatedGrid<Channel>(
     type: String?
   */
   groupKey: null,
+
+  /*
+    Mounts a NavixScroll as a focusable child along the pagination axis.
+    Arrowing into it transfers focus; arrowing out returns focus to the
+    previously active item. Default: false.
+    type: bool
+  */
+  showScrollbar: false,
+
+  /*
+    Override the default scrollbar visual. Receives ScrollbarRenderProps.
+    Setting this also enables the scrollbar implicitly.
+    type: Widget Function(ScrollbarRenderProps)?
+  */
+  scrollbarBuilder: null,
 
   // onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
 )
@@ -836,6 +871,148 @@ col 0       col 1       col 2
 ```
 
 Left/right moves between columns (pagination axis). Up/down moves within a column (stops at edges).
+
+---
+
+#### `NavixScroll`
+
+Focusable scrollbar. Used internally by `NavixPaginatedList` / `NavixPaginatedGrid` to expose page navigation as a real focus target — the arrow opposite to the list's main axis transfers focus from the active item to the scrollbar; the reverse direction returns focus to the previously active item. Can also be used on its own as the scrollbar of any virtualized layout.
+
+```dart
+NavixScroll(
+  /*
+    Required. Identifies this node in the tree.
+    type: String
+  */
+  fKey: 'my-scrollbar',
+
+  /*
+    Required. Scroll axis. Arrow keys along this axis move the page;
+    PageUp/PageDown also move by pageStep regardless of orientation.
+    type: NavixScrollOrientation
+  */
+  orientation: NavixScrollOrientation.horizontal,
+
+  /*
+    Required. Total number of pages. Driving widgets typically pass
+    behavior.maxOffset + 1.
+    type: int
+  */
+  pageCount: pages.length,
+
+  /*
+    Controlled page index (0..pageCount-1). Omit for uncontrolled mode.
+    type: int?
+  */
+  page: page,
+
+  /*
+    Initial page in uncontrolled mode. Default: 0.
+    type: int?
+  */
+  defaultPage: 0,
+
+  /*
+    Pages moved per arrow press. Default: 1. Paginated list/grid pass
+    visibleCount so one arrow press jumps a full page.
+    type: int
+  */
+  arrowStep: 1,
+
+  /*
+    Pages moved per PageUp/PageDown press. Default: 1.
+    type: int
+  */
+  pageStep: 5,
+
+  /*
+    Called with the new page index when it changes.
+    type: void Function(int page)?
+  */
+  onPageChange: (p) => setState(() => page = p),
+
+  /*
+    Override the default visual. Receives ScrollbarRenderProps
+    (scrollMode/page/pageCount/orientation/onPageChange).
+    type: Widget Function(ScrollbarRenderProps)?
+  */
+  renderScrollbar: null,
+
+  // disabled, onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
+)
+```
+
+---
+
+#### `NavixStepper`
+
+Focusable single-value stepper. Arrow keys along `orientation` call `onChange(value)` with the clamped result. Built-in `render` modes draw a scrollbar or a progress fill; pass a `builder` for full visual control.
+
+```dart
+NavixStepper(
+  /*
+    Required. Identifies this node in the tree.
+    type: String
+  */
+  fKey: 'volume',
+
+  /*
+    Required. Step axis.
+    type: NavixStepperOrientation
+  */
+  orientation: NavixStepperOrientation.horizontal,
+
+  /*
+    Controlled value. Omit for uncontrolled mode.
+    type: double?
+  */
+  value: volume,
+
+  /*
+    Initial value in uncontrolled mode. Defaults to min.
+    type: double?
+  */
+  defaultValue: 0,
+
+  /*
+    Range and step size.
+    type: double
+  */
+  min: 0,
+  max: 100,
+  step: 2,
+
+  /*
+    Called with the new value when it changes.
+    type: void Function(double value)?
+  */
+  onChange: (v) => setState(() => volume = v),
+
+  /*
+    Allow long-press / double-press events to fire onChange.
+    Defaults: false / false.
+    type: bool
+  */
+  long: false,
+  double_: false,
+
+  /*
+    Built-in visual mode. Ignored when builder is provided.
+    Default: scrollbar.
+    type: NavixStepperRender?
+  */
+  render: NavixStepperRender.scrollbar,
+
+  /*
+    Custom builder for full visual control.
+    type: Widget Function(context, bool focused, StepperStatus status,
+                          double value, double min, double max, double step)?
+  */
+  builder: null,
+
+  // disabled, onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
+)
+```
 
 ---
 
@@ -1220,5 +1397,7 @@ Navigate with arrow keys. `Enter` to select. `Escape` to go back.
 - [x] `NavixSwitch` — controlled boolean toggle
 - [x] `NavixInput` — two-state text input with idle/editing modes
 - [x] `NavixMultiLayer` — full-screen video player shell with directional panels, zap banner, and notification overlay
+- [x] `NavixStepper` — single-value stepper with scrollbar / progress / custom render
+- [x] `NavixScroll` — focusable scrollbar embedded as a child of paginated list/grid
 - [ ] Scroll-into-view integration
 - [ ] Test suite
