@@ -24,6 +24,8 @@ export { NavixMultiLayer } from './multi-layer';
 export type {
   NavixMultiLayerPanelProps,
   NavixMultiLayerPanelId,
+  NavixMultiLayerPanelState,
+  NavixMultiLayerPanelRootProps,
 } from './multi-layer';
 
 export { NavixExpandable, useExpandable } from './expandable';

@@ -53,7 +53,7 @@ React 18+ adapter. Peer dependency on `react` and `react-dom`.
 | `NavixScroll`                                    | Focusable scrollbar. When focused, arrow keys (matching `orientation`) move by `arrowStep` (default 1) and PageUp/PageDown move by `pageStep` (default 1). Renders a draggable track + thumb by default; override with `renderScrollbar`. Used internally by `NavixPaginatedList` / `NavixPaginatedGrid` but reusable on its own.                                                  |
 | `NavixStepper`                                   | Focusable single-value stepper. Arrow keys (matching `orientation`) call `onChange` with the new value. `render` accepts `'scrollbar'`, `'progress'`, or a render function `({ focused, status, value, min, max, step }) => ReactNode` for full visual control.                                                                                                                    |
 | `NavixMultiLayer`                                | Full-screen video player shell. Renders a `baseLayer` beneath up to four directional panels (`left`, `right`, `up`, `down`). Only one panel is active at a time. Accepts `onPrev`/`onNext` for channel switching, `zapBanner` shown for 2s after channel change, `notification` for persistent or transient overlays, and `panelTimeout` to auto-close inactive panels.            |
-| `NavixMultiLayerPanelProps`                      | Props passed to each panel render function: `fKey`, `close`, `onEvent`, and all `BaseComponentProps`.                                                                                                                                                                                                                                                                              |
+| `NavixMultiLayerPanelProps`                      | Props passed to each panel render function: `fKey`, `close`, `panelState`, `panelRootProps` (spread on the visible panel root for hover-to-stay-open), and all `BaseComponentProps`.                                                                                                                                                                                                  |
 | `BaseComponentProps`                             | Shared interface all components extend: `fKey`, `disabled`, `onFocus`, `onBlurred`, `onRegister`, `onUnregister`, `onEvent`.                                                                                                                                                                                                                                                       |
 
 ---
@@ -627,16 +627,23 @@ const [player, setPlayer] = useState({ channels, current, paused: false });
 />;
 ```
 
-`panelTimeout` (default `4000` ms) auto-closes the active panel after inactivity. Any event from within a panel resets the timer. Set to a large value to disable auto-close.
+`panelTimeout` (default `4000` ms) auto-closes the active panel after inactivity. Any navigation event from within a panel resets the timer, and the timer is **paused while the pointer is hovering the panel** (see `panelRootProps` below). Set to a large value to disable auto-close.
 
 Panel render functions receive `NavixMultiLayerPanelProps`:
 
 ```ts
 type NavixMultiLayerPanelState = 'opening' | 'open' | 'closing';
 
+interface NavixMultiLayerPanelRootProps {
+  ref: (el: HTMLElement | null) => void;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
+}
+
 interface NavixMultiLayerPanelProps extends BaseComponentProps {
   close: () => void; // close the panel programmatically
   panelState: NavixMultiLayerPanelState; // use for CSS entry/exit transitions
+  panelRootProps: NavixMultiLayerPanelRootProps; // spread on the visible panel root
 }
 ```
 
@@ -645,6 +652,7 @@ interface NavixMultiLayerPanelProps extends BaseComponentProps {
 ```tsx
 left={(props) => (
   <div
+    {...props.panelRootProps}
     style={{
       transform:
         props.panelState === 'open'
@@ -660,7 +668,39 @@ left={(props) => (
 
 `transitionDuration` (default `250` ms) controls how long `NavixMultiLayer` waits before unmounting the closing panel. Set it to match your CSS transition duration.
 
-Mouse users can also open panels by hovering near the edge of the base layer. `triggerSize` (default `200` px) sets the width/height of the invisible hover zone on each edge. `hoverDelay` (default `300` ms) sets how long the pointer must dwell in the zone before the panel opens.
+#### `panelRootProps` — keeping the panel open under the mouse
+
+`panelRootProps` bundles a `ref` and `onMouseEnter` / `onMouseLeave` handlers that you **must spread onto the actual visible panel element** so `NavixMultiLayer` can pause the auto-close timer while the pointer is hovering it.
+
+```tsx
+// ✅ Correct — spread on the visible 260px-wide panel
+left={(props) => (
+  <div
+    {...props.panelRootProps}
+    style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 260 }}
+  >
+    …
+  </div>
+)}
+```
+
+```tsx
+// ❌ Wrong — don't spread on a fullscreen backdrop / overlay wrapper.
+// Every pixel would count as "hovering the panel" and the timer would
+// never fire.
+left={(props) => (
+  <div {...props.panelRootProps} style={{ position: 'absolute', inset: 0 }}>
+    <div style={{ position: 'absolute', left: 0, width: 260 }}>…</div>
+  </div>
+)}
+```
+
+Two subtleties worth knowing about:
+
+- **Keyboard-opened with the cursor already inside.** When the panel mounts under a stationary pointer, the browser does not fire `mouseenter`. The `ref` callback handles this by checking `el.matches(':hover')` on the next frame and pausing the timer accordingly — so this case Just Works as long as `panelRootProps` is spread on the right element.
+- **Don't omit `panelRootProps` if you have several panels stacked / animated wrappers.** It is the wrapper *closest to the visible panel surface* that should receive these props; outer animation containers are usually wrong because they fill the screen during transforms.
+
+Mouse users can also open panels by hovering near the edge of the base layer. `triggerSize` (default `200` px) sets the width/height of the invisible hover zone on each edge. `hoverDelay` (default `100` ms) sets how long the pointer must dwell in the zone before the panel opens.
 
 ### 15. Custom focusable with useFocusable
 

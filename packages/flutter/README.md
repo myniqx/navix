@@ -1083,6 +1083,8 @@ NavixMultiLayer(
 
   /*
     Ms of inactivity before active panel auto-closes. Default: 4000.
+    The timer is paused while the pointer hovers the visible panel (see
+    panelRootWrapper below) and resumes on exit.
     type: int
   */
   panelTimeout: 4000,
@@ -1100,10 +1102,10 @@ NavixMultiLayer(
   triggerSize: 200,
 
   /*
-    Ms the pointer must dwell in a trigger zone before the panel opens. Default: 300.
+    Ms the pointer must dwell in a trigger zone before the panel opens. Default: 100.
     type: int
   */
-  hoverDelay: 300,
+  hoverDelay: 100,
 )
 ```
 
@@ -1114,6 +1116,9 @@ class NavixMultiLayerPanelProps {
   final String fKey;
   final VoidCallback close;
   final NavixPanelState panelState; // opening | open | closing
+  // Wrap the visible panel widget with this to keep the panel open while the
+  // mouse is over it. Required for hover-to-stay-open behavior.
+  final Widget Function(Widget child) panelRootWrapper;
   // + onFocus, onBlurred, onRegister, onUnregister, onEvent
 }
 ```
@@ -1129,6 +1134,43 @@ left: (props) => AnimatedSlide(
   child: AudioSubtitlesPanel(props: props),
 )
 ```
+
+##### `panelRootWrapper` — keeping the panel open under the mouse
+
+`panelRootWrapper` returns a `MouseRegion` around its child. Wrap your **visible panel widget** with it so `NavixMultiLayer` can pause the auto-close timer while the pointer is hovering the panel.
+
+```dart
+// ✅ Correct — wrap the visible 260px-wide panel.
+left: (props) => Align(
+  alignment: Alignment.centerLeft,
+  child: props.panelRootWrapper(
+    Container(
+      width: 260,
+      color: Colors.black87,
+      child: AudioSubtitlesContent(props: props),
+    ),
+  ),
+)
+```
+
+```dart
+// ❌ Wrong — don't wrap a full-screen container that just positions a small
+// inner panel. Every pixel would count as "hovering the panel" and the
+// timer would never fire.
+left: (props) => props.panelRootWrapper(
+  SizedBox.expand(
+    child: Align(
+      alignment: Alignment.centerLeft,
+      child: Container(width: 260, ...),
+    ),
+  ),
+)
+```
+
+Two things to know:
+
+- **Keyboard-opened with the cursor already inside.** Flutter's mouse tracker fires `MouseRegion.onEnter` automatically when a region is mounted under a stationary pointer, so the panel correctly stays open without any extra work — as long as `panelRootWrapper` wraps the right widget.
+- **Animation containers usually fill the screen.** If your panel uses `AnimatedContainer` / `AnimatedSlide` at the outermost level, wrap the inner visible widget (typically the `Container` inside an `Align`) rather than the animation wrapper itself.
 
 ---
 

@@ -20,10 +20,17 @@ class NavixMultiLayerPanelProps {
   final void Function(String key)? onUnregister;
   final bool Function(NavEvent event)? onEvent;
 
+  /// Wrap the actual visible panel widget with this so the parent can keep
+  /// the panel open while the mouse is over it. Important when the panel is
+  /// opened by key press with the cursor already inside its bounds — Flutter's
+  /// MouseRegion fires onEnter when it is mounted underneath the pointer.
+  final Widget Function(Widget child) panelRootWrapper;
+
   const NavixMultiLayerPanelProps({
     required this.fKey,
     required this.close,
     required this.panelState,
+    required this.panelRootWrapper,
     this.onFocus,
     this.onBlurred,
     this.onRegister,
@@ -183,6 +190,7 @@ class _NavixMultiLayerState extends State<NavixMultiLayer> {
   NavixPanelId? _openingPanel;
   NavixPanelId? _closingPanel;
   bool _zapVisible = false;
+  bool _panelHovered = false;
 
   _MultiLayerBehavior? _behavior;
   NavixFocusNode? _node;
@@ -200,6 +208,7 @@ class _NavixMultiLayerState extends State<NavixMultiLayer> {
         _activePanel = null;
         _closingPanel = current;
         _openingPanel = null;
+        _panelHovered = false;
       });
       _closingTimer?.cancel();
       _closingTimer = Timer(
@@ -211,6 +220,9 @@ class _NavixMultiLayerState extends State<NavixMultiLayer> {
         _activePanel = panel;
         _closingPanel = null;
         _openingPanel = panel;
+        // Reset; MouseRegion.onEnter will fire on the next frame if the
+        // pointer is already inside the freshly-mounted panel.
+        _panelHovered = false;
       });
       // Next frame: switch opening → open so transition triggers
       WidgetsBinding.instance.addPostFrameCallback(
@@ -229,9 +241,30 @@ class _NavixMultiLayerState extends State<NavixMultiLayer> {
   void _resetPanelTimeout() {
     _panelTimer?.cancel();
     if (_activePanel == null) return;
+    if (_panelHovered) return;
     _panelTimer = Timer(
       Duration(milliseconds: widget.panelTimeout),
       () => _closePanel(),
+    );
+  }
+
+  void _handlePanelMouseEnter() {
+    if (_panelHovered) return;
+    setState(() => _panelHovered = true);
+    _panelTimer?.cancel();
+  }
+
+  void _handlePanelMouseExit() {
+    if (!_panelHovered) return;
+    setState(() => _panelHovered = false);
+    _resetPanelTimeout();
+  }
+
+  Widget _wrapPanelRoot(Widget child) {
+    return MouseRegion(
+      onEnter: (_) => _handlePanelMouseEnter(),
+      onExit: (_) => _handlePanelMouseExit(),
+      child: child,
     );
   }
 
@@ -298,6 +331,7 @@ class _NavixMultiLayerState extends State<NavixMultiLayer> {
       fKey: '${widget.fKey}-panel-${side.name}',
       close: _closePanel,
       panelState: panelState,
+      panelRootWrapper: _wrapPanelRoot,
       onEvent: (event) {
         _resetPanelTimeout();
         return false;

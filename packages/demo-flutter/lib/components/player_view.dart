@@ -305,7 +305,8 @@ class _SidePanelState extends State<_SidePanel> {
       transform: Matrix4.translationValues(isOpen ? 0 : -260, 0, 0),
       child: Align(
         alignment: Alignment.centerLeft,
-        child: Container(
+        child: widget.props.panelRootWrapper(
+          Container(
           width: 260,
           decoration: const BoxDecoration(
             color: Color(0xF20a0a14),
@@ -436,6 +437,7 @@ class _SidePanelState extends State<_SidePanel> {
             ],
           ),
         ),
+        ),
       ),
     );
   }
@@ -462,7 +464,8 @@ class _ChannelListPanel extends StatelessWidget {
       transform: Matrix4.translationValues(isOpen ? 0 : 280, 0, 0),
       child: Align(
         alignment: Alignment.centerRight,
-        child: Container(
+        child: props.panelRootWrapper(
+          Container(
           width: 280,
           decoration: const BoxDecoration(
             color: Color(0xF20a0a14),
@@ -572,6 +575,7 @@ class _ChannelListPanel extends StatelessWidget {
             ],
           ),
         ),
+        ),
       ),
     );
   }
@@ -606,7 +610,8 @@ class _NotificationsPanel extends StatelessWidget {
       transform: Matrix4.translationValues(0, isOpen ? 0 : -280, 0),
       child: Align(
         alignment: Alignment.topCenter,
-        child: Container(
+        child: props.panelRootWrapper(
+          Container(
           height: 280,
           width: double.infinity,
           decoration: const BoxDecoration(
@@ -754,6 +759,7 @@ class _NotificationsPanel extends StatelessWidget {
             ],
           ),
         ),
+        ),
       ),
     );
   }
@@ -809,7 +815,8 @@ class _ControlsPanelState extends State<_ControlsPanel> {
       transform: Matrix4.translationValues(0, isOpen ? 0 : 200, 0),
       child: Align(
         alignment: Alignment.bottomCenter,
-        child: Container(
+        child: widget.props.panelRootWrapper(
+          Container(
           width: double.infinity,
           decoration: const BoxDecoration(
             color: Color(0xF20a0a14),
@@ -1049,6 +1056,7 @@ class _ControlsPanelState extends State<_ControlsPanel> {
               ],
             ),
           ),
+        ),
         ),
       ),
     );

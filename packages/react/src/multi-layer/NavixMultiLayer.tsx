@@ -24,9 +24,19 @@ export type { NavixMultiLayerPanelId };
 
 export type NavixMultiLayerPanelState = 'opening' | 'open' | 'closing';
 
+export interface NavixMultiLayerPanelRootProps {
+  ref: (el: HTMLElement | null) => void;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
+}
+
 export interface NavixMultiLayerPanelProps extends BaseComponentProps {
   close: () => void;
   panelState: NavixMultiLayerPanelState;
+  // Spread this on the actual visible panel root so the parent can keep the
+  // panel open while the mouse is over it (works even when the panel was
+  // opened by keyboard with the cursor already inside its bounds).
+  panelRootProps: NavixMultiLayerPanelRootProps;
 }
 
 interface MultiLayerProps extends BaseComponentProps {
@@ -79,6 +89,8 @@ export function NavixMultiLayer({
     useState<NavixMultiLayerPanelId | null>(null);
   const activePanelRef = useRef<NavixMultiLayerPanelId | null>(null);
   const [zapChannel, setZapChannel] = useState<boolean>(false);
+  const [panelHovered, setPanelHovered] = useState<boolean>(false);
+  const panelHoveredRef = useRef<boolean>(false);
   const panelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const zapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -101,6 +113,8 @@ export function NavixMultiLayer({
         const current = activePanelRef.current;
         if (current === null) return;
         activePanelRef.current = null;
+        panelHoveredRef.current = false;
+        setPanelHovered(false);
         setActivePanel(null);
         setClosingPanel(current);
         setOpeningPanel(null);
@@ -112,6 +126,10 @@ export function NavixMultiLayer({
         );
       } else {
         activePanelRef.current = panel;
+        // Reset hover; the panel-root ref callback will re-detect via
+        // matches(':hover') once the new panel mounts.
+        panelHoveredRef.current = false;
+        setPanelHovered(false);
         setActivePanel(panel);
         setClosingPanel(null);
         setOpeningPanel(panel);
@@ -127,6 +145,7 @@ export function NavixMultiLayer({
   const resetPanelTimeout = useCallback(() => {
     if (panelTimeoutRef.current !== null) clearTimeout(panelTimeoutRef.current);
     if (activePanelRef.current === null) return;
+    if (panelHoveredRef.current) return;
     panelTimeoutRef.current = setTimeout(() => setPanel(null), panelTimeout);
   }, [setPanel, panelTimeout]);
   resetPanelTimeoutRef.current = resetPanelTimeout;
@@ -137,9 +156,18 @@ export function NavixMultiLayer({
     zapTimeoutRef.current = setTimeout(() => setZapChannel(false), 2000);
   }, []);
 
-  // Reset timeout on any event while panel is open
+  // (Re)start auto-close timer when the panel is open and the mouse is not
+  // hovering it. When hover begins we clear the timer; when hover ends we
+  // restart it here.
   useEffect(() => {
     if (activePanel === null) {
+      if (panelTimeoutRef.current !== null) {
+        clearTimeout(panelTimeoutRef.current);
+        panelTimeoutRef.current = null;
+      }
+      return;
+    }
+    if (panelHovered) {
       if (panelTimeoutRef.current !== null) {
         clearTimeout(panelTimeoutRef.current);
         panelTimeoutRef.current = null;
@@ -151,7 +179,7 @@ export function NavixMultiLayer({
       if (panelTimeoutRef.current !== null)
         clearTimeout(panelTimeoutRef.current);
     };
-  }, [activePanel, panelTimeout, setPanel]);
+  }, [activePanel, panelHovered, panelTimeout, setPanel]);
 
   const { FocusProvider, node } = useFocusable(
     fKey,
@@ -242,6 +270,30 @@ export function NavixMultiLayer({
     [triggerSize],
   );
 
+  const handlePanelMouseEnter = useCallback(() => {
+    panelHoveredRef.current = true;
+    setPanelHovered(true);
+  }, []);
+
+  const handlePanelMouseLeave = useCallback(() => {
+    panelHoveredRef.current = false;
+    setPanelHovered(false);
+  }, []);
+
+  const handlePanelRootRef = useCallback((el: HTMLElement | null) => {
+    if (el === null) return;
+    // The mouse may already be hovering the panel when it mounts — typical
+    // case: the user opened the panel with a key press while the cursor
+    // happened to be over its area, so no mouseenter event fires. Detect
+    // initial hover state via the :hover CSS selector after layout settles.
+    requestAnimationFrame(() => {
+      if (typeof el.matches === 'function' && el.matches(':hover')) {
+        panelHoveredRef.current = true;
+        setPanelHovered(true);
+      }
+    });
+  }, []);
+
   const makePanelProps = useCallback(
     (
       side: NavixMultiLayerPanelId,
@@ -254,8 +306,20 @@ export function NavixMultiLayer({
         resetPanelTimeout();
         return false;
       },
+      panelRootProps: {
+        ref: handlePanelRootRef,
+        onMouseEnter: handlePanelMouseEnter,
+        onMouseLeave: handlePanelMouseLeave,
+      },
     }),
-    [fKey, closePanel, resetPanelTimeout],
+    [
+      fKey,
+      closePanel,
+      resetPanelTimeout,
+      handlePanelRootRef,
+      handlePanelMouseEnter,
+      handlePanelMouseLeave,
+    ],
   );
 
   const wrapperStyle = useMemo<CSSProperties>(

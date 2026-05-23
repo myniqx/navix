@@ -212,11 +212,13 @@ function SidePanel({
   onEvent,
   close,
   panelState,
+  panelRootProps,
 }: NavixMultiLayerPanelProps) {
   const [selected, setSelected] = useState('audio-tr');
 
   return (
     <div
+      {...panelRootProps}
       style={{
         position: 'absolute',
         left: 0,
@@ -345,6 +347,7 @@ function ChannelListPanel({
   onSelect,
   close,
   panelState,
+  panelRootProps,
 }: NavixMultiLayerPanelProps & {
   channels: ContentItem[];
   current: ContentItem;
@@ -352,6 +355,7 @@ function ChannelListPanel({
 }) {
   return (
     <div
+      {...panelRootProps}
       style={{
         position: 'absolute',
         right: 0,
@@ -491,9 +495,11 @@ function NotificationsPanel({
   close,
   current,
   panelState,
+  panelRootProps,
 }: NavixMultiLayerPanelProps & { current: ContentItem }) {
   return (
     <div
+      {...panelRootProps}
       style={{
         position: 'absolute',
         top: 0,
@@ -634,6 +640,7 @@ function ControlsPanel({
   onNext,
   onPrev,
   panelState,
+  panelRootProps,
 }: NavixMultiLayerPanelProps & {
   paused: boolean;
   onTogglePause: () => void;
@@ -652,6 +659,7 @@ function ControlsPanel({
 
   return (
     <div
+      {...panelRootProps}
       style={{
         position: 'absolute',
         bottom: 0,
