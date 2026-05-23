@@ -160,7 +160,10 @@ export function NavixPaginatedGrid<T>({
       }
       if (activeKey !== undefined) {
         const idx = itemKeysRef.current.indexOf(activeKey);
-        if (idx !== -1) b.jumpToIndex(idx);
+        if (idx !== -1) {
+          b.jumpToIndex(idx);
+          b.focusByKey(activeKey);
+        }
       }
       return b;
     },

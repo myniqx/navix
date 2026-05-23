@@ -578,6 +578,7 @@ class _NavixPaginatedGridState<T> extends State<NavixPaginatedGrid<T>> {
           if (idx != -1) {
             _behavior!.jumpToIndex(idx);
             _viewOffset = _behavior!.viewOffset;
+            _behavior!.focusByKey(widget.activeKey!);
           }
         }
         _behavior!.onChange = _onBehaviorChange;
