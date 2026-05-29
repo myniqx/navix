@@ -1,6 +1,15 @@
 name: navix
-description: Spatial navigation library for Flutter TV platforms.
+description: Spatial navigation library for Flutter TV platforms (Android TV, Fire TV, Apple TV, desktop).
 version: 0.1.0
+homepage: https://github.com/myniqx/navix/tree/main/packages/flutter
+repository: https://github.com/myniqx/navix
+issue_tracker: https://github.com/myniqx/navix/issues
+topics:
+  - tv
+  - navigation
+  - focus
+  - remote-control
+  - android-tv
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
