@@ -353,6 +353,7 @@ class NavixPaginatedGrid<T> extends StatefulWidget {
   final NavixPaginatedGridKeyForItem<T>? keyForItem;
   final bool Function(int index)? isItemDisabled;
   final bool disabled;
+  final bool focusOnRegister;
 
   /// Jump to this item on mount and whenever the value changes. The widget
   /// manages its own navigation state between jumps — user arrow-key navigation
@@ -383,6 +384,7 @@ class NavixPaginatedGrid<T> extends StatefulWidget {
     this.isItemDisabled,
     this.activeKey,
     this.disabled = false,
+    this.focusOnRegister = false,
     this.groupKey,
     this.orientation = NavixGridOrientation.horizontal,
     this.gap = 0,
@@ -552,6 +554,7 @@ class _NavixPaginatedGridState<T> extends State<NavixPaginatedGrid<T>> {
         onUnregister: widget.onUnregister,
         onEvent: widget.onEvent,
         disabled: widget.disabled,
+        focusOnRegister: widget.focusOnRegister,
       ),
       createBehavior: (node) {
         _behavior = NavixPaginatedGridBehavior(

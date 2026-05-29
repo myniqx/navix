@@ -36,6 +36,7 @@ class NavixHorizontalList extends StatefulWidget {
   final String fKey;
   final Widget child;
   final bool disabled;
+  final bool focusOnRegister;
   final void Function(String key)? onFocus;
   final void Function(String key)? onBlurred;
   final void Function(String key)? onRegister;
@@ -47,6 +48,7 @@ class NavixHorizontalList extends StatefulWidget {
     required this.fKey,
     required this.child,
     this.disabled = false,
+    this.focusOnRegister = false,
     this.onFocus,
     this.onBlurred,
     this.onRegister,
@@ -71,6 +73,7 @@ class _NavixHorizontalListState extends State<NavixHorizontalList>
         onUnregister: widget.onUnregister,
         onEvent: widget.onEvent,
         disabled: widget.disabled,
+        focusOnRegister: widget.focusOnRegister,
       ),
       createBehavior: (node) {
         final behavior = _ListBehavior(node, _ListOrientation.horizontal);
@@ -93,6 +96,7 @@ class NavixVerticalList extends StatefulWidget {
   final String fKey;
   final Widget child;
   final bool disabled;
+  final bool focusOnRegister;
   final void Function(String key)? onFocus;
   final void Function(String key)? onBlurred;
   final void Function(String key)? onRegister;
@@ -104,6 +108,7 @@ class NavixVerticalList extends StatefulWidget {
     required this.fKey,
     required this.child,
     this.disabled = false,
+    this.focusOnRegister = false,
     this.onFocus,
     this.onBlurred,
     this.onRegister,
@@ -128,6 +133,7 @@ class _NavixVerticalListState extends State<NavixVerticalList>
         onUnregister: widget.onUnregister,
         onEvent: widget.onEvent,
         disabled: widget.disabled,
+        focusOnRegister: widget.focusOnRegister,
       ),
       createBehavior: (node) {
         final behavior = _ListBehavior(node, _ListOrientation.vertical);

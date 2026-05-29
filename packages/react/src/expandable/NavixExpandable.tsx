@@ -61,6 +61,7 @@ export function NavixExpandable({
   onUnregister,
   onEvent,
   disabled,
+  focusOnRegister,
   children,
 }: ExpandableProps) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -68,7 +69,7 @@ export function NavixExpandable({
   const { focused, directlyFocused, focusSelf, FocusProvider, node } =
     useFocusable(
       fKey,
-      { onFocus, onBlurred, onRegister, onUnregister, onEvent, disabled },
+      { onFocus, onBlurred, onRegister, onUnregister, onEvent, disabled, focusOnRegister },
       (n: FocusNode) => new ExpandableBehavior(n, setIsExpanded),
     );
 

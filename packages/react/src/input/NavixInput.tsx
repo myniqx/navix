@@ -55,6 +55,7 @@ export function NavixInput({
   onUnregister,
   onEvent,
   disabled,
+  focusOnRegister,
   value,
   onChange,
   style,
@@ -75,7 +76,7 @@ export function NavixInput({
 
   const { focused, focusSelf, FocusProvider, node } = useFocusable(
     fKey,
-    { onFocus, onBlurred, onRegister, onUnregister, onEvent, disabled },
+    { onFocus, onBlurred, onRegister, onUnregister, onEvent, disabled, focusOnRegister },
     (n: FocusNode) => new InputBehavior(n, setIsEditing),
   );
 

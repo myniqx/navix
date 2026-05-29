@@ -15,6 +15,7 @@ class NavixButton extends StatefulWidget {
   final VoidCallback? onLongPress;
   final VoidCallback? onDoublePress;
   final bool disabled;
+  final bool focusOnRegister;
   final void Function(String key)? onFocus;
   final void Function(String key)? onBlurred;
   final void Function(String key)? onRegister;
@@ -30,6 +31,7 @@ class NavixButton extends StatefulWidget {
     this.onLongPress,
     this.onDoublePress,
     this.disabled = false,
+    this.focusOnRegister = false,
     this.onFocus,
     this.onBlurred,
     this.onRegister,
@@ -84,6 +86,7 @@ class _NavixButtonState extends State<NavixButton> {
         onUnregister: widget.onUnregister,
         onEvent: widget.onEvent,
         disabled: widget.disabled,
+        focusOnRegister: widget.focusOnRegister,
       ),
       createBehavior: (_) => _behavior,
       builder: (context, node, focused, directlyFocused) {

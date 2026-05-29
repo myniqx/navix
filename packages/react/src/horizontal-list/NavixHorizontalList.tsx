@@ -25,6 +25,7 @@ export function NavixHorizontalList({
   onUnregister,
   onEvent,
   disabled,
+  focusOnRegister,
   children,
   className,
   focusedClassName,
@@ -33,7 +34,7 @@ export function NavixHorizontalList({
 }: HorizontalListProps) {
   const { node, focused, FocusProvider } = useFocusable(
     fKey,
-    { onFocus, onBlurred, onRegister, onUnregister, onEvent, disabled },
+    { onFocus, onBlurred, onRegister, onUnregister, onEvent, disabled, focusOnRegister },
     (n: FocusNode) => new ListBehavior(n, 'horizontal'),
   );
 

@@ -26,6 +26,7 @@ export function NavixGrid({
   onUnregister,
   onEvent,
   disabled,
+  focusOnRegister,
   children,
   className,
   focusedClassName,
@@ -34,7 +35,7 @@ export function NavixGrid({
 }: GridProps) {
   const { focused, FocusProvider, node } = useFocusable(
     fKey,
-    { onFocus, onBlurred, onRegister, onUnregister, onEvent, disabled },
+    { onFocus, onBlurred, onRegister, onUnregister, onEvent, disabled, focusOnRegister },
     (n: FocusNode) => new GridBehavior(n, columns),
   );
 

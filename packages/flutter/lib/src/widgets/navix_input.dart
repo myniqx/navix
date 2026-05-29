@@ -69,6 +69,7 @@ class NavixInput extends StatefulWidget {
   final void Function(String value) onChange;
   final NavixInputBuilder builder;
   final bool disabled;
+  final bool focusOnRegister;
   final void Function(String key)? onFocus;
   final void Function(String key)? onBlurred;
   final void Function(String key)? onRegister;
@@ -82,6 +83,7 @@ class NavixInput extends StatefulWidget {
     required this.onChange,
     required this.builder,
     this.disabled = false,
+    this.focusOnRegister = false,
     this.onFocus,
     this.onBlurred,
     this.onRegister,
@@ -169,6 +171,7 @@ class _NavixInputState extends State<NavixInput> {
         onUnregister: widget.onUnregister,
         onEvent: widget.onEvent,
         disabled: widget.disabled,
+        focusOnRegister: widget.focusOnRegister,
       ),
       createBehavior: (node) {
         _behavior = _InputBehavior(node, _onEditingChanged);

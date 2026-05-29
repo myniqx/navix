@@ -158,6 +158,7 @@ NavixFocusable(
     Lifecycle and event callbacks. All receive the fKey of the widget.
     onFocus / onBlurred fire when isDirectlyFocused changes.
     onRegister / onUnregister fire when the node enters/leaves the tree.
+    focusOnRegister: calls requestFocus() automatically on register.
     onEvent: return true to consume the event, false to let it bubble.
     type: NavixFocusableCallbacks?
   */
@@ -167,6 +168,7 @@ NavixFocusable(
     onRegister: (key) => print('$key mounted'),
     onUnregister: (key) => print('$key unmounted'),
     onEvent: (event) => false,
+    focusOnRegister: false,
   ),
 
   /*
@@ -229,7 +231,7 @@ NavixVerticalList(
     ],
   ),
 
-  // disabled, onFocus, onBlurred, onRegister, onUnregister also accepted
+  // disabled, focusOnRegister, onFocus, onBlurred, onRegister, onUnregister also accepted
 )
 ```
 
@@ -267,7 +269,7 @@ NavixGrid(
     ).toList(),
   ),
 
-  // disabled, onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
+  // disabled, focusOnRegister, onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
 )
 ```
 
@@ -319,7 +321,7 @@ NavixButton(
   ),
 
   // child: const Text('▶ Play'),  // alternative to builder
-  // disabled, onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
+  // disabled, focusOnRegister, onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
 )
 ```
 
@@ -369,7 +371,7 @@ NavixSwitch(
     ],
   ),
 
-  // disabled, onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
+  // disabled, focusOnRegister, onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
 )
 ```
 
@@ -437,7 +439,7 @@ NavixInput(
     );
   },
 
-  // disabled, onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
+  // disabled, focusOnRegister, onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
 )
 ```
 
@@ -499,7 +501,7 @@ NavixExpandable(
     );
   },
 
-  // disabled, onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
+  // disabled, focusOnRegister, onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
 )
 ```
 
@@ -606,7 +608,7 @@ NavixDropdown(
       ]),
     ),
 
-  // disabled, onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
+  // disabled, focusOnRegister, onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
 )
 ```
 
@@ -725,7 +727,7 @@ NavixPaginatedList<Movie>(
   */
   renderScrollbar: null,
 
-  // onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
+  // focusOnRegister, onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
 )
 ```
 
@@ -854,7 +856,7 @@ NavixPaginatedGrid<Channel>(
   */
   scrollbarBuilder: null,
 
-  // onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
+  // focusOnRegister, onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
 )
 ```
 
@@ -938,7 +940,7 @@ NavixScroll(
   */
   renderScrollbar: null,
 
-  // disabled, onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
+  // disabled, focusOnRegister, onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
 )
 ```
 
@@ -1010,7 +1012,7 @@ NavixStepper(
   */
   builder: null,
 
-  // disabled, onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
+  // disabled, focusOnRegister, onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
 )
 ```
 
@@ -1375,11 +1377,12 @@ NavixFocusable(
 
 ### 4. Lifecycle callbacks
 
-Every widget accepts `onFocus`, `onBlurred`, `onRegister`, `onUnregister`. All receive the `fKey` of the widget that fired the event:
+Every widget accepts `onFocus`, `onBlurred`, `onRegister`, `onUnregister`, and `focusOnRegister`. All receive the `fKey` of the widget that fired the event:
 
 ```dart
 NavixButton(
   fKey: 'play',
+  focusOnRegister: true,
   onRegister: (key) => print('$key mounted'),
   onFocus: (key) => print('$key focused'),
   onBlurred: (key) => print('$key blurred'),
@@ -1388,6 +1391,8 @@ NavixButton(
   child: const Text('▶ Play'),
 )
 ```
+
+`focusOnRegister: true` calls `requestFocus()` automatically when the node registers with its parent — useful for giving a specific widget initial focus on mount. When multiple widgets have `focusOnRegister: true`, the last one to register wins.
 
 ---
 

@@ -86,6 +86,7 @@ export function NavixPaginatedGrid<T>({
   isItemDisabled,
   activeKey,
   disabled,
+  focusOnRegister,
   groupKey,
   gap = 0,
   buffer = 1,
@@ -138,7 +139,7 @@ export function NavixPaginatedGrid<T>({
 
   const { node, FocusProvider } = useFocusable(
     fKey,
-    { onFocus, onBlurred, onRegister, onUnregister, onEvent, disabled },
+    { onFocus, onBlurred, onRegister, onUnregister, onEvent, disabled, focusOnRegister },
     (n: FocusNode) => {
       const b = new PaginatedGridBehavior(
         n,

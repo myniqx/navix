@@ -150,6 +150,7 @@ class NavixMultiLayer extends StatefulWidget {
   final double triggerSize;
   final int hoverDelay;
   final int transitionDuration;
+  final bool focusOnRegister;
   final void Function(String key)? onFocus;
   final void Function(String key)? onBlurred;
   final void Function(String key)? onRegister;
@@ -174,6 +175,7 @@ class NavixMultiLayer extends StatefulWidget {
     this.triggerSize = 200,
     this.hoverDelay = 100,
     this.transitionDuration = 250,
+    this.focusOnRegister = false,
     this.onFocus,
     this.onBlurred,
     this.onRegister,
@@ -364,6 +366,7 @@ class _NavixMultiLayerState extends State<NavixMultiLayer> {
         onRegister: widget.onRegister,
         onUnregister: widget.onUnregister,
         onEvent: widget.onEvent,
+        focusOnRegister: widget.focusOnRegister,
       ),
       createBehavior: (node) {
         _node = node;

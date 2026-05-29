@@ -9,17 +9,9 @@ import {
 } from 'react';
 
 import { FocusNode } from './core/FocusNode';
-import type { IFocusNodeBehavior, NavEvent } from './core/types';
+import type { IFocusNodeBehavior } from './core/types';
 import { FocusContext } from './FocusContext';
-
-interface UseFocusableCallbacks {
-  onFocus?: (key: string) => void;
-  onBlurred?: (key: string) => void;
-  onRegister?: (key: string) => void;
-  onUnregister?: (key: string) => void;
-  onEvent?: (event: NavEvent) => boolean;
-  disabled?: boolean;
-}
+import type { UseFocusableCallbacks } from './types';
 
 interface UseFocusableResult {
   node: FocusNode;
@@ -90,6 +82,10 @@ export function useFocusable(
   node.behavior.onRegister = () => {
     orig.onRegister?.();
     callbacksRef.current.onRegister?.(key);
+    if (callbacksRef.current.focusOnRegister) {
+      console.log(`Node ${key} requesting focus on register due to focusOnRegister prop`);
+      node.requestFocus();
+    }
   };
   node.behavior.onUnregister = () => {
     orig.onUnregister?.();

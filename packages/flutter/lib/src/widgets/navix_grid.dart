@@ -60,6 +60,7 @@ class NavixGrid extends StatefulWidget {
   final int columns;
   final Widget child;
   final bool disabled;
+  final bool focusOnRegister;
   final void Function(String key)? onFocus;
   final void Function(String key)? onBlurred;
   final void Function(String key)? onRegister;
@@ -72,6 +73,7 @@ class NavixGrid extends StatefulWidget {
     required this.columns,
     required this.child,
     this.disabled = false,
+    this.focusOnRegister = false,
     this.onFocus,
     this.onBlurred,
     this.onRegister,
@@ -105,6 +107,7 @@ class _NavixGridState extends State<NavixGrid> {
         onUnregister: widget.onUnregister,
         onEvent: widget.onEvent,
         disabled: widget.disabled,
+        focusOnRegister: widget.focusOnRegister,
       ),
       createBehavior: (node) {
         _behavior = _GridBehavior(node, widget.columns);

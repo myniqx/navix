@@ -92,6 +92,7 @@ export function NavixPaginatedList<T>({
   isItemDisabled,
   activeKey,
   disabled,
+  focusOnRegister,
   groupKey,
   gap = 0,
   buffer = 2,
@@ -142,7 +143,7 @@ export function NavixPaginatedList<T>({
 
   const { node, FocusProvider } = useFocusable(
     fKey,
-    { onFocus, onBlurred, onRegister, onUnregister, onEvent, disabled },
+    { onFocus, onBlurred, onRegister, onUnregister, onEvent, disabled, focusOnRegister },
     (n: FocusNode) => {
       const b = new PaginatedListBehavior(
         n,

@@ -67,6 +67,7 @@ export function NavixStepper({
   double = false,
   feedbackTimeout = 300,
   disabled,
+  focusOnRegister,
   onFocus,
   onBlurred,
   onRegister,
@@ -130,7 +131,7 @@ export function NavixStepper({
 
   const { node, directlyFocused } = useFocusable(
     fKey,
-    { onFocus, onBlurred, onRegister, onUnregister, onEvent, disabled },
+    { onFocus, onBlurred, onRegister, onUnregister, onEvent, disabled, focusOnRegister },
     (n: FocusNode) =>
       new StepperBehavior(n, {
         orientation,

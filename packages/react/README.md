@@ -54,7 +54,7 @@ React 18+ adapter. Peer dependency on `react` and `react-dom`.
 | `NavixStepper`                                   | Focusable single-value stepper. Arrow keys (matching `orientation`) call `onChange` with the new value. `render` accepts `'scrollbar'`, `'progress'`, or a render function `({ focused, status, value, min, max, step }) => ReactNode` for full visual control.                                                                                                                    |
 | `NavixMultiLayer`                                | Full-screen video player shell. Renders a `baseLayer` beneath up to four directional panels (`left`, `right`, `up`, `down`). Only one panel is active at a time. Accepts `onPrev`/`onNext` for channel switching, `zapBanner` shown for 2s after channel change, `notification` for persistent or transient overlays, and `panelTimeout` to auto-close inactive panels.            |
 | `NavixMultiLayerPanelProps`                      | Props passed to each panel render function: `fKey`, `close`, `panelState`, `panelRootProps` (spread on the visible panel root for hover-to-stay-open), and all `BaseComponentProps`.                                                                                                                                                                                                  |
-| `BaseComponentProps`                             | Shared interface all components extend: `fKey`, `disabled`, `onFocus`, `onBlurred`, `onRegister`, `onUnregister`, `onEvent`.                                                                                                                                                                                                                                                       |
+| `BaseComponentProps`                             | Shared interface all components extend: `fKey`, `disabled`, `focusOnRegister`, `onFocus`, `onBlurred`, `onRegister`, `onUnregister`, `onEvent`.                                                                                                                                                                                                                                    |
 
 ---
 
@@ -187,6 +187,7 @@ All React components extend `BaseComponentProps`:
 interface BaseComponentProps {
   fKey: string;
   disabled?: boolean;
+  focusOnRegister?: boolean;
   onFocus?: (key: string) => void;
   onBlurred?: (key: string) => void;
   onRegister?: (key: string) => void;
@@ -196,6 +197,8 @@ interface BaseComponentProps {
 ```
 
 `key` is the `fKey` of the component that fired the event — useful for identifying which item in a list changed state.
+
+`focusOnRegister` calls `requestFocus()` automatically when the node registers with its parent — useful for giving a specific component initial focus on mount. When multiple components have `focusOnRegister={true}`, the last one to register wins.
 
 ### NavixExpandable and focus trapping
 
@@ -553,11 +556,12 @@ const [volume, setVolume] = useState(40);
 
 ### 13. Focus lifecycle callbacks
 
-Every component accepts `onFocus`, `onBlurred`, `onRegister`, `onUnregister`. All receive the `fKey` of the component that fired the event:
+Every component accepts `onFocus`, `onBlurred`, `onRegister`, `onUnregister`, and `focusOnRegister`. All receive the `fKey` of the component that fired the event:
 
 ```tsx
 <NavixButton
   fKey="play"
+  focusOnRegister={true}
   onRegister={(key) => console.log(key, 'mounted')}
   onFocus={(key) => console.log(key, 'focused')}
   onBlurred={(key) => console.log(key, 'blurred')}

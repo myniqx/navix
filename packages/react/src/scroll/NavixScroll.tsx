@@ -136,6 +136,7 @@ export function NavixScroll({
   onPageChange,
   renderScrollbar,
   disabled,
+  focusOnRegister,
   onFocus,
   onBlurred,
   onRegister,
@@ -179,7 +180,7 @@ export function NavixScroll({
 
   const { node, directlyFocused } = useFocusable(
     fKey,
-    { onFocus, onBlurred, onRegister, onUnregister, onEvent, disabled },
+    { onFocus, onBlurred, onRegister, onUnregister, onEvent, disabled, focusOnRegister },
     (n: FocusNode) =>
       new ScrollBehavior(n, {
         orientation,

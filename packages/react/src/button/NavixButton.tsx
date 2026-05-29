@@ -50,6 +50,7 @@ export function NavixButton({
   onLongPress,
   onDoublePress,
   disabled,
+  focusOnRegister,
   onFocus,
   onBlurred,
   onRegister,
@@ -75,7 +76,7 @@ export function NavixButton({
 
   const { node, directlyFocused, focusSelf } = useFocusable(
     fKey,
-    { onFocus, onBlurred, onRegister, onUnregister, onEvent, disabled },
+    { onFocus, onBlurred, onRegister, onUnregister, onEvent, disabled, focusOnRegister },
     (node: FocusNode) =>
       new ButtonBehavior(node, {
         onPress: () => onClickRef.current?.(),

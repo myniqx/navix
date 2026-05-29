@@ -20,6 +20,7 @@ class NavixFocusableCallbacks {
   final void Function(String key)? onUnregister;
   final bool Function(NavEvent event)? onEvent;
   final bool disabled;
+  final bool focusOnRegister;
 
   const NavixFocusableCallbacks({
     this.onFocus,
@@ -28,6 +29,7 @@ class NavixFocusableCallbacks {
     this.onUnregister,
     this.onEvent,
     this.disabled = false,
+    this.focusOnRegister = false,
   });
 }
 
@@ -121,6 +123,9 @@ class _NavixFocusableState extends State<NavixFocusable> {
     _node.behavior.onRegister = () {
       _origOnRegister?.call();
       cb?.onRegister?.call(key);
+      if (cb?.focusOnRegister == true) {
+        _node.requestFocus();
+      }
     };
     _node.behavior.onUnregister = () {
       _origOnUnregister?.call();

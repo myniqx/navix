@@ -15,6 +15,7 @@ class NavixSwitch extends StatelessWidget {
   final void Function(bool checked) onChange;
   final NavixSwitchBuilder builder;
   final bool disabled;
+  final bool focusOnRegister;
   final void Function(String key)? onFocus;
   final void Function(String key)? onBlurred;
   final void Function(String key)? onRegister;
@@ -28,6 +29,7 @@ class NavixSwitch extends StatelessWidget {
     required this.onChange,
     required this.builder,
     this.disabled = false,
+    this.focusOnRegister = false,
     this.onFocus,
     this.onBlurred,
     this.onRegister,
@@ -41,6 +43,7 @@ class NavixSwitch extends StatelessWidget {
       fKey: fKey,
       onClick: () => onChange(!checked),
       disabled: disabled,
+      focusOnRegister: focusOnRegister,
       onFocus: onFocus,
       onBlurred: onBlurred,
       onRegister: onRegister,

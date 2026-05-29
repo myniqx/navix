@@ -92,6 +92,7 @@ class NavixScroll extends StatefulWidget {
   final void Function(int page)? onPageChange;
   final NavixScrollbarBuilder? renderScrollbar;
   final bool disabled;
+  final bool focusOnRegister;
   final void Function(String key)? onFocus;
   final void Function(String key)? onBlurred;
   final void Function(String key)? onRegister;
@@ -110,6 +111,7 @@ class NavixScroll extends StatefulWidget {
     this.onPageChange,
     this.renderScrollbar,
     this.disabled = false,
+    this.focusOnRegister = false,
     this.onFocus,
     this.onBlurred,
     this.onRegister,
@@ -173,6 +175,7 @@ class _NavixScrollState extends State<NavixScroll> {
         onUnregister: widget.onUnregister,
         onEvent: widget.onEvent,
         disabled: widget.disabled,
+        focusOnRegister: widget.focusOnRegister,
       ),
       createBehavior: (node) {
         _behavior = NavixScrollBehavior(

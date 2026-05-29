@@ -275,6 +275,7 @@ class NavixPaginatedList<T> extends StatefulWidget {
   final NavixPaginatedListKeyForItem<T>? keyForItem;
   final bool Function(int index)? isItemDisabled;
   final bool disabled;
+  final bool focusOnRegister;
   final String? activeKey;
   final String? groupKey;
   final double gap;
@@ -298,6 +299,7 @@ class NavixPaginatedList<T> extends StatefulWidget {
     this.isItemDisabled,
     this.activeKey,
     this.disabled = false,
+    this.focusOnRegister = false,
     this.groupKey,
     this.orientation = NavixListOrientation.horizontal,
     this.gap = 0,
@@ -447,6 +449,7 @@ class _NavixPaginatedListState<T> extends State<NavixPaginatedList<T>> {
         onUnregister: widget.onUnregister,
         onEvent: widget.onEvent,
         disabled: widget.disabled,
+        focusOnRegister: widget.focusOnRegister,
       ),
       createBehavior: (node) {
         _behavior = NavixPaginatedListBehavior(

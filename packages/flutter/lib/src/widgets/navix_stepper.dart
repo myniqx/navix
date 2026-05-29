@@ -39,6 +39,7 @@ class NavixStepper extends StatefulWidget {
   final bool double_;
   final int feedbackTimeout;
   final bool disabled;
+  final bool focusOnRegister;
   final void Function(String key)? onFocus;
   final void Function(String key)? onBlurred;
   final void Function(String key)? onRegister;
@@ -63,6 +64,7 @@ class NavixStepper extends StatefulWidget {
     this.double_ = false,
     this.feedbackTimeout = 300,
     this.disabled = false,
+    this.focusOnRegister = false,
     this.onFocus,
     this.onBlurred,
     this.onRegister,
@@ -245,6 +247,7 @@ class _NavixStepperState extends State<NavixStepper> {
         onUnregister: widget.onUnregister,
         onEvent: widget.onEvent,
         disabled: widget.disabled,
+        focusOnRegister: widget.focusOnRegister,
       ),
       createBehavior: (_) => _behavior,
       builder: (context, node, focused, directlyFocused) {
