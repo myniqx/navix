@@ -28,10 +28,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
 
       - name: Publish
-        run: npm publish --access public --provenance
+        run: |
+          npm config set //registry.npmjs.org/:_authToken ""
+          npm publish --access public --provenance
         working-directory: packages/react
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
