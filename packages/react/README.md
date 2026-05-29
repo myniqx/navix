@@ -36,25 +36,25 @@ Navix manages keyboard-driven focus across a tree of components — the same mod
 
 React 18+ adapter. Peer dependency on `react` and `react-dom`.
 
-| Export                                           | Description                                                                                                                                                                                                                                                                                                                                                                        |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `NavixScope`                                     | Creates the `FocusTree`, attaches `keydown`/`keyup` listeners to `document`, provides root node via context.                                                                                                                                                                                                                                                                       |
-| `useFocusable(key, callbacks?, createBehavior?)` | Hook. Creates a `FocusNode`, registers it with the nearest parent, returns `focused`, `directlyFocused`, `focusSelf`, `FocusProvider`. Accepts lifecycle callbacks and an optional behavior factory.                                                                                                                                                                               |
-| `NavixHorizontalList`                            | Node + `ListBehavior('horizontal')`. Accepts `className`, `focusedClassName`, `style`, `focusedStyle` — renders a wrapper div only when any of these are provided.                                                                                                                                                                                                                 |
-| `NavixVerticalList`                              | Node + `ListBehavior('vertical')`. Accepts `className`, `focusedClassName`, `style`, `focusedStyle` — renders a wrapper div only when any of these are provided.                                                                                                                                                                                                                   |
-| `NavixGrid`                                      | Node + `GridBehavior(columns)`. Syncs `columns` prop on every render. Accepts `className`, `focusedClassName`, `style`, `focusedStyle`.                                                                                                                                                                                                                                            |
-| `NavixButton`                                    | Leaf node. Handles enter events. Supports `onClick`, `onLongPress`, `onDoublePress`, `style`, `focusedStyle`, `className`, `focusedClassName`, and render prop children `({ focused }) => ReactNode`.                                                                                                                                                                              |
-| `NavixSwitch`                                    | Controlled boolean toggle built on `NavixButton`. Render prop `(checked, focused) => ReactNode`. Exposes `checked` and `onChange`. No click/press callbacks.                                                                                                                                                                                                                       |
-| `NavixInput`                                     | Leaf node + `InputBehavior`. Two-state: idle (navigable) and editing (focus trapped, nav events swallowed). Enter starts editing, Enter/back stops editing. Supports `style`, `focusedStyle`, `editingStyle`, `className`, `focusedClassName`, `editingClassName`. Render prop `({ value, focused, editing, inputRef, stopEditing }) => ReactNode` — omit for a default `<input>`. |
-| `NavixExpandable`                                | Node + `ExpandableBehavior`. Render prop exposes `isExpanded`, `focused`, `directlyFocused`, `expand`, `collapse`.                                                                                                                                                                                                                                                                 |
-| `NavixDropdown`                                  | Node + `ExpandableBehavior`. Render prop exposes `isExpanded`, `focused`, `directlyFocused`, `collapse`. Supports single/multi-select, custom trigger and option renderers, top/bottom position.                                                                                                                                                                                   |
+| Export                                           | Description                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NavixScope`                                     | Creates the `FocusTree`, attaches `keydown`/`keyup` listeners to `document`, provides root node via context.                                                                                                                                                                                                                                                                                                                     |
+| `useFocusable(key, callbacks?, createBehavior?)` | Hook. Creates a `FocusNode`, registers it with the nearest parent, returns `focused`, `directlyFocused`, `focusSelf`, `FocusProvider`. Accepts lifecycle callbacks and an optional behavior factory.                                                                                                                                                                                                                             |
+| `NavixHorizontalList`                            | Node + `ListBehavior('horizontal')`. Accepts `className`, `focusedClassName`, `style`, `focusedStyle` — renders a wrapper div only when any of these are provided.                                                                                                                                                                                                                                                               |
+| `NavixVerticalList`                              | Node + `ListBehavior('vertical')`. Accepts `className`, `focusedClassName`, `style`, `focusedStyle` — renders a wrapper div only when any of these are provided.                                                                                                                                                                                                                                                                 |
+| `NavixGrid`                                      | Node + `GridBehavior(columns)`. Syncs `columns` prop on every render. Accepts `className`, `focusedClassName`, `style`, `focusedStyle`.                                                                                                                                                                                                                                                                                          |
+| `NavixButton`                                    | Leaf node. Handles enter events. Supports `onClick`, `onLongPress`, `onDoublePress`, `style`, `focusedStyle`, `className`, `focusedClassName`, and render prop children `({ focused }) => ReactNode`.                                                                                                                                                                                                                            |
+| `NavixSwitch`                                    | Controlled boolean toggle built on `NavixButton`. Render prop `(checked, focused) => ReactNode`. Exposes `checked` and `onChange`. No click/press callbacks.                                                                                                                                                                                                                                                                     |
+| `NavixInput`                                     | Leaf node + `InputBehavior`. Two-state: idle (navigable) and editing (focus trapped, nav events swallowed). Enter starts editing, Enter/back stops editing. Supports `style`, `focusedStyle`, `editingStyle`, `className`, `focusedClassName`, `editingClassName`. Render prop `({ value, focused, editing, inputRef, stopEditing }) => ReactNode` — omit for a default `<input>`.                                               |
+| `NavixExpandable`                                | Node + `ExpandableBehavior`. Render prop exposes `isExpanded`, `focused`, `directlyFocused`, `expand`, `collapse`.                                                                                                                                                                                                                                                                                                               |
+| `NavixDropdown`                                  | Node + `ExpandableBehavior`. Render prop exposes `isExpanded`, `focused`, `directlyFocused`, `collapse`. Supports single/multi-select, custom trigger and option renderers, top/bottom position.                                                                                                                                                                                                                                 |
 | `NavixPaginatedList`                             | Virtualized 1D list with sliding window pagination. Items are rendered only within the visible window + buffer. When `showScrollbar` (or `renderScrollbar`) is enabled, mounts a `NavixScroll` as a focusable child — arrowing into the scrollbar transfers focus to it; arrowing back returns focus to the active item. Accepts `isItemDisabled`, `activeKey`, `disabled`, `outerClassName`, `innerClassName`, `slotClassName`. |
-| `NavixPaginatedGrid`                             | Virtualized 2D grid with sliding window pagination. Supports horizontal (column-major) and vertical (row-major) orientation. Embeds `NavixScroll` as a focusable child when a scrollbar is shown. Accepts `isItemDisabled`, `activeKey`, `disabled`, `outerClassName`, `innerClassName`, `slotClassName`.                                                                              |
-| `NavixScroll`                                    | Focusable scrollbar. When focused, arrow keys (matching `orientation`) move by `arrowStep` (default 1) and PageUp/PageDown move by `pageStep` (default 1). Renders a draggable track + thumb by default; override with `renderScrollbar`. Used internally by `NavixPaginatedList` / `NavixPaginatedGrid` but reusable on its own.                                                  |
-| `NavixStepper`                                   | Focusable single-value stepper. Arrow keys (matching `orientation`) call `onChange` with the new value. `render` accepts `'scrollbar'`, `'progress'`, or a render function `({ focused, status, value, min, max, step }) => ReactNode` for full visual control.                                                                                                                    |
-| `NavixMultiLayer`                                | Full-screen video player shell. Renders a `baseLayer` beneath up to four directional panels (`left`, `right`, `up`, `down`). Only one panel is active at a time. Accepts `onPrev`/`onNext` for channel switching, `zapBanner` shown for 2s after channel change, `notification` for persistent or transient overlays, and `panelTimeout` to auto-close inactive panels.            |
-| `NavixMultiLayerPanelProps`                      | Props passed to each panel render function: `fKey`, `close`, `panelState`, `panelRootProps` (spread on the visible panel root for hover-to-stay-open), and all `BaseComponentProps`.                                                                                                                                                                                                  |
-| `BaseComponentProps`                             | Shared interface all components extend: `fKey`, `disabled`, `focusOnRegister`, `onFocus`, `onBlurred`, `onRegister`, `onUnregister`, `onEvent`.                                                                                                                                                                                                                                    |
+| `NavixPaginatedGrid`                             | Virtualized 2D grid with sliding window pagination. Supports horizontal (column-major) and vertical (row-major) orientation. Embeds `NavixScroll` as a focusable child when a scrollbar is shown. Accepts `isItemDisabled`, `activeKey`, `disabled`, `outerClassName`, `innerClassName`, `slotClassName`.                                                                                                                        |
+| `NavixScroll`                                    | Focusable scrollbar. When focused, arrow keys (matching `orientation`) move by `arrowStep` (default 1) and PageUp/PageDown move by `pageStep` (default 1). Renders a draggable track + thumb by default; override with `renderScrollbar`. Used internally by `NavixPaginatedList` / `NavixPaginatedGrid` but reusable on its own.                                                                                                |
+| `NavixStepper`                                   | Focusable single-value stepper. Arrow keys (matching `orientation`) call `onChange` with the new value. `render` accepts `'scrollbar'`, `'progress'`, or a render function `({ focused, status, value, min, max, step }) => ReactNode` for full visual control.                                                                                                                                                                  |
+| `NavixMultiLayer`                                | Full-screen video player shell. Renders a `baseLayer` beneath up to four directional panels (`left`, `right`, `up`, `down`). Only one panel is active at a time. Accepts `onPrev`/`onNext` for channel switching, `zapBanner` shown for 2s after channel change, `notification` for persistent or transient overlays, and `panelTimeout` to auto-close inactive panels.                                                          |
+| `NavixMultiLayerPanelProps`                      | Props passed to each panel render function: `fKey`, `close`, `panelState`, `panelRootProps` (spread on the visible panel root for hover-to-stay-open), and all `BaseComponentProps`.                                                                                                                                                                                                                                             |
+| `BaseComponentProps`                             | Shared interface all components extend: `fKey`, `disabled`, `focusOnRegister`, `onFocus`, `onBlurred`, `onRegister`, `onUnregister`, `onEvent`.                                                                                                                                                                                                                                                                                  |
 
 ---
 
@@ -103,19 +103,19 @@ interface NavEvent {
 
 Default key mappings:
 
-| Action         | Keys                                |
-| -------------- | ----------------------------------- |
-| `left`         | `ArrowLeft`                         |
-| `right`        | `ArrowRight`                        |
-| `up`           | `ArrowUp`                           |
-| `down`         | `ArrowDown`                         |
-| `enter`        | `Enter` (long-press after 500 ms)   |
-| `back`         | `Escape`                            |
-| `play`         | `MediaPlay`                         |
-| `pause`        | `MediaPause`                        |
-| `play_pause`   | `MediaPlayPause`, `Space`           |
-| `program_up`   | `PageUp`                            |
-| `program_down` | `PageDown`                          |
+| Action         | Keys                              |
+| -------------- | --------------------------------- |
+| `left`         | `ArrowLeft`                       |
+| `right`        | `ArrowRight`                      |
+| `up`           | `ArrowUp`                         |
+| `down`         | `ArrowDown`                       |
+| `enter`        | `Enter` (long-press after 500 ms) |
+| `back`         | `Escape`                          |
+| `play`         | `MediaPlay`                       |
+| `pause`        | `MediaPause`                      |
+| `play_pause`   | `MediaPlayPause`, `Space`         |
+| `program_up`   | `PageUp`                          |
+| `program_down` | `PageDown`                        |
 
 ### Behaviors
 
@@ -134,10 +134,10 @@ new PaginatedListBehavior(
   totalCount,
   visibleCount,
   threshold,
-  onChange,          // (newIndex: number, newOffset: number, refocusItem: boolean) => void
-  indexForKey,       // (key: string) => number
-  isItemDisabled,    // (index: number) => boolean
-  scrollbarKey,      // string | null — key of the embedded NavixScroll child, if any
+  onChange, // (newIndex: number, newOffset: number, refocusItem: boolean) => void
+  indexForKey, // (key: string) => number
+  isItemDisabled, // (index: number) => boolean
+  scrollbarKey, // string | null — key of the embedded NavixScroll child, if any
 );
 new PaginatedGridBehavior(
   node,
@@ -146,21 +146,21 @@ new PaginatedGridBehavior(
   rows,
   columns,
   threshold,
-  onChange,          // (newIndex: number, newOffset: number, refocusItem: boolean) => void
-  indexForKey,       // (key: string) => number
-  isItemDisabled,    // (index: number) => boolean
-  scrollbarKey,      // string | null — key of the embedded NavixScroll child, if any
+  onChange, // (newIndex: number, newOffset: number, refocusItem: boolean) => void
+  indexForKey, // (key: string) => number
+  isItemDisabled, // (index: number) => boolean
+  scrollbarKey, // string | null — key of the embedded NavixScroll child, if any
 );
 new ScrollBehavior(node, {
-  orientation,       // 'horizontal' | 'vertical'
-  onDelta,           // (delta: -1 | 1) => void — fired on arrow keys
-  onPageDelta,       // (delta: -1 | 1) => void — fired on PageUp/PageDown
+  orientation, // 'horizontal' | 'vertical'
+  onDelta, // (delta: -1 | 1) => void — fired on arrow keys
+  onPageDelta, // (delta: -1 | 1) => void — fired on PageUp/PageDown
 });
 new StepperBehavior(node, {
-  orientation,       // 'horizontal' | 'vertical'
-  long,              // boolean — also fire on long-press
-  double,            // boolean — also fire on double-press
-  onChange,          // (delta: -1 | 1, type: 'single' | 'long' | 'double') => void
+  orientation, // 'horizontal' | 'vertical'
+  long, // boolean — also fire on long-press
+  double, // boolean — also fire on double-press
+  onChange, // (delta: -1 | 1, type: 'single' | 'long' | 'double') => void
 });
 ```
 
@@ -460,7 +460,9 @@ Virtualized horizontal or vertical list. Only items within the visible window + 
   // disabled={false} // prevent this entire list from receiving focus
   // showScrollbar={true} // mounts a NavixScroll as a focusable child
   // renderScrollbar={(props) => <MyScrollbar {...props} />}
-  renderItem={(item, fKey, index, disabled) => <MovieCard fKey={fKey} item={item} disabled={disabled} />}
+  renderItem={(item, fKey, index, disabled) => (
+    <MovieCard fKey={fKey} item={item} disabled={disabled} />
+  )}
   outerStyle={{ padding: '12px 4px' }}
   slotStyle={{ alignItems: 'stretch' }}
 />
@@ -485,7 +487,9 @@ Virtualized 2D grid. Pagination moves one slice at a time along the main axis.
   // disabled={false} // prevent this entire grid from receiving focus
   showScrollbar={true} // mounts NavixScroll as a focusable child
   // renderScrollbar={(props) => <MyScrollbar {...props} />}
-  renderItem={(item, fKey, index, disabled) => <ChannelCard fKey={fKey} item={item} disabled={disabled} />}
+  renderItem={(item, fKey, index, disabled) => (
+    <ChannelCard fKey={fKey} item={item} disabled={disabled} />
+  )}
   outerStyle={{ height: 'calc(90vh - 120px)' }}
 />
 ```
@@ -524,8 +528,8 @@ const [page, setPage] = useState(0);
   orientation="horizontal"
   page={page}
   pageCount={pages.length}
-  arrowStep={1}      // pages per arrow press
-  pageStep={5}       // pages per PageUp/PageDown press
+  arrowStep={1} // pages per arrow press
+  pageStep={5} // pages per PageUp/PageDown press
   onPageChange={setPage}
   // renderScrollbar={(props) => <MyScrollbar {...props} />}
 />;
@@ -547,8 +551,8 @@ const [volume, setVolume] = useState(40);
   min={0}
   max={100}
   step={2}
-  long={true}        // also fires while Enter/arrow is held
-  double={false}     // also fires on double-press
+  long={true} // also fires while Enter/arrow is held
+  double={false} // also fires on double-press
   onChange={setVolume}
   render="scrollbar" // or 'progress' or ({ focused, status, value, min, max, step }) => ReactNode
 />;
@@ -702,7 +706,7 @@ left={(props) => (
 Two subtleties worth knowing about:
 
 - **Keyboard-opened with the cursor already inside.** When the panel mounts under a stationary pointer, the browser does not fire `mouseenter`. The `ref` callback handles this by checking `el.matches(':hover')` on the next frame and pausing the timer accordingly — so this case Just Works as long as `panelRootProps` is spread on the right element.
-- **Don't omit `panelRootProps` if you have several panels stacked / animated wrappers.** It is the wrapper *closest to the visible panel surface* that should receive these props; outer animation containers are usually wrong because they fill the screen during transforms.
+- **Don't omit `panelRootProps` if you have several panels stacked / animated wrappers.** It is the wrapper _closest to the visible panel surface_ that should receive these props; outer animation containers are usually wrong because they fill the screen during transforms.
 
 Mouse users can also open panels by hovering near the edge of the base layer. `triggerSize` (default `200` px) sets the width/height of the invisible hover zone on each edge. `hoverDelay` (default `100` ms) sets how long the pointer must dwell in the zone before the panel opens.
 
@@ -792,19 +796,3 @@ Navigate with arrow keys. `Enter` to select. `Backspace` or `Escape` to go back.
 **React StrictMode safe** — `NavixScope` handles the double-mount cycle. `FocusNode.register` guards against duplicate registration.
 
 ---
-
-## Roadmap
-
-- [x] `FocusNode.requestFocus()` — programmatic focus from anywhere in the tree
-- [x] `onFocus` / `onBlurred` lifecycle callbacks on all components
-- [x] `onRegister` / `onUnregister` lifecycle callbacks on all components
-- [x] `NavixSwitch` — controlled boolean toggle
-- [x] `NavixInput` — two-state text input with idle/editing modes
-- [x] `NavixMultiLayer` — full-screen video player shell with directional panels, zap banner, and notification overlay
-- [x] `NavixStepper` — single-value stepper with scrollbar / progress / custom render
-- [x] `NavixScroll` — focusable scrollbar embedded as a child of paginated list/grid
-- [ ] Vue 3 adapter (`@navix/vue`)
-- [ ] Solid adapter (`@navix/solid`)
-- [ ] Vanilla JS adapter (`@navix/vanilla`)
-- [ ] Scroll-into-view integration
-- [ ] Test suite
