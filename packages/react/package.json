@@ -1,6 +1,6 @@
 {
   "name": "@navix/react",
-  "version": "0.1.2",
+  "version": "0.1.1",
   "description": "Spatial navigation library for web-based TV platforms (Tizen, WebOS, browser)",
   "author": "myniqx",
   "license": "MIT",
