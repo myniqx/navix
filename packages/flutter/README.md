@@ -1435,16 +1435,3 @@ Navigate with arrow keys. `Enter` to select. `Escape` to go back.
 **Per-group selection cache** — Paginated widgets accept an optional `groupKey`. When it changes, the previous group's `activeIndex`/`viewOffset` is saved and the new group's saved selection is restored, with focus automatically retargeted.
 
 ---
-
-## Roadmap
-
-- [x] `NavixFocusNode.requestFocus()` — programmatic focus from anywhere in the tree
-- [x] `onFocus` / `onBlurred` lifecycle callbacks on all widgets
-- [x] `onRegister` / `onUnregister` lifecycle callbacks on all widgets
-- [x] `NavixSwitch` — controlled boolean toggle
-- [x] `NavixInput` — two-state text input with idle/editing modes
-- [x] `NavixMultiLayer` — full-screen video player shell with directional panels, zap banner, and notification overlay
-- [x] `NavixStepper` — single-value stepper with scrollbar / progress / custom render
-- [x] `NavixScroll` — focusable scrollbar embedded as a child of paginated list/grid
-- [ ] Scroll-into-view integration
-- [ ] Test suite
