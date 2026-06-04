@@ -73,10 +73,6 @@ class NavixFocusManager {
 
   bool _isAttached = false;
 
-  // Double-back-to-exit state
-  bool _backPendingExit = false;
-  Timer? _backExitTimer;
-
   NavixFocusManager({InputConfig? inputConfig}) {
     root = NavixFocusNode('root');
     _config = inputConfig ?? defaultInputConfig;
@@ -125,26 +121,7 @@ class NavixFocusManager {
       consumed = _handleKeyUp(action);
     }
 
-    if (!consumed && action == 'back') {
-      return _handleBackExit();
-    }
-
     return consumed;
-  }
-
-  bool _handleBackExit() {
-    if (_backPendingExit) {
-      _backExitTimer?.cancel();
-      _backExitTimer = null;
-      _backPendingExit = false;
-      return false;
-    }
-    _backPendingExit = true;
-    _backExitTimer = Timer(const Duration(milliseconds: 2000), () {
-      _backPendingExit = false;
-      _backExitTimer = null;
-    });
-    return true;
   }
 
   void _handleKeyDown(String action) {
@@ -200,9 +177,6 @@ class NavixFocusManager {
   }
 
   void _destroy() {
-    _backExitTimer?.cancel();
-    _backExitTimer = null;
-    _backPendingExit = false;
     for (final state in _keyStates.values) {
       state.longPressTimer?.cancel();
       state.doublePressTimer?.cancel();

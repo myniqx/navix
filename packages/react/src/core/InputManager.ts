@@ -34,9 +34,6 @@ export class InputManager {
   private keyCodeToAction: Map<number, string> = new Map();
   private keyStates: Map<string, KeyState> = new Map();
 
-  private _backPendingExit = false;
-  private _backExitTimer: ReturnType<typeof setTimeout> | null = null;
-
   constructor(config?: InputConfig) {
     this.config = config ?? DEFAULT_INPUT_CONFIG;
     this._buildKeyMap();
@@ -130,30 +127,7 @@ export class InputManager {
       return true;
     }
 
-    const consumed = this._emit({ action, type: 'press' });
-
-    if (!consumed && action === 'back') {
-      return this._handleBackExit();
-    }
-
-    return consumed;
-  }
-
-  private _handleBackExit(): boolean {
-    if (this._backPendingExit) {
-      if (this._backExitTimer !== null) {
-        clearTimeout(this._backExitTimer);
-        this._backExitTimer = null;
-      }
-      this._backPendingExit = false;
-      return false;
-    }
-    this._backPendingExit = true;
-    this._backExitTimer = setTimeout(() => {
-      this._backPendingExit = false;
-      this._backExitTimer = null;
-    }, 2000);
-    return true;
+    return this._emit({ action, type: 'press' });
   }
 
   private _emit(event: NavEvent): boolean {
@@ -161,11 +135,6 @@ export class InputManager {
   }
 
   destroy(): void {
-    if (this._backExitTimer !== null) {
-      clearTimeout(this._backExitTimer);
-      this._backExitTimer = null;
-    }
-    this._backPendingExit = false;
     for (const state of this.keyStates.values()) {
       if (state.longPressTimer !== null) clearTimeout(state.longPressTimer);
       if (state.doublePressTimer !== null) clearTimeout(state.doublePressTimer);
