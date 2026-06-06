@@ -12,18 +12,7 @@ Targets **web** (Tizen, WebOS, browser) and **Flutter** (Android TV, Fire TV, Ap
 
 ## Architecture
 
-```
-┌──────────────────────────────────────┐
-│  @navix/react  /  navix (Dart)       │
-│                                      │
-│  FocusNode  ←  FocusTree / Manager   │
-│     ↑               ↑               │
-│  register      InputManager /        │
-│               HardwareKeyboard       │
-└──────────────────────────────────────┘
-```
-
-**Navigation logic is self-contained.** `@navix/react` includes the full focus tree, behaviors, and input manager — no separate core package needed.
+**Navigation logic is self-contained.** Each package owns its full focus tree, behaviors, and input manager — no shared core dependency.
 
 ---
 
@@ -45,10 +34,8 @@ npm install @navix/react
 
 Flutter adapter for TV platforms. No web dependencies.
 
-```yaml
-dependencies:
-  navix:
-    path: ./packages/flutter # or pub.dev reference once published // TODO: update this after publish
+```bash
+flutter pub add navix
 ```
 
 → [Flutter package docs](./packages/flutter/README.md)

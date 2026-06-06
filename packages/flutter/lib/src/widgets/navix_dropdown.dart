@@ -5,15 +5,35 @@ import 'navix_button.dart';
 import 'navix_expandable.dart';
 import 'navix_paginated_list.dart';
 
-enum NavixDropdownPosition { top, bottom }
+/// Where the [NavixDropdown] panel opens relative to the trigger widget.
+enum NavixDropdownPosition {
+  /// Panel opens above the trigger.
+  top,
 
+  /// Panel opens below the trigger (default).
+  bottom,
+}
+
+/// A single option in a [NavixDropdown].
 class NavixDropdownOption {
+  /// Human-readable label shown in the trigger and rendered by
+  /// [NavixDropdown.renderOption].
   final String label;
+
+  /// The opaque value stored in [NavixDropdown.value] when this option is
+  /// selected.
   final String value;
 
+  /// Creates a [NavixDropdownOption].
   const NavixDropdownOption({required this.label, required this.value});
 }
 
+/// Signature for the trigger builder of [NavixDropdown].
+///
+/// - [label] — the display text: selected option label, multi-selection
+///   summary (`'N selected'`), or [NavixDropdown.placeholder].
+/// - [isExpanded] — whether the dropdown panel is open.
+/// - [focused] — `true` when this node is on the active focus path.
 typedef NavixDropdownTriggerBuilder = Widget Function(
   BuildContext context,
   String label,
@@ -21,6 +41,12 @@ typedef NavixDropdownTriggerBuilder = Widget Function(
   bool focused,
 );
 
+/// Signature for the option row builder of [NavixDropdown].
+///
+/// - [option] — the [NavixDropdownOption] for this row.
+/// - [selected] — whether this option is in the current [NavixDropdown.value].
+/// - [focused] — `true` when this row is the deepest active leaf.
+/// - [index] — position in the [NavixDropdown.options] list.
 typedef NavixDropdownOptionBuilder = Widget Function(
   BuildContext context,
   NavixDropdownOption option,
@@ -29,27 +55,89 @@ typedef NavixDropdownOptionBuilder = Widget Function(
   int index,
 );
 
+/// A single- or multi-select dropdown built on [NavixExpandable] +
+/// [NavixPaginatedList].
+///
+/// Options are navigated with up/down arrow keys. Enter selects; Back closes.
+/// The panel is rendered in an [OverlayPortal] so it floats above other
+/// widgets.
+///
+/// ```dart
+/// NavixDropdown(
+///   fKey: 'resolution',
+///   options: const [
+///     NavixDropdownOption(value: '4k',    label: '4K'),
+///     NavixDropdownOption(value: '1080p', label: '1080p'),
+///   ],
+///   value: resolution,
+///   onChange: (v) => setState(() => resolution = v),
+///   renderTrigger: (context, label, isExpanded, focused) => Text(label),
+///   renderOption: (context, option, selected, focused, index) =>
+///       Text(option.label),
+/// )
+/// ```
 class NavixDropdown extends StatelessWidget {
+  /// Unique string identifier for this node.
   final String fKey;
+
+  /// The full list of selectable options.
   final List<NavixDropdownOption> options;
+
+  /// Currently selected values (list of [NavixDropdownOption.value] strings).
+  /// Default: `[]`.
   final List<String> value;
+
+  /// Called when the selection changes. Receives the updated value list.
   final void Function(List<String> value)? onChange;
+
+  /// Allow selecting multiple options simultaneously. Default: `false`.
   final bool multiple;
+
+  /// Whether the panel opens above or below the trigger. Default: [NavixDropdownPosition.bottom].
   final NavixDropdownPosition position;
+
+  /// Maximum number of options visible at once before the panel scrolls.
+  /// Default: `3`.
   final int maxVisible;
+
+  /// Text shown in the trigger when nothing is selected. Default: `'Select...'`.
   final String placeholder;
+
+  /// Height of each option row in logical pixels. Default: `44`.
   final double slotHeight;
+
+  /// Fixed panel width. When `null` the panel matches the trigger width
+  /// (clamped to [minPanelWidth]).
   final double? panelWidth;
+
+  /// Minimum panel width in logical pixels. Default: `160`.
   final double minPanelWidth;
+
+  /// Required. Builds the trigger (closed state) widget.
   final NavixDropdownTriggerBuilder renderTrigger;
+
+  /// Required. Builds each option row inside the panel.
   final NavixDropdownOptionBuilder renderOption;
+
+  /// Prevents this dropdown from receiving focus. Default: `false`.
   final bool disabled;
+
+  /// Called when this node becomes directly focused.
   final void Function(String key)? onFocus;
+
+  /// Called when this node loses direct focus.
   final void Function(String key)? onBlurred;
+
+  /// Called when this node registers with its parent.
   final void Function(String key)? onRegister;
+
+  /// Called when this node is unregistered (widget disposed).
   final void Function(String key)? onUnregister;
+
+  /// Custom event handler. Return `true` to consume, `false` to bubble.
   final bool Function(NavEvent event)? onEvent;
 
+  /// Creates a [NavixDropdown].
   const NavixDropdown({
     super.key,
     required this.fKey,

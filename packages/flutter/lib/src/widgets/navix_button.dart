@@ -4,26 +4,78 @@ import '../core/nav_event.dart';
 import '../core/focus_node.dart';
 import 'navix_focusable.dart';
 
+/// Signature for the builder of [NavixButton].
+///
+/// - [focused] — `true` when this button is the deepest active leaf.
 typedef NavixButtonBuilder = Widget Function(
   BuildContext context,
   bool focused,
 );
 
+/// A leaf focusable button.
+///
+/// Fires [onClick] on keyboard Enter press and on tap. Supports [onLongPress]
+/// and [onDoublePress] for keyboard-only gestures.  Mouse hover calls
+/// [NavixFocusNode.requestFocus] automatically.
+///
+/// Provide either a [builder] (for full control over focused state) or a
+/// static [child] widget:
+///
+/// ```dart
+/// NavixButton(
+///   fKey: 'play',
+///   onClick: play,
+///   builder: (context, focused) => Container(
+///     color: focused ? Colors.blue : Colors.grey,
+///     child: const Text('▶ Play'),
+///   ),
+/// )
+/// ```
 class NavixButton extends StatefulWidget {
+  /// Unique string identifier for this node.
   final String fKey;
+
+  /// Called on Enter key press and on tap.
   final VoidCallback? onClick;
+
+  /// Called on Enter long-press. Requires [ActionConfig.longPress] to be
+  /// enabled for the `'enter'` action (it is enabled in [defaultInputConfig]).
   final VoidCallback? onLongPress;
+
+  /// Called on Enter double-press. Requires [ActionConfig.doublePress] to be
+  /// enabled for the `'enter'` action.
   final VoidCallback? onDoublePress;
+
+  /// Prevents this button from receiving focus. Default: `false`.
   final bool disabled;
+
+  /// Auto-focus this button when it registers. Default: `false`.
   final bool focusOnRegister;
+
+  /// Called when this node becomes directly focused.
   final void Function(String key)? onFocus;
+
+  /// Called when this node loses direct focus.
   final void Function(String key)? onBlurred;
+
+  /// Called when this node registers with its parent.
   final void Function(String key)? onRegister;
+
+  /// Called when this node is unregistered (widget disposed).
   final void Function(String key)? onUnregister;
+
+  /// Custom event handler. Return `true` to consume, `false` to bubble.
   final bool Function(NavEvent event)? onEvent;
+
+  /// Builder for full control over the focused state. Provide this **or**
+  /// [child], not both.
   final NavixButtonBuilder? builder;
+
+  /// Static child widget. Provide this **or** [builder], not both.
   final Widget? child;
 
+  /// Creates a [NavixButton]. Exactly one of [builder] or [child] must be
+  /// provided.
   const NavixButton({
     super.key,
     required this.fKey,

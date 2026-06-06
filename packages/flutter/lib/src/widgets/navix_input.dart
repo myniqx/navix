@@ -54,6 +54,16 @@ class _InputBehavior extends IFocusNodeBehavior {
   }
 }
 
+/// Signature for the builder of [NavixInput].
+///
+/// - [focused] — `true` when this node is on the active focus path.
+/// - [editing] — `true` while the text field is in editing mode (keyboard trapped).
+/// - `controller` — the [TextEditingController] synced with [NavixInput.value];
+///   pass directly to `TextField`.
+/// - `textFocusNode` — Flutter's own [FocusNode] for the [TextField]; pass
+///   directly to `TextField`.
+/// - [stopEditing] — call to exit editing mode programmatically (e.g. from a
+///   "Done" button inside the builder).
 typedef NavixInputBuilder = Widget Function(
   BuildContext context,
   bool focused,
@@ -63,19 +73,68 @@ typedef NavixInputBuilder = Widget Function(
   VoidCallback stopEditing,
 );
 
+/// A two-state text input widget.
+///
+/// **Idle**: behaves like any other focusable — arrow keys and Back bubble
+/// normally.  **Editing**: focus is trapped inside this widget, all nav events
+/// are swallowed, and the native [TextField] receives keyboard input.
+///
+/// Enter starts editing; Enter or Back stops editing.
+///
+/// You own the [TextField] — pass `controller` and `textFocusNode` from the
+/// builder arguments directly:
+///
+/// ```dart
+/// NavixInput(
+///   fKey: 'search',
+///   value: query,
+///   onChange: (v) => setState(() => query = v),
+///   builder: (context, focused, editing, controller, textFocusNode, stopEditing) {
+///     return TextField(
+///       controller: controller,
+///       focusNode: textFocusNode,
+///     );
+///   },
+/// )
+/// ```
 class NavixInput extends StatefulWidget {
+  /// Unique string identifier for this node.
   final String fKey;
+
+  /// The controlled text value. Synced to the [TextEditingController] whenever
+  /// the widget is not in editing mode.
   final String value;
+
+  /// Called on every keystroke while editing.
   final void Function(String value) onChange;
+
+  /// Builder for the visible widget. Receives a [TextEditingController] and a
+  /// [FocusNode] to pass to a [TextField].
   final NavixInputBuilder builder;
+
+  /// Prevents this input from receiving focus. Default: `false`.
   final bool disabled;
+
+  /// Auto-focus this input when it registers. Default: `false`.
   final bool focusOnRegister;
+
+  /// Called when this node becomes directly focused (idle mode).
   final void Function(String key)? onFocus;
+
+  /// Called when this node loses direct focus.
   final void Function(String key)? onBlurred;
+
+  /// Called when this node registers with its parent.
   final void Function(String key)? onRegister;
+
+  /// Called when this node is unregistered (widget disposed).
   final void Function(String key)? onUnregister;
+
+  /// Custom event handler (idle mode only). Return `true` to consume, `false`
+  /// to bubble. While editing, all events are consumed internally.
   final bool Function(NavEvent event)? onEvent;
 
+  /// Creates a [NavixInput].
   const NavixInput({
     super.key,
     required this.fKey,

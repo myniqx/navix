@@ -76,6 +76,13 @@ class _ExpandableBehavior extends IFocusNodeBehavior {
   }
 }
 
+/// Signature for the builder of [NavixExpandable].
+///
+/// - [isExpanded] — whether this expandable is currently open.
+/// - [focused] — `true` for every node on the active path.
+/// - [directlyFocused] — `true` only when this node is the active leaf.
+/// - `expand` — programmatically open this expandable.
+/// - `collapse` — programmatically close this expandable.
 typedef NavixExpandableBuilder = Widget Function(
   BuildContext context,
   bool isExpanded,
@@ -85,17 +92,59 @@ typedef NavixExpandableBuilder = Widget Function(
   VoidCallback collapse,
 );
 
+/// A two-state expandable container.
+///
+/// **Collapsed**: Enter expands; focus and events behave normally.
+/// **Expanded**: Back collapses; focus is trapped inside. Only one
+/// [NavixExpandable] can be open at a time — expanding one automatically
+/// collapses all others (ancestors on the active path are excluded).
+///
+/// Mouse hover calls [NavixFocusNode.requestFocus]; tap calls `expand`.
+///
+/// ```dart
+/// NavixExpandable(
+///   fKey: 'card',
+///   builder: (context, isExpanded, focused, directlyFocused, expand, collapse) {
+///     return Column(
+///       children: [
+///         const Text('Title'),
+///         if (isExpanded)
+///           NavixButton(fKey: 'play', onClick: play, child: const Text('▶ Play')),
+///       ],
+///     );
+///   },
+/// )
+/// ```
 class NavixExpandable extends StatefulWidget {
+  /// Unique string identifier for this node.
   final String fKey;
+
+  /// Builder for the visible widget. The `expand` and `collapse` callbacks
+  /// passed to the builder allow programmatic open/close.
   final NavixExpandableBuilder builder;
+
+  /// Prevents this expandable from receiving focus. Default: `false`.
   final bool disabled;
+
+  /// Auto-focus this expandable when it registers. Default: `false`.
   final bool focusOnRegister;
+
+  /// Called when this node becomes directly focused (collapsed state).
   final void Function(String key)? onFocus;
+
+  /// Called when this node loses direct focus.
   final void Function(String key)? onBlurred;
+
+  /// Called when this node registers with its parent.
   final void Function(String key)? onRegister;
+
+  /// Called when this node is unregistered (widget disposed).
   final void Function(String key)? onUnregister;
+
+  /// Custom event handler. Return `true` to consume, `false` to bubble.
   final bool Function(NavEvent event)? onEvent;
 
+  /// Creates a [NavixExpandable].
   const NavixExpandable({
     super.key,
     required this.fKey,

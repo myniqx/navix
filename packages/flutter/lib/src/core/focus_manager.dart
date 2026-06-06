@@ -6,13 +6,47 @@ import 'package:flutter/widgets.dart';
 import 'nav_event.dart';
 import 'focus_node.dart';
 
+/// Configuration for a single logical navigation action (e.g. `'enter'`,
+/// `'left'`).
+///
+/// Pass a map of [ActionConfig] values to [NavixScope.inputConfig] to
+/// override the default key bindings.
+///
+/// ```dart
+/// NavixScope(
+///   inputConfig: {
+///     'enter': ActionConfig(
+///       keys: [LogicalKeyboardKey.enter],
+///       longPress: true,
+///       longPressMs: 600,
+///     ),
+///   },
+///   child: MyApp(),
+/// )
+/// ```
 class ActionConfig {
+  /// The physical keys that trigger this action.
   final List<LogicalKeyboardKey> keys;
+
+  /// Whether a long-press variant of this action is enabled.
+  ///
+  /// When `true`, holding the key for at least [longPressMs] milliseconds
+  /// emits a [NavEventType.longPress] event instead of a normal press.
   final bool longPress;
+
+  /// Duration in milliseconds before a long-press fires. Default: `500`.
   final int longPressMs;
+
+  /// Whether a double-press variant of this action is enabled.
+  ///
+  /// When `true`, two presses within [doublePressMs] milliseconds emit a
+  /// [NavEventType.doublePress] event.
   final bool doublePress;
+
+  /// Window in milliseconds for detecting a double-press. Default: `300`.
   final int doublePressMs;
 
+  /// Creates an [ActionConfig].
   const ActionConfig({
     required this.keys,
     this.longPress = false,
@@ -22,8 +56,27 @@ class ActionConfig {
   });
 }
 
+/// A map from action name to its [ActionConfig].
+///
+/// Pass to [NavixScope.inputConfig] to replace the [defaultInputConfig].
 typedef InputConfig = Map<String, ActionConfig>;
 
+/// The built-in key mappings used when no [NavixScope.inputConfig] is
+/// provided.
+///
+/// | Action         | Keys                                          |
+/// |----------------|-----------------------------------------------|
+/// | `left`         | ArrowLeft                                     |
+/// | `right`        | ArrowRight                                    |
+/// | `up`           | ArrowUp                                       |
+/// | `down`         | ArrowDown                                     |
+/// | `enter`        | Enter, Select (long-press after 500 ms)       |
+/// | `back`         | Escape, GoBack, Backspace                     |
+/// | `play`         | MediaPlay                                     |
+/// | `pause`        | MediaPause                                    |
+/// | `play_pause`   | MediaPlayPause, Space                         |
+/// | `program_up`   | ChannelUp, PageUp                             |
+/// | `program_down` | ChannelDown, PageDown                         |
 final InputConfig defaultInputConfig = {
   'left': ActionConfig(keys: [LogicalKeyboardKey.arrowLeft]),
   'right': ActionConfig(keys: [LogicalKeyboardKey.arrowRight]),
@@ -64,7 +117,13 @@ class _KeyState {
   _KeyState({required this.action, required this.config});
 }
 
+/// Wires the [NavixFocusNode] root to [HardwareKeyboard].
+///
+/// Translates raw key events into [NavEvent] objects — applying long-press and
+/// double-press timers — and dispatches them to the root node. Normally you
+/// do not create this directly; [NavixScope] manages it for you.
 class NavixFocusManager {
+  /// The root [NavixFocusNode] of the focus tree.
   late final NavixFocusNode root;
   late final InputConfig _config;
 
@@ -87,12 +146,16 @@ class NavixFocusManager {
     }
   }
 
+  /// Registers the keyboard handler. Call once at startup (done automatically
+  /// by [NavixScope]).
   void attach() {
     if (_isAttached) return;
     _isAttached = true;
     HardwareKeyboard.instance.addHandler(_handleKeyEvent);
   }
 
+  /// Unregisters the keyboard handler and disposes all focus tree state.
+  /// Called automatically by [NavixScope] on dispose.
   void detach() {
     if (!_isAttached) return;
     _isAttached = false;
@@ -201,16 +264,49 @@ class NavixKVStore {
   void delete(String key) => _map.remove(key);
 }
 
+/// The root widget of the Navix focus system.
+///
+/// Wrap your entire app (or the subtree that needs keyboard navigation) with
+/// [NavixScope]. It creates a [NavixFocusManager], calls [NavixFocusManager.attach]
+/// on init and [NavixFocusManager.detach] on dispose, and exposes the root
+/// [NavixFocusNode] to all descendants via [InheritedWidget].
+///
+/// All Navix widgets must be inside a [NavixScope].
+///
+/// ```dart
+/// void main() {
+///   runApp(NavixScope(child: MyApp()));
+/// }
+/// ```
 class NavixScope extends StatefulWidget {
+  /// The widget subtree that gains keyboard navigation.
   final Widget child;
+
+  /// Custom key bindings. When `null`, [defaultInputConfig] is used.
+  ///
+  /// You can partially override the defaults by merging maps:
+  /// ```dart
+  /// inputConfig: {
+  ///   ...defaultInputConfig,
+  ///   'enter': ActionConfig(
+  ///     keys: [LogicalKeyboardKey.enter],
+  ///     longPress: true,
+  ///     longPressMs: 800,
+  ///   ),
+  /// },
+  /// ```
   final InputConfig? inputConfig;
 
+  /// Creates a [NavixScope].
   const NavixScope({
     super.key,
     required this.child,
     this.inputConfig,
   });
 
+  /// Returns the root [NavixFocusNode] from the nearest [NavixScope].
+  ///
+  /// Throws if no [NavixScope] is found in the widget tree.
   static NavixFocusNode of(BuildContext context) {
     final inherited =
         context.dependOnInheritedWidgetOfExactType<_NavixInherited>();
@@ -218,6 +314,8 @@ class NavixScope extends StatefulWidget {
     return inherited!.root;
   }
 
+  /// Returns the root [NavixFocusNode] from the nearest [NavixScope], or
+  /// `null` if none is found.
   static NavixFocusNode? maybeOf(BuildContext context) {
     return context.dependOnInheritedWidgetOfExactType<_NavixInherited>()?.root;
   }

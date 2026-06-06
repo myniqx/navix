@@ -2,19 +2,71 @@ import 'package:flutter/scheduler.dart';
 
 import 'nav_event.dart';
 
+/// Interface that all node behaviors implement.
+///
+/// Behaviors encapsulate the navigation and lifecycle logic for a
+/// [NavixFocusNode]. All fields are nullable function references — override
+/// only the ones you need; no `@override` boilerplate required.
+///
+/// ```dart
+/// class MyBehavior extends IFocusNodeBehavior {
+///   MyBehavior(NavixFocusNode node) {
+///     onEvent = (event) {
+///       if (event.action == 'enter' && event.type == NavEventType.press) {
+///         doSomething();
+///         return true; // consumed
+///       }
+///       return false; // bubble up
+///     };
+///   }
+/// }
+/// ```
 abstract class IFocusNodeBehavior {
+  /// Called after this node is registered with a parent.
   void Function()? onRegister;
+
+  /// Called after this node is unregistered from its parent.
   void Function()? onUnregister;
+
+  /// Programmatically collapse this node (used by [NavixExpandable]).
   void Function()? collapse;
+
+  /// Programmatically expand this node (used by [NavixExpandable]).
   void Function()? expand;
+
+  /// When `true`, [NavixFocusNode.requestFocus] calls on nodes outside this
+  /// subtree are silently ignored.  Used by [NavixExpandable], [NavixInput],
+  /// and [NavixMultiLayer] to trap focus.
   bool get isTrapped => false;
+
+  /// Return `false` to prevent this node from receiving focus via
+  /// [NavixFocusNode.requestFocus] or arrow-key navigation.
   bool Function()? canReceiveFocus;
+
+  /// Called when a direct child node is registered.
   void Function(NavixFocusNode child)? onChildRegistered;
+
+  /// Called when a direct child node is unregistered.
   void Function(NavixFocusNode child)? onChildUnregistered;
+
+  /// Called when the active child changes (i.e. focus moves between children).
   void Function(NavixFocusNode child)? onActiveChildChanged;
+
+  /// Called when this node becomes the deepest active leaf
+  /// ([NavixFocusNode.isDirectlyFocused] transitions to `true`).
   void Function(NavixFocusNode node)? onFocus;
+
+  /// Called when this node is no longer the deepest active leaf
+  /// ([NavixFocusNode.isDirectlyFocused] transitions to `false`).
   void Function(NavixFocusNode node)? onBlurred;
+
+  /// Handle a [NavEvent] routed to this node.
+  ///
+  /// Return `true` to consume the event (stops propagation). Return `false`
+  /// to let it bubble to the parent.
   bool Function(NavEvent event)? onEvent;
+
+  /// Called on the parent when one of its children consumes an event.
   void Function(NavEvent event)? onConsumedByChild;
 }
 
@@ -22,22 +74,52 @@ class _DefaultFocusNodeBehavior extends IFocusNodeBehavior {}
 
 int _nodeCounter = 0;
 
+/// One node in the Navix focus tree.
+///
+/// Every focusable widget creates a [NavixFocusNode] and registers it with
+/// the nearest parent node via [register]. The tree is kept in sync
+/// automatically as widgets mount and unmount.
+///
+/// You rarely need to create or manage nodes directly — the widget layer
+/// (e.g. [NavixFocusable], [NavixButton]) does this for you.
 class NavixFocusNode {
+  /// Auto-generated unique identifier (`fn_N`). Used internally for
+  /// active-child tracking; prefer [key] for application logic.
   final String id;
+
+  /// The string identifier supplied by the widget's `fKey` parameter.
   final String key;
 
+  /// The parent node, or `null` if this is the root.
   NavixFocusNode? parent;
+
+  /// Direct children of this node in registration order.
   final List<NavixFocusNode> children = [];
+
+  /// The [id] of the currently active (focused) child, or `null` if there
+  /// are no children.
   String? activeChildId;
+
+  /// `true` for every node on the active path from the root to the focused
+  /// leaf, including the leaf itself.
   bool isFocused = false;
+
+  /// `true` only for the deepest active leaf — the node that actually
+  /// "has focus" in the traditional sense.
   bool isDirectlyFocused = false;
 
+  /// The behavior attached to this node. Replaced once by the widget layer
+  /// immediately after construction; do not replace it after that.
   IFocusNodeBehavior behavior = _DefaultFocusNodeBehavior();
 
   final Set<VoidCallback> _subscribers = {};
 
+  /// Creates a node with the given [key].
   NavixFocusNode(this.key) : id = 'fn_${++_nodeCounter}';
 
+  /// Registers a change listener.
+  ///
+  /// Returns an unsubscribe callback — call it to remove the listener.
   VoidCallback subscribe(VoidCallback fn) {
     _subscribers.add(fn);
     return () => _subscribers.remove(fn);
@@ -61,6 +143,11 @@ class NavixFocusNode {
     }
   }
 
+  /// Adds [child] to this node's children.
+  ///
+  /// The first child registered on an unfocused node automatically becomes
+  /// the active child. If this node is already directly focused the focus
+  /// path is propagated down to the new child.
   void register(NavixFocusNode child) {
     if (children.contains(child)) return;
     child.parent = this;
@@ -81,6 +168,10 @@ class NavixFocusNode {
     }
   }
 
+  /// Removes [child] from this node's children.
+  ///
+  /// If [child] was on the active focus path, focus falls back to an adjacent
+  /// sibling (next preferred, then previous, then no child).
   void unregister(NavixFocusNode child) {
     final idx = children.indexOf(child);
     if (idx == -1) return;
@@ -110,6 +201,10 @@ class NavixFocusNode {
     }
   }
 
+  /// Routes [event] down to the active child first, then up via
+  /// [IFocusNodeBehavior.onEvent] if the child did not consume it.
+  ///
+  /// Returns `true` if the event was consumed anywhere in this subtree.
   bool handleEvent(NavEvent event) {
     final active = getActiveChild();
     if (active != null && active.handleEvent(event)) {
@@ -121,6 +216,10 @@ class NavixFocusNode {
 
   bool canReceiveFocus() => behavior.canReceiveFocus?.call() ?? true;
 
+  /// Moves the active child to the next sibling that can receive focus.
+  ///
+  /// Returns `true` if focus moved, `false` if already at the last focusable
+  /// child or there are no children.
   bool focusNext() {
     if (activeChildId == null || children.isEmpty) return false;
     final idx = children.indexWhere((c) => c.id == activeChildId);
@@ -136,6 +235,10 @@ class NavixFocusNode {
     return false;
   }
 
+  /// Moves the active child to the previous sibling that can receive focus.
+  ///
+  /// Returns `true` if focus moved, `false` if already at the first focusable
+  /// child or there are no children.
   bool focusPrev() {
     if (activeChildId == null || children.isEmpty) return false;
     final idx = children.indexWhere((c) => c.id == activeChildId);
@@ -151,10 +254,11 @@ class NavixFocusNode {
     return false;
   }
 
-  // Reorders existing children without firing register/unregister callbacks.
-  // The new list must contain exactly the same nodes as `children` (no
-  // additions, no removals); otherwise the call is a no-op. `activeChildId`
-  // is preserved.
+  /// Reorders existing children without firing register/unregister callbacks.
+  ///
+  /// [ordered] must contain exactly the same nodes as [children] — no
+  /// additions or removals. Mismatched lists are silently ignored.
+  /// [activeChildId] is preserved across the reorder.
   void reorderChildren(List<NavixFocusNode> ordered) {
     if (ordered.length != children.length) return;
     final currentSet = Set<NavixFocusNode>.identity()..addAll(children);
@@ -175,6 +279,9 @@ class NavixFocusNode {
     _notify();
   }
 
+  /// Focuses the child with the given [childId] (its [NavixFocusNode.id]).
+  ///
+  /// Returns `true` if the child was found and focused.
   bool focusChild(String childId) {
     final child = children.cast<NavixFocusNode?>().firstWhere(
           (c) => c!.id == childId,
@@ -189,6 +296,7 @@ class NavixFocusNode {
     return true;
   }
 
+  /// Returns the currently active child node, or `null` if there are none.
   NavixFocusNode? getActiveChild() {
     if (activeChildId == null) return null;
     return children.cast<NavixFocusNode?>().firstWhere(
@@ -197,6 +305,8 @@ class NavixFocusNode {
         );
   }
 
+  /// Returns the ordered list of nodes from this node down to the current
+  /// active leaf (inclusive on both ends).
   List<NavixFocusNode> getActivePath() {
     final path = <NavixFocusNode>[this];
     NavixFocusNode current = this;
@@ -270,6 +380,10 @@ class NavixFocusNode {
     return node;
   }
 
+  /// Programmatically focuses this node from anywhere in the tree.
+  ///
+  /// Does nothing if [canReceiveFocus] returns `false`, or if a focus trap is
+  /// active and this node is outside the trapped subtree.
   void requestFocus() {
     if (!canReceiveFocus()) return;
     final trapNode = _findTrap(getRoot());
@@ -300,6 +414,10 @@ class NavixFocusNode {
     return false;
   }
 
+  /// Detaches this node from its parent and recursively disposes all children.
+  ///
+  /// Called automatically by the widget layer on dispose. You should not
+  /// need to call this directly.
   void destroy() {
     parent?.unregister(this);
     _subscribers.clear();

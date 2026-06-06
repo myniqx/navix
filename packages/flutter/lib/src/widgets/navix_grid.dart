@@ -55,18 +55,59 @@ class _GridBehavior extends IFocusNodeBehavior {
   }
 }
 
+/// A fixed 2-D grid container.
+///
+/// Navigates in all four directions. Left/right stop at row edges; up/down
+/// skip over disabled items and stop at column edges.
+///
+/// Unlike [NavixPaginatedGrid], this widget does **not** virtualize its
+/// children — all items are rendered at once. Use it for small, fixed-size
+/// grids (e.g. a channel list with ≤ 50 items).
+///
+/// ```dart
+/// NavixGrid(
+///   fKey: 'channel-grid',
+///   columns: 5,
+///   child: Wrap(
+///     children: channels.map((ch) =>
+///       NavixButton(fKey: ch.id, onClick: () => tune(ch), child: Text(ch.name)),
+///     ).toList(),
+///   ),
+/// )
+/// ```
 class NavixGrid extends StatefulWidget {
+  /// Unique string identifier for this node.
   final String fKey;
+
+  /// Number of columns in the grid. Synced on every rebuild — can be changed
+  /// dynamically.
   final int columns;
+
+  /// The widget subtree containing the focusable children.
   final Widget child;
+
+  /// Prevents this grid from receiving focus. Default: `false`.
   final bool disabled;
+
+  /// Auto-focus this grid when it registers. Default: `false`.
   final bool focusOnRegister;
+
+  /// Called when this node becomes directly focused.
   final void Function(String key)? onFocus;
+
+  /// Called when this node loses direct focus.
   final void Function(String key)? onBlurred;
+
+  /// Called when this node registers with its parent.
   final void Function(String key)? onRegister;
+
+  /// Called when this node is unregistered (widget disposed).
   final void Function(String key)? onUnregister;
+
+  /// Custom event handler. Return `true` to consume, `false` to bubble.
   final bool Function(NavEvent event)? onEvent;
 
+  /// Creates a [NavixGrid].
   const NavixGrid({
     super.key,
     required this.fKey,

@@ -53,3 +53,4 @@ Thumbs.db
 *.g.dart
 *.freezed.dart
 pubspec.lock
+packages/flutter/doc/

@@ -8,25 +8,9 @@ Navix manages keyboard-driven focus across a tree of components — the same mod
 
 ## Architecture
 
-```
-┌─────────────────────────────────────┐
-│  @navix/react                       │
-│                                     │
-│  FocusNode  ←  FocusTree            │
-│     ↑              ↑                │
-│  register     InputManager          │
-│                    ↑                │
-│              keydown / keyup        │
-│                                     │
-│  NavixScope   useFocusable           │
-│  NavixHorizontalList  NavixVerticalList       │
-│  NavixGrid  NavixButton  NavixExpandable  NavixSwitch   │
-│  NavixInput  NavixPaginatedList  NavixPaginatedGrid│
-│  NavixScroll  NavixStepper  NavixMultiLayer    │
-└─────────────────────────────────────┘
-```
-
 **Navigation logic is self-contained.** The focus tree, behaviors, and input manager all live inside `@navix/react` — no separate core package needed.
+
+**Event flow:** `keydown`/`keyup` → `InputManager` → `FocusTree` → `FocusNode` tree (root down to the active leaf).
 
 ---
 
@@ -51,8 +35,8 @@ React 18+ adapter. Peer dependency on `react` and `react-dom`.
 | `NavixPaginatedList`                             | Virtualized 1D list with sliding window pagination. Items are rendered only within the visible window + buffer. When `showScrollbar` (or `renderScrollbar`) is enabled, mounts a `NavixScroll` as a focusable child — arrowing into the scrollbar transfers focus to it; arrowing back returns focus to the active item. Accepts `isItemDisabled`, `activeKey`, `disabled`, `outerClassName`, `innerClassName`, `slotClassName`. |
 | `NavixPaginatedGrid`                             | Virtualized 2D grid with sliding window pagination. Supports horizontal (column-major) and vertical (row-major) orientation. Embeds `NavixScroll` as a focusable child when a scrollbar is shown. Accepts `isItemDisabled`, `activeKey`, `disabled`, `outerClassName`, `innerClassName`, `slotClassName`.                                                                                                                        |
 | `NavixScroll`                                    | Focusable scrollbar. When focused, arrow keys (matching `orientation`) move by `arrowStep` (default 1) and PageUp/PageDown move by `pageStep` (default 1). Renders a draggable track + thumb by default; override with `renderScrollbar`. Used internally by `NavixPaginatedList` / `NavixPaginatedGrid` but reusable on its own.                                                                                                |
-| `NavixStepper`                                   | Focusable single-value stepper. Arrow keys (matching `orientation`) call `onChange` with the new value. `render` accepts `'scrollbar'`, `'progress'`, or a render function `({ focused, status, value, min, max, step }) => ReactNode` for full visual control.                                                                                                                                                                  |
-| `NavixMultiLayer`                                | Full-screen video player shell. Renders a `baseLayer` beneath up to four directional panels (`left`, `right`, `up`, `down`). Only one panel is active at a time. Accepts `onPrev`/`onNext` for channel switching, `zapBanner` shown for 2s after channel change, `notification` for persistent or transient overlays, and `panelTimeout` to auto-close inactive panels.                                                          |
+| `NavixStepper`                                   | Focusable single-value stepper. Arrow keys (matching `orientation`) call `onChange` with the new value. `render` accepts `'scrollbar'`, `'progress'`, or a render function `({ focused, status, value, min, max, step }) => ReactNode` for full visual control. Accepts `feedbackTimeout` (ms before status resets), `trackStyle`, and `thumbStyle` for built-in renderer styling.                                      |
+| `NavixMultiLayer`                                | Full-screen video player shell. Renders a `baseLayer` beneath up to four directional panels (`left`, `right`, `up`, `down`). Only one panel is active at a time. Accepts `onPrev`/`onNext` for channel switching, `onTogglePlay` for Enter/play/pause when no panel is open, `zapBanner` shown for 2s after channel change, `notification` for persistent or transient overlays, and `panelTimeout` to auto-close inactive panels. |
 | `NavixMultiLayerPanelProps`                      | Props passed to each panel render function: `fKey`, `close`, `panelState`, `panelRootProps` (spread on the visible panel root for hover-to-stay-open), and all `BaseComponentProps`.                                                                                                                                                                                                                                             |
 | `BaseComponentProps`                             | Shared interface all components extend: `fKey`, `disabled`, `focusOnRegister`, `onFocus`, `onBlurred`, `onRegister`, `onUnregister`, `onEvent`.                                                                                                                                                                                                                                                                                  |
 
@@ -170,12 +154,14 @@ All behaviors fire lifecycle hooks when core calls them:
 
 | Hook                  | When                                  |
 | --------------------- | ------------------------------------- |
-| `onRegister`          | Node registered with parent           |
-| `onUnregister`        | Node removed from parent              |
-| `onFocus`             | Node became the directly focused leaf |
-| `onBlurred`           | Node lost direct focus                |
-| `onChildRegistered`   | A child node was registered           |
-| `onChildUnregistered` | A child node was unregistered         |
+| `onRegister`          | Node registered with parent                          |
+| `onUnregister`        | Node removed from parent                             |
+| `onFocus`             | Node became the directly focused leaf                |
+| `onBlurred`           | Node lost direct focus                               |
+| `onChildRegistered`   | A child node was registered                          |
+| `onChildUnregistered` | A child node was unregistered                        |
+| `onActiveChildChanged`| Active child changed                                 |
+| `onConsumedByChild`   | A descendant consumed the event (return value: void) |
 
 You can skip built-in behaviors entirely and return a plain object from `createBehavior` for custom navigation logic.
 
@@ -436,6 +422,7 @@ const [resolution, setResolution] = useState(['1080p']);
   ]}
   value={resolution}
   onChange={setResolution}
+  placeholder="Select..." // text shown when nothing is selected, default 'Select...'
   maxVisible={5}
   position="bottom"
 />;
@@ -555,6 +542,9 @@ const [volume, setVolume] = useState(40);
   double={false} // also fires on double-press
   onChange={setVolume}
   render="scrollbar" // or 'progress' or ({ focused, status, value, min, max, step }) => ReactNode
+  feedbackTimeout={300} // ms before StepperStatus resets to natural after a step
+  // trackStyle — custom CSSProperties for the track element
+  // thumbStyle — custom CSSProperties for the thumb/fill element
 />;
 ```
 
@@ -601,15 +591,7 @@ const [player, setPlayer] = useState({ channels, current, paused: false });
     setPlayer((p) => ({ ...p, current: prev }));
     return true;
   }}
-  onEvent={(e) => {
-    if (
-      e.type === 'press' &&
-      (e.action === 'play_pause' || e.action === 'enter')
-    ) {
-      setPlayer((p) => ({ ...p, paused: !p.paused }));
-    }
-    return false;
-  }}
+  onTogglePlay={() => setPlayer((p) => ({ ...p, paused: !p.paused }))}
   baseLayer={() => (
     <VideoElement src={player.current.url} paused={player.paused} />
   )}

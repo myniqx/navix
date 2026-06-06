@@ -32,17 +32,53 @@ class _ListBehavior extends IFocusNodeBehavior {
   }
 }
 
+/// A container node that routes left/right arrow keys between its focusable
+/// children.
+///
+/// Place any widget subtree in [child] — Navix discovers focusable descendants
+/// automatically.  Non-focusable (decorative) widgets are ignored.
+///
+/// ```dart
+/// NavixHorizontalList(
+///   fKey: 'toolbar',
+///   child: Row(
+///     children: [
+///       NavixButton(fKey: 'play',  onClick: play,  child: const Text('▶')),
+///       NavixButton(fKey: 'pause', onClick: pause, child: const Text('⏸')),
+///     ],
+///   ),
+/// )
+/// ```
 class NavixHorizontalList extends StatefulWidget {
+  /// Unique string identifier for this node.
   final String fKey;
+
+  /// The widget subtree containing the focusable children. Rendered as-is —
+  /// no wrapper widget is injected.
   final Widget child;
+
+  /// Prevents this list from receiving focus. Default: `false`.
   final bool disabled;
+
+  /// Auto-focus this node when it registers. Default: `false`.
   final bool focusOnRegister;
+
+  /// Called when this node becomes directly focused.
   final void Function(String key)? onFocus;
+
+  /// Called when this node loses direct focus.
   final void Function(String key)? onBlurred;
+
+  /// Called when this node registers with its parent.
   final void Function(String key)? onRegister;
+
+  /// Called when this node is unregistered (widget disposed).
   final void Function(String key)? onUnregister;
+
+  /// Custom event handler. Return `true` to consume, `false` to bubble.
   final bool Function(NavEvent event)? onEvent;
 
+  /// Creates a [NavixHorizontalList].
   const NavixHorizontalList({
     super.key,
     required this.fKey,
@@ -92,17 +128,52 @@ class _NavixHorizontalListState extends State<NavixHorizontalList>
   }
 }
 
+/// A container node that routes up/down arrow keys between its focusable
+/// children.
+///
+/// Use [NavixVerticalList] as the outer shell for pages or settings screens
+/// and nest [NavixHorizontalList] rows inside it for a two-dimensional layout.
+///
+/// ```dart
+/// NavixVerticalList(
+///   fKey: 'page',
+///   child: Column(
+///     children: [
+///       NavixHorizontalList(fKey: 'row-0', child: ...),
+///       NavixHorizontalList(fKey: 'row-1', child: ...),
+///     ],
+///   ),
+/// )
+/// ```
 class NavixVerticalList extends StatefulWidget {
+  /// Unique string identifier for this node.
   final String fKey;
+
+  /// The widget subtree containing the focusable children.
   final Widget child;
+
+  /// Prevents this list from receiving focus. Default: `false`.
   final bool disabled;
+
+  /// Auto-focus this node when it registers. Default: `false`.
   final bool focusOnRegister;
+
+  /// Called when this node becomes directly focused.
   final void Function(String key)? onFocus;
+
+  /// Called when this node loses direct focus.
   final void Function(String key)? onBlurred;
+
+  /// Called when this node registers with its parent.
   final void Function(String key)? onRegister;
+
+  /// Called when this node is unregistered (widget disposed).
   final void Function(String key)? onUnregister;
+
+  /// Custom event handler. Return `true` to consume, `false` to bubble.
   final bool Function(NavEvent event)? onEvent;
 
+  /// Creates a [NavixVerticalList].
   const NavixVerticalList({
     super.key,
     required this.fKey,

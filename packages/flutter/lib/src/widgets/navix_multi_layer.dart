@@ -6,26 +6,90 @@ import '../core/nav_event.dart';
 import '../core/focus_node.dart';
 import 'navix_focusable.dart';
 
-enum NavixPanelId { left, right, up, down }
+/// Identifies one of the four directional panels in a [NavixMultiLayer].
+enum NavixPanelId {
+  /// Panel opened by the left arrow key.
+  left,
 
-enum NavixPanelState { opening, open, closing }
+  /// Panel opened by the right arrow key.
+  right,
 
+  /// Panel opened by the up arrow key.
+  up,
+
+  /// Panel opened by the down arrow key.
+  down,
+}
+
+/// The lifecycle state of a directional panel.
+///
+/// Use this to drive entry/exit animations:
+/// ```dart
+/// AnimatedSlide(
+///   offset: props.panelState == NavixPanelState.open
+///       ? Offset.zero
+///       : const Offset(-1, 0),
+/// )
+/// ```
+enum NavixPanelState {
+  /// The panel was just opened; the first frame has not yet been painted.
+  opening,
+
+  /// The panel is fully open.
+  open,
+
+  /// The panel is closing; stays mounted for [NavixMultiLayer.transitionDuration]
+  /// so exit animations can complete.
+  closing,
+}
+
+/// Props passed to each directional panel builder in [NavixMultiLayer].
 class NavixMultiLayerPanelProps {
+  /// The `fKey` of this panel's [NavixFocusable] node. Pass it to the
+  /// widget(s) inside the panel that need to receive focus.
   final String fKey;
+
+  /// Programmatically closes this panel and returns focus to the base layer.
   final VoidCallback close;
+
+  /// The current lifecycle state of this panel. Use to drive animations.
   final NavixPanelState panelState;
+
+  /// Called when the panel's root node becomes directly focused.
   final void Function(String key)? onFocus;
+
+  /// Called when the panel's root node loses direct focus.
   final void Function(String key)? onBlurred;
+
+  /// Called when the panel's root node registers.
   final void Function(String key)? onRegister;
+
+  /// Called when the panel's root node is unregistered.
   final void Function(String key)? onUnregister;
+
+  /// Custom event handler for the panel's root node.
   final bool Function(NavEvent event)? onEvent;
 
-  /// Wrap the actual visible panel widget with this so the parent can keep
-  /// the panel open while the mouse is over it. Important when the panel is
-  /// opened by key press with the cursor already inside its bounds — Flutter's
-  /// MouseRegion fires onEnter when it is mounted underneath the pointer.
+  /// Wraps the **visible** panel widget with a [MouseRegion] so that
+  /// [NavixMultiLayer] can pause the auto-close timer while the pointer is
+  /// hovering over it.
+  ///
+  /// Wrap the innermost visible container (e.g. the fixed-width `Container`
+  /// inside an `Align`), not a full-screen wrapper — every covered pixel
+  /// would count as "hovering" and prevent the timer from firing.
+  ///
+  /// ```dart
+  /// // ✅ Correct
+  /// left: (props) => Align(
+  ///   alignment: Alignment.centerLeft,
+  ///   child: props.panelRootWrapper(
+  ///     Container(width: 260, child: MyPanel(props: props)),
+  ///   ),
+  /// )
+  /// ```
   final Widget Function(Widget child) panelRootWrapper;
 
+  /// Creates a [NavixMultiLayerPanelProps].
   const NavixMultiLayerPanelProps({
     required this.fKey,
     required this.close,
@@ -133,30 +197,111 @@ class _MultiLayerBehavior extends IFocusNodeBehavior {
   }
 }
 
+/// A full-screen video player shell with four optional directional panels.
+///
+/// Each direction (`left`, `right`, `up`, `down`) optionally renders a panel.
+/// Only one panel is open at a time. Focus is trapped inside the active panel;
+/// Back closes it and returns focus to the base layer.
+///
+/// Channel switching (`program_up` / `program_down`) calls [onNext] / [onPrev].
+/// If the callback returns `true` (channel actually changed), [zapBanner] is
+/// shown for 2 seconds.
+///
+/// Panels can also be opened by hovering near the corresponding screen edge
+/// (see [triggerSize] and [hoverDelay]).
+///
+/// ```dart
+/// NavixMultiLayer(
+///   fKey: 'player',
+///   baseLayer: () => VideoWidget(src: current.url),
+///   left:  (props) => AudioPanel(props: props),
+///   right: (props) => ChannelListPanel(props: props),
+///   onNext: () { setState(() => current = next); return true; },
+///   onExitRequest: () => setState(() => playerOpen = false),
+/// )
+/// ```
 class NavixMultiLayer extends StatefulWidget {
+  /// Unique string identifier for this node.
   final String fKey;
+
+  /// Required. Always-visible base layer (e.g. the video surface).
   final Widget Function() baseLayer;
+
+  /// Optional left panel builder. Panel opens on left arrow key or mouse
+  /// hover near the left edge. Receives [NavixMultiLayerPanelProps].
   final Widget Function(NavixMultiLayerPanelProps props)? left;
+
+  /// Optional right panel builder.
   final Widget Function(NavixMultiLayerPanelProps props)? right;
+
+  /// Optional up panel builder.
   final Widget Function(NavixMultiLayerPanelProps props)? up;
+
+  /// Optional down panel builder.
   final Widget Function(NavixMultiLayerPanelProps props)? down;
+
+  /// Called when `program_up` (channel up / page up) is pressed.
+  ///
+  /// Return `true` if the channel actually changed — this triggers [zapBanner]
+  /// for 2 seconds. Return `false` to do nothing.
   final bool Function()? onNext;
+
+  /// Called when `program_down` (channel down / page down) is pressed.
+  ///
+  /// Return `true` if the channel actually changed — this triggers [zapBanner].
   final bool Function()? onPrev;
+
+  /// Called on Enter, play, pause, or play_pause when no panel is open; and
+  /// on tap of the base layer.
   final VoidCallback? onTogglePlay;
+
+  /// Widget shown for 2 seconds after a successful channel change.
+  /// Return `null` from the builder to hide.
   final Widget Function()? zapBanner;
+
+  /// Persistent overlay above the base layer (e.g. a pause overlay). Always
+  /// visible; return `null` to hide.
   final Widget Function()? notification;
+
+  /// Called on Back when no panel is open. Use to exit the player.
   final VoidCallback? onExitRequest;
+
+  /// Milliseconds of inactivity before the active panel auto-closes.
+  /// The timer is paused while the pointer hovers the panel area (requires
+  /// [NavixMultiLayerPanelProps.panelRootWrapper]). Default: `4000`.
   final int panelTimeout;
+
+  /// Width/height of the hover trigger zone on each edge in logical pixels.
+  /// Default: `200`.
   final double triggerSize;
+
+  /// Milliseconds the pointer must dwell in a trigger zone before the panel
+  /// opens. Default: `100`.
   final int hoverDelay;
+
+  /// Milliseconds to keep a closing panel mounted (for exit animations).
+  /// Default: `250`.
   final int transitionDuration;
+
+  /// Auto-focus this widget when it registers. Default: `false`.
   final bool focusOnRegister;
+
+  /// Called when this node becomes directly focused.
   final void Function(String key)? onFocus;
+
+  /// Called when this node loses direct focus.
   final void Function(String key)? onBlurred;
+
+  /// Called when this node registers with its parent.
   final void Function(String key)? onRegister;
+
+  /// Called when this node is unregistered (widget disposed).
   final void Function(String key)? onUnregister;
+
+  /// Custom event handler. Return `true` to consume, `false` to bubble.
   final bool Function(NavEvent event)? onEvent;
 
+  /// Creates a [NavixMultiLayer].
   const NavixMultiLayer({
     super.key,
     required this.fKey,

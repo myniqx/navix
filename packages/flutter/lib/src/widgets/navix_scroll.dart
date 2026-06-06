@@ -4,15 +4,35 @@ import '../core/nav_event.dart';
 import '../core/focus_node.dart';
 import 'navix_focusable.dart';
 
-enum NavixScrollOrientation { horizontal, vertical }
+/// The orientation of a [NavixScroll] widget.
+enum NavixScrollOrientation {
+  /// Arrow-left / arrow-right move the page.
+  horizontal,
 
+  /// Arrow-up / arrow-down move the page.
+  vertical,
+}
+
+/// Props passed to a custom [NavixScroll] renderer.
 class ScrollbarRenderProps {
+  /// `true` when the scrollbar is the directly focused node (i.e. in
+  /// "scroll mode"). Use this to highlight the active state.
   final bool scrollMode;
+
+  /// Current page index (0-based).
   final int page;
+
+  /// Total number of pages.
   final int pageCount;
+
+  /// The orientation of this scrollbar.
   final NavixScrollOrientation orientation;
+
+  /// Call this to jump to a specific page programmatically (e.g. from a
+  /// drag gesture inside a custom renderer).
   final void Function(int page) onPageChange;
 
+  /// Creates a [ScrollbarRenderProps].
   const ScrollbarRenderProps({
     required this.scrollMode,
     required this.page,
@@ -22,6 +42,8 @@ class ScrollbarRenderProps {
   });
 }
 
+/// Signature for a custom scrollbar renderer passed to [NavixScroll],
+/// [NavixPaginatedList], or [NavixPaginatedGrid].
 typedef NavixScrollbarBuilder = Widget Function(ScrollbarRenderProps props);
 
 class NavixScrollBehavior extends IFocusNodeBehavior {
@@ -75,30 +97,73 @@ class NavixScrollBehavior extends IFocusNodeBehavior {
   }
 }
 
-/// NavixScroll — focusable scrollbar.
+/// A focusable scrollbar widget.
 ///
-/// When focused, arrow keys (based on orientation) shift the page by
-/// [arrowStep] (default 1), and PageUp/PageDown shift by [pageStep]
-/// (default 1). The default visual is a draggable track + thumb; override
-/// with [renderScrollbar].
+/// When focused, arrow keys along [orientation] shift the page by [arrowStep]
+/// (default `1`). PageUp / PageDown shift by [pageStep] (default `1`).
+///
+/// The default visual is a draggable track + thumb. Pass [renderScrollbar]
+/// for a fully custom visual.
+///
+/// [NavixPaginatedList] and [NavixPaginatedGrid] mount this automatically when
+/// [NavixPaginatedList.showScrollbar] is `true`. You can also use it
+/// standalone for any custom virtualized layout.
 class NavixScroll extends StatefulWidget {
+  /// Unique string identifier for this node.
   final String fKey;
+
+  /// The scroll axis — determines which arrow keys move the page.
   final NavixScrollOrientation orientation;
+
+  /// Controlled page index (`0..pageCount-1`). Omit for uncontrolled mode.
+  ///
+  /// In controlled mode the widget reflects this value; [onPageChange] is
+  /// still called on user interaction so the parent can update the value.
   final int? page;
+
+  /// Initial page in uncontrolled mode. Default: `0`.
   final int? defaultPage;
+
+  /// Total number of pages.
   final int pageCount;
+
+  /// Pages moved per arrow-key press. Default: `1`.
+  ///
+  /// [NavixPaginatedList] / [NavixPaginatedGrid] pass `visibleCount` here so
+  /// one arrow press jumps a full page.
   final int arrowStep;
+
+  /// Pages moved per PageUp / PageDown press. Default: `1`.
   final int pageStep;
+
+  /// Called with the new page index when it changes.
   final void Function(int page)? onPageChange;
+
+  /// Override the default scrollbar visual. Receives [ScrollbarRenderProps].
   final NavixScrollbarBuilder? renderScrollbar;
+
+  /// Prevents this scrollbar from receiving focus. Default: `false`.
   final bool disabled;
+
+  /// Auto-focus this scrollbar when it registers. Default: `false`.
   final bool focusOnRegister;
+
+  /// Called when this node becomes directly focused.
   final void Function(String key)? onFocus;
+
+  /// Called when this node loses direct focus.
   final void Function(String key)? onBlurred;
+
+  /// Called when this node registers with its parent.
   final void Function(String key)? onRegister;
+
+  /// Called when this node is unregistered (widget disposed).
   final void Function(String key)? onUnregister;
+
+  /// Custom event handler. Return `true` to consume, `false` to bubble.
   final bool Function(NavEvent event)? onEvent;
 
+  /// Creates a [NavixScroll].
   const NavixScroll({
     super.key,
     required this.fKey,

@@ -10,7 +10,30 @@ export 'navix_scroll.dart' show ScrollbarRenderProps, NavixScrollOrientation;
 
 const int _kMinGridDimension = 2;
 
-enum NavixGridOrientation { horizontal, vertical, autoHorizontal }
+/// The pagination axis for [NavixPaginatedGrid].
+enum NavixGridOrientation {
+  /// Column-major layout; left/right paginate between columns.
+  ///
+  /// ```
+  /// col 0      col 1      col 2
+  /// [item 0]  [item 4]  [item 8]
+  /// [item 1]  [item 5]  [item 9]
+  /// [item 2]  [item 6]  [item 10]
+  /// [item 3]  [item 7]  [item 11]
+  /// ```
+  horizontal,
+
+  /// Row-major layout; up/down paginate between rows.
+  vertical,
+
+  /// Behaves like [horizontal] when `items.length >= rows × columns`;
+  /// otherwise falls back to [vertical].
+  ///
+  /// Useful when the item count is unknown at design time. Avoid for
+  /// lazy-loaded lists — the layout will flip and items will reflow if the
+  /// count crosses the threshold.
+  autoHorizontal,
+}
 
 class NavixPaginatedGridBehavior extends IFocusNodeBehavior {
   final NavixFocusNode _node;
@@ -333,6 +356,11 @@ class NavixPaginatedGridBehavior extends IFocusNodeBehavior {
   }
 }
 
+/// Signature for the item builder of [NavixPaginatedGrid].
+///
+/// **Important:** the [fKey] argument must be assigned to the `fKey` of the
+/// focusable child widget you return. Using a custom key breaks focus
+/// tracking and emits a `debugPrint` warning in development.
 typedef NavixPaginatedGridItemBuilder<T> = Widget Function(
   T item,
   String fKey,
@@ -340,38 +368,115 @@ typedef NavixPaginatedGridItemBuilder<T> = Widget Function(
   bool disabled,
 );
 
+/// Signature for the key generator of [NavixPaginatedGrid].
+///
+/// Return a stable, content-based string per item so focus and widget
+/// reconciliation survive [NavixPaginatedGrid.items] reference changes.
 typedef NavixPaginatedGridKeyForItem<T> = String Function(T item, int index);
 
+/// A virtualized 2-D grid with a sliding window.
+///
+/// Pagination moves one slice at a time along the main axis
+/// ([NavixGridOrientation]). Only slices within the visible window ± [buffer]
+/// are mounted. Navigation within a slice uses the cross axis arrow keys.
+///
+/// The widget uses [LayoutBuilder] and must have **bounded constraints** on
+/// both axes.
+///
+/// ```dart
+/// NavixPaginatedGrid<Channel>(
+///   fKey: 'channels',
+///   items: channels,
+///   rows: 4,
+///   columns: 6,
+///   threshold: 1,
+///   renderItem: (channel, fKey, index, disabled) =>
+///       ChannelCard(fKey: fKey, channel: channel),
+/// )
+/// ```
 class NavixPaginatedGrid<T> extends StatefulWidget {
+  /// Unique string identifier for this node.
   final String fKey;
+
+  /// Layout and pagination axis. Default: [NavixGridOrientation.horizontal].
   final NavixGridOrientation orientation;
+
+  /// The full item array. Changing the reference triggers a key rebuild;
+  /// focus is clamped to the new bounds.
   final List<T> items;
+
+  /// Number of rows (minimum 2). Drives item height in horizontal orientation.
   final int rows;
+
+  /// Number of columns (minimum 2). Drives item width in vertical orientation.
   final int columns;
+
+  /// Distance from either edge (in slices) at which the window starts to
+  /// slide. Clamped to `[1, visibleSlices - 2]`.
   final int threshold;
+
+  /// Required. Builds each visible item slot.
+  ///
+  /// The [fKey] argument **must** be forwarded to the focusable child widget.
   final NavixPaginatedGridItemBuilder<T> renderItem;
+
+  /// Stable key per item used for reconciliation and focus tracking.
+  /// Default: `'${fKey}-$index'`.
   final NavixPaginatedGridKeyForItem<T>? keyForItem;
+
+  /// Returns `true` if the item at the given index should be skipped during
+  /// keyboard navigation. Disabled items are still rendered and receive
+  /// `disabled: true` in [renderItem].
   final bool Function(int index)? isItemDisabled;
+
+  /// Prevents this grid from receiving focus. Default: `false`.
   final bool disabled;
+
+  /// Auto-focus this grid when it registers. Default: `false`.
   final bool focusOnRegister;
 
-  /// Jump to this item on mount and whenever the value changes. The widget
-  /// manages its own navigation state between jumps — user arrow-key navigation
-  /// is unaffected. If the target item is disabled the nearest non-disabled
-  /// neighbour is focused instead. This is a write-only intent prop; there is
-  /// no corresponding onChange callback.
+  /// Jump to the item with this key on mount and whenever the value changes.
+  ///
+  /// If the target item is disabled, the nearest non-disabled neighbor is
+  /// focused. This is a write-only intent prop — user arrow-key navigation
+  /// is unaffected between jumps.
   final String? activeKey;
+
+  /// Per-group selection cache key. Works the same as in [NavixPaginatedList].
   final String? groupKey;
+
+  /// Gap between slots in logical pixels. Default: `0`.
   final double gap;
+
+  /// Extra slices rendered outside the visible window on each side.
+  /// Default: `1`.
   final int buffer;
+
+  /// Shows the built-in [NavixScroll] scrollbar along the pagination axis.
+  /// Default: `false`.
+  ///
+  /// Setting [scrollbarBuilder] also enables the scrollbar implicitly.
   final bool showScrollbar;
+
+  /// Override the default scrollbar visual. Receives [ScrollbarRenderProps].
   final NavixScrollbarBuilder? scrollbarBuilder;
+
+  /// Called when this node becomes directly focused.
   final void Function(String key)? onFocus;
+
+  /// Called when this node loses direct focus.
   final void Function(String key)? onBlurred;
+
+  /// Called when this node registers with its parent.
   final void Function(String key)? onRegister;
+
+  /// Called when this node is unregistered (widget disposed).
   final void Function(String key)? onUnregister;
+
+  /// Custom event handler. Return `true` to consume, `false` to bubble.
   final bool Function(NavEvent event)? onEvent;
 
+  /// Creates a [NavixPaginatedGrid].
   const NavixPaginatedGrid({
     super.key,
     required this.fKey,

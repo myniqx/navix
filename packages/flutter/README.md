@@ -8,33 +8,11 @@ Flutter's default directional navigation relies heavily on the geometric positio
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────┐
-│  Core                                   │
-│                                         │
-│  NavixFocusNode  ←  NavixFocusManager   │
-│       ↑                    ↑            │
-│    register         HardwareKeyboard    │
-│                            ↑            │
-│                     KeyDownEvent /      │
-│                     KeyUpEvent          │
-└─────────────────────────────────────────┘
-           ↑ consumed by
-┌─────────────────────────────────────────┐
-│  Widgets (thin Flutter adapter)         │
-│                                         │
-│  NavixScope       NavixFocusable        │
-│  NavixHorizontalList  NavixVerticalList │
-│  NavixGrid        NavixButton           │
-│  NavixSwitch      NavixExpandable       │
-│  NavixInput       NavixDropdown         │
-│  NavixPaginatedList  NavixPaginatedGrid │
-│  NavixScroll      NavixStepper          │
-│  NavixMultiLayer                        │
-└─────────────────────────────────────────┘
-```
+**Core** (`NavixFocusNode`, `NavixFocusManager`) owns all logic and has no dependency on Flutter widgets. It manages the focus tree, event routing, and behavior lifecycle.
 
-**Core owns all logic.** It has no dependency on any Flutter widget — it manages the focus tree, event routing, and behavior lifecycle. The widget layer is a thin `StatefulWidget` + `InheritedWidget` adapter on top.
+**Widget layer** (`NavixScope`, `NavixFocusable`, and all the named widgets) is a thin `StatefulWidget` + `InheritedWidget` adapter on top. Widgets register with Core on mount and unregister on dispose — nothing more.
+
+**Event flow:** `HardwareKeyboard` → `NavixFocusManager` → `NavixFocusNode` tree (root down to the active leaf).
 
 ---
 
@@ -77,13 +55,14 @@ abstract class IFocusNodeBehavior {
   void Function()? collapse;
   void Function()? expand;
   bool get isTrapped => false;
-  bool canReceiveFocus() => true;
+  bool Function()? canReceiveFocus;
   void Function(NavixFocusNode child)? onChildRegistered;
   void Function(NavixFocusNode child)? onChildUnregistered;
   void Function(NavixFocusNode child)? onActiveChildChanged;
   void Function(NavixFocusNode node)? onFocus;
   void Function(NavixFocusNode node)? onBlurred;
   bool Function(NavEvent event)? onEvent;
+  void Function(NavEvent event)? onConsumedByChild;
 }
 ```
 
@@ -557,6 +536,12 @@ NavixDropdown(
   position: NavixDropdownPosition.bottom,
 
   /*
+    Text shown in the trigger when nothing is selected. Default: 'Select...'.
+    type: String
+  */
+  placeholder: 'Select...',
+
+  /*
     Max visible options before scrolling. Default: 3.
     type: int
   */
@@ -1012,6 +997,25 @@ NavixStepper(
   */
   builder: null,
 
+  /*
+    Milliseconds before StepperStatus resets to natural after a step.
+    Default: 300.
+    type: int
+  */
+  feedbackTimeout: 300,
+
+  /*
+    Custom decoration for the track in the built-in renderers.
+    type: BoxDecoration?
+  */
+  trackDecoration: null,
+
+  /*
+    Custom decoration for the thumb/fill in the built-in renderers.
+    type: BoxDecoration?
+  */
+  thumbDecoration: null,
+
   // disabled, focusOnRegister, onFocus, onBlurred, onRegister, onUnregister, onEvent also accepted
 )
 ```
@@ -1064,6 +1068,13 @@ NavixMultiLayer(
     setState(() => current = prev);
     return true;
   },
+
+  /*
+    Called on Enter, play, pause, or play_pause when no panel is open,
+    and on tap of the base layer.
+    type: VoidCallback?
+  */
+  onTogglePlay: () => setState(() => paused = !paused),
 
   /*
     Shown for 2 s after a successful channel change.
@@ -1121,7 +1132,11 @@ class NavixMultiLayerPanelProps {
   // Wrap the visible panel widget with this to keep the panel open while the
   // mouse is over it. Required for hover-to-stay-open behavior.
   final Widget Function(Widget child) panelRootWrapper;
-  // + onFocus, onBlurred, onRegister, onUnregister, onEvent
+  final void Function(String key)? onFocus;
+  final void Function(String key)? onBlurred;
+  final void Function(String key)? onRegister;
+  final void Function(String key)? onUnregister;
+  final bool Function(NavEvent event)? onEvent;
 }
 ```
 
@@ -1281,10 +1296,8 @@ NavixScope(
 
 Add the package to your `pubspec.yaml`:
 
-```yaml
-dependencies:
-  navix:
-    path: ../flutter # or pub.dev reference once published
+```bash
+flutter pub add navix
 ```
 
 ### 1. NavixScope
